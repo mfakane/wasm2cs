@@ -178,8 +178,12 @@ internal static class Decoder
                 case 0x41: case 0x42: case 0x43: case 0x44: constant = ReadConstant(body, opcode); operand = 0; break;
                 case 0x00: case 0x01: case 0x05: case 0x0b: case 0x0f: case 0x1a: case 0x1b:
                 case 0x6a: case 0x6b: case 0x6c: operand = 0; break;
+                case 0xfc:
+                    operand = body.Count();
+                    if (operand > 7) throw new WasmException($"Offset 0x{offset:x}: Unsupported WASM opcode 0xfc/{operand}.");
+                    break;
                 default:
-                    if (I32Operations.Arity(opcode) != 0 || I64Operations.Arity(opcode) != 0 || FloatOperations.Arity(opcode) != 0) { operand = 0; break; }
+                    if (I32Operations.Arity(opcode) != 0 || I64Operations.Arity(opcode) != 0 || FloatOperations.Arity(opcode) != 0 || ConversionOperations.Supports(opcode)) { operand = 0; break; }
                     throw new WasmException($"Offset 0x{offset:x}: Unsupported WASM opcode 0x{opcode:x2}.");
             }
             instructions.Add(new Instruction(opcode, operand, offset, targets, immediate, blockType, selectType, constant));

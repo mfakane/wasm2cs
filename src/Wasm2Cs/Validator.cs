@@ -155,6 +155,12 @@ internal static class Validator
                     if (instruction.Opcode == 0x40) Pop(ValueType.I32);
                     Push(ValueType.I32); break;
                 default:
+                    if (ConversionOperations.Supports(instruction.Opcode))
+                    {
+                        Pop(ConversionOperations.InputType(instruction.Opcode, instruction.Operand));
+                        Push(ConversionOperations.ResultType(instruction.Opcode, instruction.Operand));
+                        break;
+                    }
                     if (FloatOperations.Arity(instruction.Opcode) != 0)
                     {
                         for (int p = 0; p < FloatOperations.Arity(instruction.Opcode); p++) Pop(FloatOperations.InputType(instruction.Opcode));

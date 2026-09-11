@@ -221,8 +221,6 @@ internal static class I64Checks
         Reject(Module([new Function("f", [0x7e], [0x7e], [0x20,0,0xa7,0x0b])]), "type mismatch");
         foreach (byte opcode in new byte[] { 0x29,0x30,0x31,0x32,0x33,0x34,0x35,0x37,0x3c,0x3d,0x3e })
             Reject(Module([new Function("f", [], [], [0x00,opcode,0,0,0x0b])]), "requires memory");
-        foreach (byte opcode in new byte[] { 0xae,0xaf,0xb0,0xb1,0xbd })
-            Reject(Module([new Function("f", [], [], [0x00,opcode,0x0b])]), $"opcode 0x{opcode:x2}");
-        Console.WriteLine("PASS: i64 operation signatures, memory presence, and explicit rejection of floating-point conversions.");
+        Console.WriteLine("PASS: i64 operation signatures and memory presence validation.");
     }
 }

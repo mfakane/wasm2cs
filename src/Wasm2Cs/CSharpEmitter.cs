@@ -10,9 +10,11 @@ internal static class CSharpEmitter
         source.Append(I32Operations.Helpers);
         if (module.Bodies.Any(f => f.Instructions.Any(i => I64Operations.Arity(i.Opcode) != 0))) source.Append(I64Operations.Helpers);
         if (module.Globals.Any(g => g.Type == ValueType.F32 || g.Type == ValueType.F64) ||
-            module.Bodies.Any(f => f.Instructions.Any(i => FloatOperations.Arity(i.Opcode) != 0 ||
+            module.Bodies.Any(f => f.Instructions.Any(i => FloatOperations.Arity(i.Opcode) != 0 || ConversionOperations.Supports(i.Opcode) ||
                 i.Opcode == 0x43 || i.Opcode == 0x44 || i.Opcode == 0x2a || i.Opcode == 0x2b || i.Opcode == 0x38 || i.Opcode == 0x39)))
             source.Append(FloatOperations.Helpers);
+        if (module.Bodies.Any(f => f.Instructions.Any(i => ConversionOperations.Supports(i.Opcode))))
+            source.Append(ConversionOperations.Helpers);
         if (module.Memory != null) source.Append(MemoryOperations.Helpers.Replace("__WASM_MAX_PAGES__", module.Memory.Maximum.ToString(CultureInfo.InvariantCulture)));
         for(int g=0;g<module.Globals.Count;g++) source.Append($"    private {TypeName(module.Globals[g].Type)} __wasm_G{g};\n");
         for (int i=0;i<module.Imports.Count;i++)
@@ -261,6 +263,12 @@ internal static class CSharpEmitter
                 case 0x3f: Push("__wasm_memory.Length / 65536"); break;
                 case 0x40: Push($"__wasm_Grow({PopI32()})"); break;
                 default:
+                    if (ConversionOperations.Supports(instruction.Opcode))
+                    {
+                        string converted = Pop(ConversionOperations.InputType(instruction.Opcode, instruction.Operand)).Name;
+                        Push(ConversionOperations.Expression(instruction.Opcode, instruction.Operand, converted), ConversionOperations.ResultType(instruction.Opcode, instruction.Operand));
+                        break;
+                    }
                     if (FloatOperations.Arity(instruction.Opcode) != 0)
                     {
                         var floatType = FloatOperations.InputType(instruction.Opcode);

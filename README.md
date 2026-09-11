@@ -21,6 +21,21 @@ Standard 2.0 APIs, verified against reference assemblies. The Unity bridge lives
 under `unity/Packages/com.mfakane.wasm2cs`; local NuGet and UPM packages can be built
 with `node scripts/pack.mjs` (requires `dotnet`, Node.js, and `tar` on PATH).
 
+## Pinned development shell
+
+The self-hosting toolchain is pinned by `flake.lock`: .NET SDK `10.0.400`, runtime
+pack `10.0.11`, Node.js `22.17.0`, WABT `1.0.41`, and the SDK's `wasm-tools`
+manifest (Emscripten `3.1.56`). Enter it with Nix and prepare the self-hosting
+bundle; the script installs that workload into its ignored local cache:
+
+```sh
+nix develop
+node scripts/self-hosting.mjs prepare
+```
+
+The shell sets `DOTNET_ROOT`, `DOTNET_CLI_HOME`, `NUGET_PACKAGES`, and
+`MSBuildUserExtensionsPath` locally, so the user's global SDK state is not changed.
+
 The Unity bridge watches `.wasm` assets and maintains Base64 `.additionalfile`
 inputs in `Assets/Wasm2CsGeneratedInputs`. Generated public classes belong only to
 the `Wasm2Cs.Modules` assembly. Reference that asmdef from custom consumer assemblies.

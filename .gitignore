@@ -8,3 +8,6 @@
 **/Wasm2Cs.Generator.dll
 **/node_modules/
 /artifacts/
+.opencode/
+.devshell/
+.direnv/

@@ -50,6 +50,7 @@ The sample prints:
 add(20, 22) = 42
 square(7) = 49
 add(int.MaxValue, 1) = -2147483648
+Clang CRC32(123456789) = cbf43926
 ```
 
 To inspect standalone translation:
@@ -57,6 +58,12 @@ To inspect standalone translation:
 ```sh
 dotnet run --project src/Wasm2Cs.Cli -- samples/Smoke/Arithmetic.wasm
 ```
+
+`samples/CAlgorithms/Algorithms.wasm` is a real Clang-produced freestanding C
+fixture (array sums and CRC32). The tests compare outputs and memory against
+Node.js. Unity consumes the same 35 Node-generated oracle vectors and checks
+them in the Editor and the IL2CPP Player. Toolchain versions and reproduction
+commands are documented alongside the C source.
 
 ## Add a WASM file to a project
 

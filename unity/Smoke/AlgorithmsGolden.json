@@ -1,0 +1,179 @@
+{
+  "Cases": [
+    {
+      "Seed": 0,
+      "Length": 0,
+      "Expected": 0
+    },
+    {
+      "Seed": 0,
+      "Length": 1,
+      "Expected": -771559539
+    },
+    {
+      "Seed": 0,
+      "Length": 8,
+      "Expected": 1225461722
+    },
+    {
+      "Seed": 0,
+      "Length": 64,
+      "Expected": 1628574918
+    },
+    {
+      "Seed": 0,
+      "Length": 255,
+      "Expected": 2051715581
+    },
+    {
+      "Seed": 0,
+      "Length": 256,
+      "Expected": -1496774568
+    },
+    {
+      "Seed": 0,
+      "Length": 300,
+      "Expected": -1496774568
+    },
+    {
+      "Seed": 1,
+      "Length": 0,
+      "Expected": 0
+    },
+    {
+      "Seed": 1,
+      "Length": 1,
+      "Expected": -1526341862
+    },
+    {
+      "Seed": 1,
+      "Length": 8,
+      "Expected": -1061147541
+    },
+    {
+      "Seed": 1,
+      "Length": 64,
+      "Expected": 1896282211
+    },
+    {
+      "Seed": 1,
+      "Length": 255,
+      "Expected": 880782136
+    },
+    {
+      "Seed": 1,
+      "Length": 256,
+      "Expected": -1528123832
+    },
+    {
+      "Seed": 1,
+      "Length": 300,
+      "Expected": -1528123832
+    },
+    {
+      "Seed": -1,
+      "Length": 0,
+      "Expected": 0
+    },
+    {
+      "Seed": -1,
+      "Length": 1,
+      "Expected": -16776961
+    },
+    {
+      "Seed": -1,
+      "Length": 8,
+      "Expected": -1292080315
+    },
+    {
+      "Seed": -1,
+      "Length": 64,
+      "Expected": -877198173
+    },
+    {
+      "Seed": -1,
+      "Length": 255,
+      "Expected": 652383486
+    },
+    {
+      "Seed": -1,
+      "Length": 256,
+      "Expected": -778923797
+    },
+    {
+      "Seed": -1,
+      "Length": 300,
+      "Expected": -778923797
+    },
+    {
+      "Seed": -2147483648,
+      "Length": 0,
+      "Expected": 0
+    },
+    {
+      "Seed": -2147483648,
+      "Length": 1,
+      "Expected": -771559539
+    },
+    {
+      "Seed": -2147483648,
+      "Length": 8,
+      "Expected": 1225461722
+    },
+    {
+      "Seed": -2147483648,
+      "Length": 64,
+      "Expected": 1628574918
+    },
+    {
+      "Seed": -2147483648,
+      "Length": 255,
+      "Expected": 2051715581
+    },
+    {
+      "Seed": -2147483648,
+      "Length": 256,
+      "Expected": -1496774568
+    },
+    {
+      "Seed": -2147483648,
+      "Length": 300,
+      "Expected": -1496774568
+    },
+    {
+      "Seed": 2147483647,
+      "Length": 0,
+      "Expected": 0
+    },
+    {
+      "Seed": 2147483647,
+      "Length": 1,
+      "Expected": -16776961
+    },
+    {
+      "Seed": 2147483647,
+      "Length": 8,
+      "Expected": -1292080315
+    },
+    {
+      "Seed": 2147483647,
+      "Length": 64,
+      "Expected": -877198173
+    },
+    {
+      "Seed": 2147483647,
+      "Length": 255,
+      "Expected": 652383486
+    },
+    {
+      "Seed": 2147483647,
+      "Length": 256,
+      "Expected": -778923797
+    },
+    {
+      "Seed": 2147483647,
+      "Length": 300,
+      "Expected": -778923797
+    }
+  ]
+}

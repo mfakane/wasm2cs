@@ -133,6 +133,7 @@ await ExecutionChecks.Numerics();
 await ExecutionChecks.ControlFlow();
 await ExecutionChecks.Calls();
 await ExecutionChecks.Memory();
+await ExecutionChecks.CAlgorithms();
 
 record Call(string Name, int[] Args);
 sealed class Input(string path, string content) : AdditionalText

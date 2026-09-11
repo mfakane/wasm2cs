@@ -13,7 +13,8 @@ Each milestone is committed separately after its checks pass. No registry publis
 6. Complete: direct/private/void calls, factorial and mutual recursion, exported wrappers.
 7. Complete: memory32 loads/stores/growth, globals, active data and start;
    differential memory/global snapshots and isolated-instance checks.
-8. Clang-produced array/CRC32 fixtures and differential execution.
+8. Complete: Clang-produced array/CRC32 fixtures, 35 differential vectors plus
+   full memory snapshots; Unity Editor and Windows x64 IL2CPP verified.
 9. Typed host function imports and memory exchange.
 10. Conformance fixtures and regeneration coverage.
 11. NuGet and UPM distribution with clean-consumer tests.

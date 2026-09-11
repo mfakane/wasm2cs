@@ -7,6 +7,7 @@
     <PackageReference Include="NETStandard.Library" Version="2.0.3" GeneratePathProperty="true" PrivateAssets="all" />
     <None Include="$(PkgNETStandard_Library)/build/netstandard2.0/ref/*.dll" Link="ReferenceAssemblies/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../samples/Smoke/Arithmetic.wasm" Link="Arithmetic.wasm" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../samples/CAlgorithms/Algorithms.wasm" Link="Algorithms.wasm" CopyToOutputDirectory="PreserveNewest" />
     <None Include="oracle.mjs" CopyToOutputDirectory="PreserveNewest" />
     <None Include="execution-oracle.mjs" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

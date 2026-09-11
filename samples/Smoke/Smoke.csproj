@@ -7,6 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="../../src/Wasm2Cs.Generator/Wasm2Cs.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <Wasm Include="Arithmetic.wasm" />
+    <Wasm Include="../CAlgorithms/Algorithms.wasm" />
   </ItemGroup>
   <Import Project="../../build/Wasm2Cs.targets" />
 </Project>

@@ -204,5 +204,19 @@ internal static class ExecutionChecks
         }
         Console.WriteLine("PASS: memory loads/stores, unsigned bounds, grow, data/start initialization, globals, and isolated instances.");
     }
+    public static async Task CAlgorithms()
+    {
+        byte[] bytes = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory,"Algorithms.wasm"));
+        var calls = new[] {0,1,-1,int.MinValue,int.MaxValue}.SelectMany(seed=>new[]{0,1,8,64,255,256,300}.Select(length=>new[]{seed,length})).ToArray();
+        await Compare(bytes,calls);
+        var type = Compile(bytes).GetType("Wasm2Cs.Generated.Subject")!;
+        var instance = Activator.CreateInstance(type);
+        int address = (int)type.GetMethod("buffer_ptr")!.Invoke(instance,null)!;
+        type.GetMethod("WriteMemory")!.Invoke(instance,[unchecked((uint)address),System.Text.Encoding.ASCII.GetBytes("123456789")]);
+        int crc = (int)type.GetMethod("crc32")!.Invoke(instance,[address,9])!;
+        int sum = (int)type.GetMethod("sum_bytes")!.Invoke(instance,[address,9])!;
+        if (unchecked((uint)crc) != 0xcbf43926u || sum != 477) throw new Exception("C algorithm known-answer test failed.");
+        Console.WriteLine("PASS: Clang-produced CRC32/array algorithms, known answers, and full-memory differential checks.");
+    }
     private sealed record Outcome(bool Trapped, int Value);
 }

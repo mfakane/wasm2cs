@@ -108,8 +108,10 @@ Translation errors fail the build with `WASM001`; duplicate class names use `WAS
   of `int.MinValue` by `-1` returns zero.
 - Zero-initialized locals and wrapping 32-bit integer arithmetic. Stack values are
   materialized into temporary variables so later local assignments cannot change them.
+- Direct function calls, including non-exported functions and recursion. Each WASM
+  function is emitted once; exports are public wrappers over private instance methods.
 
-Imports, memory, globals, calls, floating point,
+Imports, memory, globals, indirect calls, floating point,
 and other instructions are rejected. This is not yet a general-purpose WASM compiler;
 ordinary Rust/C/C++ outputs will typically need more instructions and sections.
 All function bodies, including unexported ones, are checked. Parsing validates section

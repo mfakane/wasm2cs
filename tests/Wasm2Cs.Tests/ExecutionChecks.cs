@@ -104,5 +104,36 @@ internal static class ExecutionChecks
         }
         Console.WriteLine("PASS: structured branches, branch values, branch tables, unreachable validation, and 200 GCD loops.");
     }
+    internal static byte[] Functions(int[] parameters, byte[][] instructions, int[]? results = null)
+    {
+        results ??= Enumerable.Repeat(1,parameters.Length).ToArray();
+        var types = new List<byte>(U32(parameters.Length));
+        var code = new List<byte>(U32(parameters.Length));
+        for(int i=0;i<parameters.Length;i++)
+        {
+            types.AddRange([0x60,..U32(parameters[i]),..Enumerable.Repeat((byte)0x7f,parameters[i]),(byte)results[i],..(results[i] == 1 ? new byte[]{0x7f} : Array.Empty<byte>())]);
+            byte[] body = [0,..instructions[i]];
+            code.AddRange([..U32(body.Length),..body]);
+        }
+        return [0,97,115,109,1,0,0,0,..Section(1,types.ToArray()),
+            ..Section(3,[..U32(parameters.Length),..Enumerable.Range(0,parameters.Length).SelectMany(U32)]),
+            ..Section(7,[1,1,(byte)'f',0,0]),..Section(10,code.ToArray())];
+    }
+    public static async Task Calls()
+    {
+        await Compare(Functions([2,2],[[0x20,0,0x20,1,0x10,1,0x0b],[0x20,0,0x20,1,0x6b,0x0b]]),[[1,2],[7,3],[int.MinValue,1]]);
+        await Compare(Functions([0,1],[[0x41,7,0x10,1,0x41,42,0x0b],[0x20,0,0x1a,0x0b]],[1,0]),[[]]);
+        await Compare(Functions([1],[[0x20,0,0x45,0x04,0x7f,0x41,1,0x05,0x20,0,0x20,0,0x41,1,0x6b,0x10,0,0x6c,0x0b,0x0b]]),
+            Enumerable.Range(0,14).Select(n=>new[]{n}).ToArray());
+        byte[] even = [0x20,0,0x45,0x04,0x7f,0x41,1,0x05,0x20,0,0x41,1,0x6b,0x10,1,0x0b,0x0b];
+        byte[] odd = [0x20,0,0x45,0x04,0x7f,0x41,0,0x05,0x20,0,0x41,1,0x6b,0x10,0,0x0b,0x0b];
+        await Compare(Functions([1,1],[even,odd]),Enumerable.Range(0,40).Select(n=>new[]{n}).ToArray());
+        foreach(var bytes in new[] { Module(0,[0x10,1,0x0b]),Functions([0,1],[[0x10,1,0x0b],[0x20,0,0x0b]]) })
+        {
+            try { Transpiler.Translate(bytes,"Invalid"); throw new Exception("Invalid call accepted."); }
+            catch(WasmException) { }
+        }
+        Console.WriteLine("PASS: private calls, argument order, void calls, factorial, mutual recursion, and invalid calls.");
+    }
     private sealed record Outcome(bool Trapped, int Value);
 }

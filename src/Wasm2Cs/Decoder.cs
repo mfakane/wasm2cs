@@ -94,7 +94,7 @@ internal static class Decoder
                     byte blockType = body.Byte();
                     if (blockType != 0x40 && blockType != 0x7f) throw new WasmException("Only empty or i32 block results are supported.");
                     operand = blockType == 0x7f ? 1 : 0; depth++; break;
-                case 0x0c: case 0x0d: operand = body.Count(); break;
+                case 0x0c: case 0x0d: case 0x10: operand = body.Count(); break;
                 case 0x0e:
                     int count = body.Count();
                     if (count >= body.Remaining) throw new WasmException("Branch table extends past body boundary.");

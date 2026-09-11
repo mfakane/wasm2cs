@@ -11,7 +11,7 @@ internal static class Validator
                 throw new WasmException($"Export '{export.Key}' cannot be represented as a C# method name.");
             if (export.Value >= module.Bodies.Count) throw new WasmException("Invalid exported function index.");
         }
-        for (int i = 0; i < module.Bodies.Count; i++) ValidateBody(module.Bodies[i], i);
+        for (int i = 0; i < module.Bodies.Count; i++) ValidateBody(module, module.Bodies[i], i);
     }
     private sealed class Control(byte opcode, int height, int results)
     {
@@ -20,7 +20,7 @@ internal static class Validator
         public bool Unreachable, ElseSeen;
         public int BranchResults => Opcode == 0x03 ? 0 : Results;
     }
-    private static void ValidateBody(Function function, int index)
+    private static void ValidateBody(Module module, Function function, int index)
     {
         int height = 0;
         var controls = new List<Control> { new Control(0xff, 0, function.Signature.Results) };
@@ -75,6 +75,11 @@ internal static class Validator
                     PopResults(results); Unreachable();
                     break;
                 case 0x0f: PopResults(function.Signature.Results); Unreachable(); break;
+                case 0x10:
+                    if (instruction.Operand >= module.Bodies.Count) Fail("Invalid called function index.");
+                    var signature = module.Bodies[instruction.Operand].Signature;
+                    PopResults(signature.Parameters); height += signature.Results;
+                    break;
                 case 0x1a: Pop(); break;
                 case 0x1b: Pop(); Pop(); Pop(); height++; break;
                 case 0x20: case 0x21: case 0x22:

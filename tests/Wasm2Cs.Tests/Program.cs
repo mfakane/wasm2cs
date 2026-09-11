@@ -131,6 +131,7 @@ Assert(unityDriver.GetRunResult().Diagnostics.Any(d => d.Id == "WASM002"), "Dupl
 Console.WriteLine("PASS: Unity AdditionalFiles, asmdef isolation, and duplicate diagnostics.");
 await ExecutionChecks.Numerics();
 await ExecutionChecks.ControlFlow();
+await ExecutionChecks.Calls();
 
 record Call(string Name, int[] Args);
 sealed class Input(string path, string content) : AdditionalText

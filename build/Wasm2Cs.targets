@@ -1,0 +1,46 @@
+<Project>
+  <!-- Binary AdditionalFiles cannot be consumed as SourceText. Encode before compilation,
+       and preserve timestamps when the bytes are unchanged. -->
+  <UsingTask TaskName="Wasm2CsEncode" TaskFactory="RoslynCodeTaskFactory"
+             AssemblyFile="$(MSBuildToolsPath)/Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Modules ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <OutputDirectory ParameterType="System.String" Required="true" />
+      <EncodedFiles ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System" />
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Collections.Generic" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        var files = new List<Microsoft.Build.Framework.ITaskItem>();
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        Directory.CreateDirectory(OutputDirectory);
+        foreach (var module in Modules)
+        {
+            var name = Path.GetFileNameWithoutExtension(module.ItemSpec);
+            if (!names.Add(name))
+            {
+                Log.LogError("WASM002: Duplicate WASM class name '{0}'. Use unique filenames.", name);
+                return false;
+            }
+            var target = Path.Combine(OutputDirectory, name + ".wasm.base64");
+            var content = Convert.ToBase64String(File.ReadAllBytes(module.GetMetadata("FullPath")));
+            if (!File.Exists(target) || File.ReadAllText(target) != content)
+                File.WriteAllText(target, content);
+            files.Add(new Microsoft.Build.Utilities.TaskItem(target));
+        }
+        EncodedFiles = files.ToArray();
+      ]]></Code>
+    </Task>
+  </UsingTask>
+  <Target Name="Wasm2CsPrepare" BeforeTargets="GenerateMSBuildEditorConfigFile;CoreCompile" Condition="'@(Wasm)' != ''">
+    <Wasm2CsEncode Modules="@(Wasm)" OutputDirectory="$(IntermediateOutputPath)wasm2cs">
+      <Output TaskParameter="EncodedFiles" ItemName="_Wasm2CsEncoded" />
+    </Wasm2CsEncode>
+    <ItemGroup>
+      <AdditionalFiles Include="@(_Wasm2CsEncoded)" />
+      <FileWrites Include="@(_Wasm2CsEncoded)" />
+    </ItemGroup>
+  </Target>
+</Project>

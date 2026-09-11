@@ -1,0 +1,98 @@
+# wasm2cs
+
+A proof of concept that translates WebAssembly binaries into ordinary C# methods,
+then runs the same translator from a Roslyn incremental Source Generator.
+The generated application does not need a WebAssembly runtime.
+
+Requires the **.NET 10 SDK**; Node.js 22+ is used for the independent WebAssembly
+oracle and build integration tests. There are no NuGet dependencies. This bootstrap
+uses Roslyn assemblies from the installed SDK and targets `net10.0`, including the
+generator. Older compiler hosts and Visual Studio's .NET Framework host are not
+supported. NuGet packaging and wider compiler compatibility are future work.
+
+## Run the proof
+
+```sh
+dotnet build Wasm2Cs.slnx
+dotnet run --project tests/Wasm2Cs.Tests --no-build
+dotnet run --project samples/Smoke --no-build
+node scripts/test-build.mjs
+```
+
+The 201-byte `samples/Smoke/Arithmetic.wasm` is checked in. Its readable counterpart
+is `Arithmetic.wat`; regenerate the binary with `node scripts/create-fixture.mjs`.
+The assembler script validates its output with Node's WebAssembly engine.
+
+The test executable compiles translated C# with overflow checks enabled and compares
+3,649 calls against Node's WebAssembly engine, including random inputs and integer
+boundaries. It also checks malformed/unsupported modules, generator diagnostics,
+and changes to generator inputs. `test-build.mjs` exercises actual MSBuild builds,
+including a same-size binary edit with its timestamp preserved and removal of a WASM item.
+
+The sample prints:
+
+```text
+add(20, 22) = 42
+square(7) = 49
+add(int.MaxValue, 1) = -2147483648
+```
+
+To inspect standalone translation:
+
+```sh
+dotnet run --project src/Wasm2Cs.Cli -- samples/Smoke/Arithmetic.wasm
+```
+
+## Add a WASM file to a project
+
+Use the following entries in an SDK-style .NET 10 project, adjusting the repository
+paths. The complete example is `samples/Smoke/Smoke.csproj`.
+
+```xml
+<PropertyGroup>
+  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+  <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
+</PropertyGroup>
+<ItemGroup>
+  <ProjectReference Include="../../src/Wasm2Cs.Generator/Wasm2Cs.Generator.csproj"
+                    OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  <Wasm Include="Arithmetic.wasm" />
+</ItemGroup>
+<Import Project="../../build/Wasm2Cs.targets" />
+```
+
+After `dotnet build`, call `Wasm2Cs.Generated.Arithmetic.add(20, 22)`.
+The file is written to
+`obj/generated/Wasm2Cs.Generator/Wasm2Cs.WasmGenerator/Arithmetic.g.cs`.
+Keep generated files under `obj` to avoid compiling them twice.
+
+MSBuild encodes each binary into `obj/<configuration>/<framework>/wasm2cs/*.wasm.base64`
+before compilation. The generator consumes these as text `AdditionalFiles`, so
+content changes are tracked without reading hidden binary dependencies inside the
+generator. Unchanged inputs retain their timestamps. Run a build after editing WASM;
+automatic IDE file-watching behavior has not been verified.
+
+Each filename becomes a static class; each function export becomes a static method.
+Names must be ASCII C# identifiers, with keywords escaped using `@`. An export cannot
+have the same name as its class, and module filenames must be unique (ignoring case).
+Translation errors fail the build with `WASM001`; duplicate class names use `WASM002`.
+
+## Supported subset
+
+- WASM version 1, function types with `i32` parameters and zero or one `i32` result.
+- Type, function, function export, and code sections; custom sections are skipped.
+- `local.get`, `local.set`, `local.tee`, `i32.const`, `i32.add`, `i32.sub`, `i32.mul`.
+- `nop`, `drop`, final `end`, and `return` immediately followed by final `end`.
+- Zero-initialized locals and wrapping 32-bit integer arithmetic. Stack values are
+  materialized into temporary variables so later local assignments cannot change them.
+
+Imports, memory, globals, calls, branching/loops, floating point, integer division,
+and other instructions are rejected. This is not yet a general-purpose WASM compiler;
+ordinary Rust/C/C++ outputs will typically need more instructions and sections.
+All function bodies, including unexported ones, are checked. Parsing validates section
+boundaries/order, LEB128 encodings, indices, and operand/result stack heights within
+the supported subset. There is an implementation limit of 100,000 locals per function.
+
+Design references: [WASM binary modules](https://webassembly.github.io/spec/core/binary/modules.html),
+[integer semantics](https://webassembly.github.io/spec/core/exec/numerics.html), and
+[Roslyn incremental generators](https://github.com/dotnet/roslyn/blob/main/docs/features/incremental-generators.md).

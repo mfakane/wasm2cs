@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Wasm2Cs/Wasm2Cs.csproj" />
+    <ProjectReference Include="../../src/Wasm2Cs.Generator/Wasm2Cs.Generator.csproj" Aliases="Generator" />
+    <Reference Include="Microsoft.CodeAnalysis" HintPath="$(MSBuildBinPath)/Roslyn/bincore/Microsoft.CodeAnalysis.dll" />
+    <Reference Include="Microsoft.CodeAnalysis.CSharp" HintPath="$(MSBuildBinPath)/Roslyn/bincore/Microsoft.CodeAnalysis.CSharp.dll" />
+    <None Include="../../samples/Smoke/Arithmetic.wasm" Link="Arithmetic.wasm" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="oracle.mjs" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+    <OutputType>Exe</OutputType>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <WasmMainJSPath>main.mjs</WasmMainJSPath>
+    <WasmGenerateAppBundle>true</WasmGenerateAppBundle>
+
+    <!-- SH-01 runtime profile: keep the managed IL interpreter and PE DLLs. -->
+    <RunAOTCompilation>false</RunAOTCompilation>
+    <WasmStripILAfterAOT>false</WasmStripILAfterAOT>
+    <BlazorWebAssemblyJiterpreter>false</BlazorWebAssemblyJiterpreter>
+    <WasmEnableSIMD>false</WasmEnableSIMD>
+    <WasmEnableThreads>false</WasmEnableThreads>
+    <WasmEnableExceptionHandling>true</WasmEnableExceptionHandling>
+    <WasmEnableWebcil>false</WasmEnableWebcil>
+    <PublishTrimmed>false</PublishTrimmed>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <EmccMaximumHeapSize>268435456</EmccMaximumHeapSize>
+
+    <!-- prepare builds this DLL first; the guest deliberately consumes a DLL. -->
+    <Wasm2CsAssembly>$(MSBuildThisFileDirectory)..\..\src\Wasm2Cs\bin\$(Configuration)\netstandard2.0\Wasm2Cs.dll</Wasm2CsAssembly>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Wasm2Cs">
+      <HintPath>$(Wasm2CsAssembly)</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

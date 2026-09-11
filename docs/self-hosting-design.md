@@ -71,15 +71,15 @@ node scripts/test-build.mjs
 
 コードを変更する各 SH でこの組を実行する。公開 API、Generator、ビルド・配布設定を変更した場合は既存の `node scripts/pack.mjs` と `node scripts/test-package.mjs` も実行する。既存 Unity 統合の確認には `scripts/test-unity.ps1` を使用する。
 
-### 今後追加するコマンド
+### SH-01 で追加したコマンド
 
-次のドライバーとサブコマンドは未実装であり、記載された段階で追加する。既存コマンドとして実行しない。
+SH-01 の3コマンドは実装済みである。`prepare` が作成した bundle 以外を入力にしない。WABT などの調査ツールや SDK がない場合は成功扱いにしない。
 
-| 追加段階 | 予定コマンド | 検証対象 |
+| 追加段階 | コマンド | 検証対象 |
 |---|---|---|
-| SH-01 | `node scripts/self-hosting.mjs prepare` | 専用環境での対象ビルドと成果物固定 |
-| SH-01 | `node scripts/self-hosting.mjs inventory` | 全体の必要機能・依存関係一覧 |
-| SH-01 | `node scripts/self-hosting.mjs reference` | 公式 Node.js 環境による参照実行 |
+| SH-01 | `node scripts/self-hosting.mjs prepare` | 専用環境での対象ビルドと成果物固定（実装済み） |
+| SH-01 | `node scripts/self-hosting.mjs inventory` | 全体の必要機能・依存関係一覧（実装済み） |
+| SH-01 | `node scripts/self-hosting.mjs reference` | 公式 Node.js 環境による参照実行（実装済み） |
 | SH-08 | `node scripts/self-hosting.mjs generate` | ランタイム全体の C# 生成 |
 | SH-08 | `node scripts/self-hosting.mjs compile` | 生成した全ソースの外側でのコンパイル |
 | SH-09 | `node scripts/self-hosting.mjs host` | 小型 WASM による ABI 検証 |

@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "milestone": "SH-01",
+  "profile": "dotnet-browser-wasm-net10-interpreter",
+  "targetFramework": "net10.0",
+  "runtimeIdentifier": "browser-wasm",
+  "sdk": "10.0.400",
+  "workload": "wasm-tools",
+  "runtimePack": "10.0.11",
+  "node": "22.17.0",
+  "wabt": "1.0.41",
+  "wabtSource": "https://github.com/WebAssembly/wabt/releases/tag/1.0.41",
+  "emscripten": "3.1.56",
+  "buildProperties": {
+    "RunAOTCompilation": false,
+    "WasmStripILAfterAOT": false,
+    "BlazorWebAssemblyJiterpreter": false,
+    "WasmEnableSIMD": false,
+    "WasmEnableThreads": false,
+    "WasmEnableExceptionHandling": true,
+    "WasmEnableWebcil": false,
+    "PublishTrimmed": false,
+    "InvariantGlobalization": true,
+    "EmccMaximumHeapSize": 268435456
+  },
+  "runtimeOptions": [
+    "--no-jiterpreter-traces-enabled"
+  ],
+  "memory": {
+    "addressModel": "memory32",
+    "maximumMiB": 256
+  },
+  "artifacts": {
+    "root": "artifacts/self-hosting",
+    "bundle": "artifacts/self-hosting/bundle",
+    "manifest": "artifacts/self-hosting/bundle-manifest.json",
+    "largeFilesVersioned": false
+  },
+  "managedAssemblies": [
+    "System.Private.CoreLib.dll",
+    "Wasm2Cs.dll",
+    "SelfHosting.dll"
+  ],
+  "runtimeAssemblies": [
+    "dotnet.native.wasm",
+    "dotnet.js",
+    "dotnet.native.js",
+    "dotnet.boot.js"
+  ],
+  "jiterpreter": {
+    "traces": "disabled by MSBuild and --no-jiterpreter-traces-enabled",
+    "interpEntryThunks": "not generated in the non-AOT profile",
+    "jitCallThunks": "not generated in the non-AOT profile"
+  },
+  "inventory": {
+    "status": "complete",
+    "wabt": "1.0.41",
+    "bundleSha256": "10e2f5cee5fecd86681ef9e043082a04df131a0d7eb76855ac895ea0cbf3c9e6",
+    "runtime": {
+      "path": "_framework/dotnet.native.wasm",
+      "bytes": 2970056,
+      "sha256": "d531922c75237648c1f643077c13ba0da8f9583ecfa3304476ab196984c3efe4",
+      "functions": 12356,
+      "sections": {
+        "Type": 176,
+        "Import": 74,
+        "Function": 12356,
+        "Table": 1,
+        "Memory": 1,
+        "Tag": 1,
+        "Global": 3,
+        "Export": 191,
+        "Elem": 1,
+        "Code": 12356,
+        "Data": 3285
+      }
+    },
+    "managedAssemblyCount": 174,
+    "machineReadable": "artifacts/self-hosting/inventory.json",
+    "humanSummary": "artifacts/self-hosting/inventory.md",
+    "artifactManifest": "artifacts/self-hosting/bundle-manifest.json",
+    "featureOwners": {
+      "typedIr": "SH-02",
+      "i64": "SH-03",
+      "floatingPoint": "SH-04",
+      "memoryGlobalsData": "SH-05",
+      "tablesIndirectCalls": "SH-06",
+      "exceptions": "SH-07",
+      "largeCodegen": "SH-08",
+      "runtimeAbi": "SH-09",
+      "monoStartup": "SH-10",
+      "managedRuntime": "SH-11",
+      "guestTranslation": "SH-12",
+      "unity": "SH-13",
+      "reproducibility": "SH-14"
+    }
+  },
+  "status": "complete"
+}

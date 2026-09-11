@@ -1,0 +1,5 @@
+{
+  "name": "Wasm2Cs.Modules",
+  "autoReferenced": true,
+  "noEngineReferences": true
+}

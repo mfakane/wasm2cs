@@ -115,6 +115,21 @@ Assert(result.Diagnostics.Any(d => d.Id == "WASM001" && d.Severity == Diagnostic
 Assert(result.GeneratedTrees.Length == 0, "Invalid binary produced code.");
 Console.WriteLine("PASS: Source Generator compilation, content updates, and WASM001 diagnostics.");
 
+var unityInput = new Input("Arithmetic.Wasm2Cs.Generator.additionalfile", Convert.ToBase64String(bytes));
+GeneratorDriver unityDriver = CSharpGeneratorDriver.Create([new WasmGenerator().AsSourceGenerator()], [unityInput],
+    parseOptions: new CSharpParseOptions(LanguageVersion.CSharp9));
+unityDriver = unityDriver.RunGeneratorsAndUpdateCompilation(Compilation("").WithAssemblyName("Wasm2Cs.Modules"), out generated, out diagnostics);
+Assert(diagnostics.Length == 0, "Unity input failed.");
+Compile(generated);
+Assert(unityDriver.GetRunResult().GeneratedTrees.Length == 1, "Unity module was not generated.");
+unityDriver = unityDriver.RunGenerators(Compilation("").WithAssemblyName("Consumer"));
+Assert(unityDriver.GetRunResult().GeneratedTrees.Length == 0, "Unity module leaked into a referencing assembly.");
+var duplicate = new Input(unityInput.Path, "!WASM002:Duplicate module name: Arithmetic");
+unityDriver = unityDriver.ReplaceAdditionalText(unityInput, duplicate)
+    .RunGenerators(Compilation("").WithAssemblyName("Wasm2Cs.Modules"));
+Assert(unityDriver.GetRunResult().Diagnostics.Any(d => d.Id == "WASM002"), "Duplicate Unity input not diagnosed.");
+Console.WriteLine("PASS: Unity AdditionalFiles, asmdef isolation, and duplicate diagnostics.");
+
 record Call(string Name, int[] Args);
 sealed class Input(string path, string content) : AdditionalText
 {

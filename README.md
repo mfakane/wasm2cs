@@ -12,8 +12,18 @@ the staged Unity/IL2CPP implementation milestones.
 Requires the **.NET 10 SDK** to build the tools and tests; Node.js 22+ supplies the
 independent WebAssembly oracle. The core and generator target `netstandard2.0`;
 the generator uses Roslyn 4.3.0 from NuGet. Generated code targets C# 9 and .NET
-Standard 2.0 APIs, verified against reference assemblies. Unity runtime validation
-and package distribution are subsequent milestones.
+Standard 2.0 APIs, verified against reference assemblies. The Unity bridge lives
+under `unity/Packages/com.mfakane.wasm2cs`; package distribution is a subsequent milestone.
+
+The Unity bridge watches `.wasm` assets and maintains Base64 `.additionalfile`
+inputs in `Assets/Wasm2CsGeneratedInputs`. Generated public classes belong only to
+the `Wasm2Cs.Modules` assembly. Reference that asmdef from custom consumer assemblies.
+The compiler plugin is excluded from runtime platforms. Use the Editor menu
+`Tools/Wasm2Cs/Regenerate Inputs` to explicitly reconcile inputs after file changes.
+On Windows, `scripts/test-unity.ps1 -Editor <Unity.exe>` creates a temporary consumer,
+installs the local package with Unity's package API, and builds/runs an IL2CPP smoke.
+It preserves logs and the temporary project for investigation. Unity 6.0 is the
+compatibility baseline; this machine's available Editor is 6000.6.0f1.
 
 ## Run the proof
 

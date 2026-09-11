@@ -1,2 +1,8 @@
 **/bin/
 **/obj/
+**/Library/
+**/Temp/
+**/Logs/
+**/UserSettings/
+**/Build/
+**/Wasm2Cs.Generator.dll

@@ -3,9 +3,10 @@
 Baseline: `8818947`. Work branch: `feat/unity-wasm-pipeline`.
 Each milestone is committed separately after its checks pass. No registry publishing.
 
-1. Separate decoding, module IR, validation, and C# emission.
-2. Portable netstandard2.0 generator (Roslyn 4.3.0) and instance API.
-3. Unity 6 input bridge, asmdef isolation, Editor and Windows IL2CPP smoke.
+1. Complete (`fd9e980`): separate decoding, module IR, validation, and C# emission.
+2. Complete (`a7aad72`): portable netstandard2.0 generator (Roslyn 4.3.0) and instance API.
+3. Complete: Unity input bridge, asmdef isolation, create/move/change/delete/restart
+   checks, Editor and Windows x64 IL2CPP smoke (Unity 6000.6.0f1).
 4. i32 numeric operations and traps.
 5. Structured control flow and validation of unreachable instructions.
 6. Direct calls, recursion, and exported wrappers.
@@ -37,3 +38,9 @@ are deferred.
 The local SDK is .NET 10.0.400 but inherited DOTNET_ROOT points to an older SDK.
 Build checks must set DOTNET_ROOT and DOTNET_ROOT_X64 to the root reported by
 the selected SDK, without changing the user's global configuration.
+
+Windows has Unity 6000.6.0f1 at `C:/Program Files/Unity/Hub/Editor/6000.6.0f1`.
+The Windows IL2CPP support module was added with the official CLI for validation.
+Unity 6.0 compatibility is a target; 6000.6.0f1 is the actual tested editor.
+The WebGL module also supplies Clang and wasm-ld under
+`Editor/Data/PlaybackEngines/WebGLSupport/BuildTools/Emscripten/llvm`.

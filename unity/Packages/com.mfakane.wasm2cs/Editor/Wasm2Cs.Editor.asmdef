@@ -1,0 +1,5 @@
+{
+  "name": "Wasm2Cs.Editor",
+  "includePlatforms": ["Editor"],
+  "autoReferenced": true
+}

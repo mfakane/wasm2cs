@@ -3,6 +3,6 @@
   <ItemGroup>
     <!-- Bootstrap without NuGet; this prototype requires the .NET 10 SDK compiler. -->
     <Reference Include="Microsoft.CodeAnalysis" HintPath="$(MSBuildBinPath)/Roslyn/bincore/Microsoft.CodeAnalysis.dll" Private="false" />
-    <Compile Include="../Wasm2Cs/Transpiler.cs" Link="Transpiler.cs" />
+    <Compile Include="../Wasm2Cs/*.cs" Link="Core/%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

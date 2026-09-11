@@ -4,6 +4,11 @@ A proof of concept that translates WebAssembly binaries into ordinary C# methods
 then runs the same translator from a Roslyn incremental Source Generator.
 The generated application does not need a WebAssembly runtime.
 
+The translator separates binary decoding, a module/instruction representation,
+validation, and C# emission. Invalid instructions and operand stacks include
+function indices and byte offsets in diagnostics. See `IMPLEMENTATION.md` for
+the staged Unity/IL2CPP implementation milestones.
+
 Requires the **.NET 10 SDK**; Node.js 22+ is used for the independent WebAssembly
 oracle and build integration tests. There are no NuGet dependencies. This bootstrap
 uses Roslyn assemblies from the installed SDK and targets `net10.0`, including the

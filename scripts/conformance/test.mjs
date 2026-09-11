@@ -44,9 +44,12 @@ assert.deepEqual(convert({ type: 'assert_malformed', line: 3, module_type: 'text
 assert.equal(convert({ type: 'assert_malformed', line: 4, module_type: 'binary', filename: 'bad.wasm' })[0].Binary, 'AA==');
 assert.throws(() => verifyReference([{ Kind: 'unknown' }]), /Unknown conformance command/);
 assert.throws(() => verifyReference([{ Kind: 'assert_return', Action: 'unknown' }]), /Unknown conformance action/);
-const file = process.argv[2];
-const fixture = JSON.parse(readFileSync(file, 'utf8'));
-assert.equal(fixture.SchemaVersion, 2);
-assert.equal(createHash('sha256').update(readFileSync(join(dirname(file), fixture.Source))).digest('hex'), fixture.SourceSha256, 'Fixture source changed without regeneration');
-assert.deepEqual(verifyReference(fixture.Cases), fixture.Counts);
-console.log(`PASS: typed bit transport, NaN rules, unknown WAST rejection, and typed fixture reference execution (Node ${process.version}, V8 ${process.versions.v8}).`);
+const files = process.argv.slice(2);
+assert.ok(files.length > 0, 'Expected at least one fixture');
+for (const file of files) {
+  const fixture = JSON.parse(readFileSync(file, 'utf8'));
+  assert.equal(fixture.SchemaVersion, 2);
+  assert.equal(createHash('sha256').update(readFileSync(join(dirname(file), fixture.Source))).digest('hex'), fixture.SourceSha256, 'Fixture source changed without regeneration');
+  assert.deepEqual(verifyReference(fixture.Cases), fixture.Counts);
+}
+console.log(`PASS: typed bit transport, NaN rules, unknown WAST rejection, and ${files.length} fixture reference executions (Node ${process.version}, V8 ${process.versions.v8}).`);

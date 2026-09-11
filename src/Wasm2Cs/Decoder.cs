@@ -164,7 +164,9 @@ internal static class Decoder
                     operand = 0; break;
                 case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: operand = body.Count(); break;
                 case 0x28: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
+                case 0x29: case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35:
                 case 0x36: case 0x3a: case 0x3b:
+                case 0x37: case 0x3c: case 0x3d: case 0x3e:
                     operand = body.Count(); immediate = body.UnsignedI32(); break;
                 case 0x3f: case 0x40:
                     if (body.Byte() != 0) throw new WasmException("Invalid memory index.");

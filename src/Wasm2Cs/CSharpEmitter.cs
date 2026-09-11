@@ -235,10 +235,16 @@ internal static class CSharpEmitter
                 case 0x23: Push($"__wasm_G{instruction.Operand}", module.Globals[instruction.Operand].Type); break;
                 case 0x24: Line($"__wasm_G{instruction.Operand} = {Pop(module.Globals[instruction.Operand].Type).Name};"); break;
                 case 0x28: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
-                    Push($"__wasm_Load({PopI32()}, {instruction.Immediate}u, {MemoryOperations.Width(instruction.Opcode)}, {(instruction.Opcode == 0x2c || instruction.Opcode == 0x2e ? "true" : "false")})"); break;
+                case 0x29: case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35:
+                    var loadType = MemoryOperations.Type(instruction.Opcode);
+                    string load = loadType == ValueType.I64 ? "__wasm_Load64" : "__wasm_Load";
+                    Push($"{load}({PopI32()}, {instruction.Immediate}u, {MemoryOperations.Width(instruction.Opcode)}, {(MemoryOperations.IsSigned(instruction.Opcode) ? "true" : "false")})", loadType); break;
                 case 0x36: case 0x3a: case 0x3b:
-                    string stored = PopI32(), address = PopI32();
-                    Line($"__wasm_Store({address}, {stored}, {instruction.Immediate}u, {MemoryOperations.Width(instruction.Opcode)});"); break;
+                case 0x37: case 0x3c: case 0x3d: case 0x3e:
+                    var storeType = MemoryOperations.Type(instruction.Opcode);
+                    string store = storeType == ValueType.I64 ? "__wasm_Store64" : "__wasm_Store";
+                    string stored = Pop(storeType).Name, address = PopI32();
+                    Line($"{store}({address}, {stored}, {instruction.Immediate}u, {MemoryOperations.Width(instruction.Opcode)});"); break;
                 case 0x3f: Push("__wasm_memory.Length / 65536"); break;
                 case 0x40: Push($"__wasm_Grow({PopI32()})"); break;
                 default:

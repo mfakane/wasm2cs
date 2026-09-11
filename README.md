@@ -71,7 +71,9 @@ skipped. See `tests/Conformance/README.md` for pinned provenance, licensing, and
 reproduction. A separate SH-02 fixture adds 32 typed return checks, 2 traps,
 and 23 invalid modules, including block parameters and multiple results. Its primitive
 values preserve integer and floating-point bits through JSON strings. This does not
-imply conformance to the entire WebAssembly specification.
+imply conformance to the entire WebAssembly specification. SH-03 adds the pinned
+official i64 suite (350 results, 9 traps, 29 invalid modules), an i64 memory/global
+fixture, and fixed-seed differential tests using hexadecimal bits and Node BigInt.
 
 The sample prints:
 
@@ -171,25 +173,27 @@ Translation errors fail the build with `WASM001`; duplicate class names use `WAS
 
 - WASM version 1; typed parameters, locals, and results (`i32`, `i64`, `f32`,
   `f64`, `funcref`, `externref`). Multiple results use statically typed C# tuples.
-  Numeric constants and operations currently support i32 only.
+  Numeric constants and integer operations support i32 and i64; i64 values use C# `long`.
 - Type, function import, function, memory, global, export, start, code, and active
   data sections; custom sections are skipped.
-- `local.get`, `local.set`, `local.tee`, `i32.const`, all MVP i32 arithmetic,
-  comparisons, bitwise operations, shifts, rotates, and bit counts.
+- `local.get`, `local.set`, `local.tee`, i32/i64 constants and MVP integer arithmetic,
+  comparisons, bitwise operations, shifts, rotates, and bit counts. Integer wrap/extend
+  conversions and the five integer sign-extension instructions are supported.
 - `nop`, `drop`, `select`, `unreachable`, `return`, and structured `block`, `loop`,
   `if`/`else`, `br`, `br_if`, and `br_table`. Block type indices, block/loop
   parameters, multiple results, and typed `select` are supported. Unreachable
   instructions are still decoded and type-checked.
 - Runtime traps use each generated module's nested `TrapException` and `TrapKind`.
   Signed division overflow and division/remainder by zero trap; signed remainder
-  of `int.MinValue` by `-1` returns zero.
-- Zero-initialized locals and wrapping 32-bit integer arithmetic. Stack values are
+  of `int.MinValue` or `long.MinValue` by `-1` returns zero.
+- Zero-initialized locals and wrapping 32-bit/64-bit integer arithmetic. Stack values are
   materialized into temporary variables so later local assignments cannot change them.
 - Direct function calls, including non-exported functions and recursion. Each WASM
   function is emitted once; exports are public wrappers over private instance methods.
 
-- One owned memory32, i32 loads/stores (including signed/unsigned 8/16-bit loads),
-  `memory.size/grow`, owned i32 globals, active data segments, and start functions.
+- One owned memory32, i32/i64 loads/stores (including signed/unsigned narrow loads),
+  `memory.size/grow`, owned i32/i64 globals, active data segments, and start functions.
+  Addresses remain i32; i64 loads/stores also support 8/16/32-bit storage widths.
   Instantiation initializes memory/globals/data before calling start exactly once.
   Memory is limited to 256 MiB; exceeding growth limits returns -1 without changing state.
   Memory exports use `MemorySize` (bytes), `ReadMemory(uint offset, int count)` and
@@ -209,8 +213,9 @@ and verifies callback order, memory exchange, reentry, and exception identity in
 both .NET and Unity. Run `node scripts/create-host-fixture.mjs` to reproduce its
 binary and verify the same callback scenario with WebAssembly.
 
-Imported memories/globals, indirect calls, i64/floating-point numeric instructions,
-reference instructions, and other unsupported instructions are rejected. This is not yet a general-purpose WASM compiler;
+Imported memories/globals, indirect calls, floating-point numeric instructions and
+conversions (including reinterpret), reference instructions, and other unsupported
+instructions are rejected. This is not yet a general-purpose WASM compiler;
 ordinary Rust/C/C++ outputs will typically need more instructions and sections.
 All function bodies, including unexported ones, are checked. Parsing validates section
 boundaries/order, LEB128 encodings, indices, and operand/result stack types and heights within

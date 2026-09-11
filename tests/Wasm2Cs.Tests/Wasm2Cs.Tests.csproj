@@ -13,6 +13,11 @@
     <None Include="../../scripts/conformance/*.mjs" Link="ConformanceTools/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../Conformance/typed-ir.wast" Link="Conformance/typed-ir.wast" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../Conformance/typed-ir.json" Link="Conformance/typed-ir.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Conformance/i64-memory.json" Link="Conformance/i64-memory.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Conformance/i64-memory.wast" Link="Conformance/i64-memory.wast" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Conformance/i64.json" Link="Conformance/i64.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Conformance/i64.wast" Link="Conformance/i64.wast" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="i64-oracle.mjs" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../Conformance/i32.json" Link="Conformance/i32.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

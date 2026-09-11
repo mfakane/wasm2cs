@@ -137,6 +137,7 @@ await ExecutionChecks.CAlgorithms();
 ExecutionChecks.Imports();
 ConformanceChecks.Verify();
 await TypedIrChecks.Verify();
+await I64Checks.Verify();
 
 record Call(string Name, int[] Args);
 sealed class Input(string path, string content) : AdditionalText

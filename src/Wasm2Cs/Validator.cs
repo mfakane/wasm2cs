@@ -138,12 +138,15 @@ internal static class Validator
                     else { if (!global.Mutable) Fail("Cannot set immutable global."); Pop(global.Type); }
                     break;
                 case 0x28: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
+                case 0x29: case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35:
                 case 0x36: case 0x3a: case 0x3b:
+                case 0x37: case 0x3c: case 0x3d: case 0x3e:
                     if (module.Memory == null) Fail("Memory instruction requires memory.");
-                    int alignment = MemoryOperations.Width(instruction.Opcode) == 4 ? 2 : MemoryOperations.Width(instruction.Opcode) == 2 ? 1 : 0;
+                    int alignment = MemoryOperations.Width(instruction.Opcode) == 8 ? 3 : MemoryOperations.Width(instruction.Opcode) == 4 ? 2 : MemoryOperations.Width(instruction.Opcode) == 2 ? 1 : 0;
                     if (instruction.Operand > alignment) Fail("Alignment exceeds natural alignment.");
-                    Pop(ValueType.I32);
-                    if (MemoryOperations.IsStore(instruction.Opcode)) Pop(ValueType.I32); else Push(ValueType.I32);
+                    var memoryType = MemoryOperations.Type(instruction.Opcode);
+                    if (MemoryOperations.IsStore(instruction.Opcode)) { Pop(memoryType); Pop(ValueType.I32); }
+                    else { Pop(ValueType.I32); Push(memoryType); }
                     break;
                 case 0x3f: case 0x40:
                     if (module.Memory == null) Fail("Memory instruction requires memory.");

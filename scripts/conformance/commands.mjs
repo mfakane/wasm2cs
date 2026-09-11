@@ -54,8 +54,7 @@ export function verifyReference(cases) {
         } catch (error) {
           if (test.Kind !== 'assert_trap' || !(error instanceof WebAssembly.RuntimeError)) throw error;
           // V8's wording for division by zero differs from WAST's wording.
-          const messages = { Unreachable: 'unreachable', DivisionByZero: 'divide by zero', IntegerOverflow: 'unrepresentable', MemoryOutOfBounds: 'out of bounds' };
-          if (!messages[test.Trap] || !error.message.includes(messages[test.Trap])) throw error;
+          if (referenceTrap(error) !== test.Trap) throw error;
           traps++; break;
         }
         if (test.Kind === 'assert_trap') throw new Error(`Line ${test.Line}: missing reference trap`);
@@ -72,4 +71,13 @@ export function verifyReference(cases) {
     }
   }
   return { Returns: returns, Traps: traps, Invalid: invalid };
+}
+
+export function referenceTrap(error) {
+  if (!(error instanceof WebAssembly.RuntimeError)) throw error;
+  const messages = { Unreachable: ['unreachable'], DivisionByZero: ['divide by zero', 'remainder by zero'],
+    IntegerOverflow: ['unrepresentable'], MemoryOutOfBounds: ['out of bounds'] };
+  for (const [kind, fragments] of Object.entries(messages))
+    if (fragments.some(fragment => error.message.includes(fragment))) return kind;
+  throw error;
 }

@@ -1,0 +1,956 @@
+{
+  "schemaVersion": 1,
+  "milestone": "SH-03",
+  "bundleSha256": "10e2f5cee5fecd86681ef9e043082a04df131a0d7eb76855ac895ea0cbf3c9e6",
+  "source": "artifacts/self-hosting/inventory.json",
+  "evidenceScope": "SH-01 inventory observations and small-fixture validation; generated runtime execution is not yet verified",
+  "implemented": [
+    {
+      "opcode": "0x29",
+      "instruction": "i64.load",
+      "signature": "i32 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/MemoryOperations.cs",
+      "tests": [
+        "tests/Conformance/i64-memory.json",
+        "tests/Wasm2Cs.Tests/I64Checks.cs:MemoryAndGlobals"
+      ],
+      "observedCount": 2283,
+      "firstObserved": {
+        "function": 82,
+        "offset": 30659
+      }
+    },
+    {
+      "opcode": "0x30",
+      "instruction": "i64.load8_s",
+      "signature": "i32 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/MemoryOperations.cs",
+      "tests": [
+        "tests/Conformance/i64-memory.json",
+        "tests/Wasm2Cs.Tests/I64Checks.cs:MemoryAndGlobals"
+      ],
+      "observedCount": 7,
+      "firstObserved": {
+        "function": 1910,
+        "offset": 484578
+      }
+    },
+    {
+      "opcode": "0x31",
+      "instruction": "i64.load8_u",
+      "signature": "i32 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/MemoryOperations.cs",
+      "tests": [
+        "tests/Conformance/i64-memory.json",
+        "tests/Wasm2Cs.Tests/I64Checks.cs:MemoryAndGlobals"
+      ],
+      "observedCount": 48,
+      "firstObserved": {
+        "function": 1910,
+        "offset": 484538
+      }
+    },
+    {
+      "opcode": "0x32",
+      "instruction": "i64.load16_s",
+      "signature": "i32 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/MemoryOperations.cs",
+      "tests": [
+        "tests/Conformance/i64-memory.json",
+        "tests/Wasm2Cs.Tests/I64Checks.cs:MemoryAndGlobals"
+      ],
+      "observedCount": 21,
+      "firstObserved": {
+        "function": 100,
+        "offset": 37025
+      }
+    },
+    {
+      "opcode": "0x33",
+      "instruction": "i64.load16_u",
+      "signature": "i32 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/MemoryOperations.cs",
+      "tests": [
+        "tests/Conformance/i64-memory.json",
+        "tests/Wasm2Cs.Tests/I64Checks.cs:MemoryAndGlobals"
+      ],
+      "observedCount": 31,
+      "firstObserved": {
+        "function": 100,
+        "offset": 55025
+      }
+    },
+    {
+      "opcode": "0x34",
+      "instruction": "i64.load32_s",
+      "signature": "i32 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/MemoryOperations.cs",
+      "tests": [
+        "tests/Conformance/i64-memory.json",
+        "tests/Wasm2Cs.Tests/I64Checks.cs:MemoryAndGlobals"
+      ],
+      "observedCount": 54,
+      "firstObserved": {
+        "function": 100,
+        "offset": 52627
+      }
+    },
+    {
+      "opcode": "0x35",
+      "instruction": "i64.load32_u",
+      "signature": "i32 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/MemoryOperations.cs",
+      "tests": [
+        "tests/Conformance/i64-memory.json",
+        "tests/Wasm2Cs.Tests/I64Checks.cs:MemoryAndGlobals"
+      ],
+      "observedCount": 65,
+      "firstObserved": {
+        "function": 100,
+        "offset": 54767
+      }
+    },
+    {
+      "opcode": "0x37",
+      "instruction": "i64.store",
+      "signature": "i32 i64 ->",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/MemoryOperations.cs",
+      "tests": [
+        "tests/Conformance/i64-memory.json",
+        "tests/Wasm2Cs.Tests/I64Checks.cs:MemoryAndGlobals"
+      ],
+      "observedCount": 3004,
+      "firstObserved": {
+        "function": 82,
+        "offset": 30662
+      }
+    },
+    {
+      "opcode": "0x3c",
+      "instruction": "i64.store8",
+      "signature": "i32 i64 ->",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/MemoryOperations.cs",
+      "tests": [
+        "tests/Conformance/i64-memory.json",
+        "tests/Wasm2Cs.Tests/I64Checks.cs:MemoryAndGlobals"
+      ],
+      "observedCount": 18,
+      "firstObserved": {
+        "function": 1910,
+        "offset": 486114
+      }
+    },
+    {
+      "opcode": "0x3d",
+      "instruction": "i64.store16",
+      "signature": "i32 i64 ->",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/MemoryOperations.cs",
+      "tests": [
+        "tests/Conformance/i64-memory.json",
+        "tests/Wasm2Cs.Tests/I64Checks.cs:MemoryAndGlobals"
+      ],
+      "observedCount": 14,
+      "firstObserved": {
+        "function": 1910,
+        "offset": 486143
+      }
+    },
+    {
+      "opcode": "0x3e",
+      "instruction": "i64.store32",
+      "signature": "i32 i64 ->",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/MemoryOperations.cs",
+      "tests": [
+        "tests/Conformance/i64-memory.json",
+        "tests/Wasm2Cs.Tests/I64Checks.cs:MemoryAndGlobals"
+      ],
+      "observedCount": 58,
+      "firstObserved": {
+        "function": 100,
+        "offset": 70551
+      }
+    },
+    {
+      "opcode": "0x42",
+      "instruction": "i64.const",
+      "signature": "-> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/Reader.cs:SignedI64",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Leb",
+        "tests/Conformance/i64-memory.json"
+      ],
+      "observedCount": 3823,
+      "firstObserved": {
+        "function": 89,
+        "offset": 32200
+      }
+    },
+    {
+      "opcode": "0x50",
+      "instruction": "i64.eqz",
+      "signature": "i64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 260,
+      "firstObserved": {
+        "function": 89,
+        "offset": 32203
+      }
+    },
+    {
+      "opcode": "0x51",
+      "instruction": "i64.eq",
+      "signature": "i64 i64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 125,
+      "firstObserved": {
+        "function": 100,
+        "offset": 39795
+      }
+    },
+    {
+      "opcode": "0x52",
+      "instruction": "i64.ne",
+      "signature": "i64 i64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 259,
+      "firstObserved": {
+        "function": 100,
+        "offset": 39604
+      }
+    },
+    {
+      "opcode": "0x53",
+      "instruction": "i64.lt_s",
+      "signature": "i64 i64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 82,
+      "firstObserved": {
+        "function": 100,
+        "offset": 41723
+      }
+    },
+    {
+      "opcode": "0x54",
+      "instruction": "i64.lt_u",
+      "signature": "i64 i64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 156,
+      "firstObserved": {
+        "function": 100,
+        "offset": 45631
+      }
+    },
+    {
+      "opcode": "0x55",
+      "instruction": "i64.gt_s",
+      "signature": "i64 i64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 53,
+      "firstObserved": {
+        "function": 100,
+        "offset": 41079
+      }
+    },
+    {
+      "opcode": "0x56",
+      "instruction": "i64.gt_u",
+      "signature": "i64 i64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 168,
+      "firstObserved": {
+        "function": 100,
+        "offset": 39962
+      }
+    },
+    {
+      "opcode": "0x57",
+      "instruction": "i64.le_s",
+      "signature": "i64 i64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 43,
+      "firstObserved": {
+        "function": 100,
+        "offset": 42367
+      }
+    },
+    {
+      "opcode": "0x58",
+      "instruction": "i64.le_u",
+      "signature": "i64 i64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 58,
+      "firstObserved": {
+        "function": 100,
+        "offset": 44975
+      }
+    },
+    {
+      "opcode": "0x59",
+      "instruction": "i64.ge_s",
+      "signature": "i64 i64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 78,
+      "firstObserved": {
+        "function": 100,
+        "offset": 40435
+      }
+    },
+    {
+      "opcode": "0x5a",
+      "instruction": "i64.ge_u",
+      "signature": "i64 i64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 59,
+      "firstObserved": {
+        "function": 100,
+        "offset": 43663
+      }
+    },
+    {
+      "opcode": "0x79",
+      "instruction": "i64.clz",
+      "signature": "i64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 11,
+      "firstObserved": {
+        "function": 100,
+        "offset": 58580
+      }
+    },
+    {
+      "opcode": "0x7a",
+      "instruction": "i64.ctz",
+      "signature": "i64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 3,
+      "firstObserved": {
+        "function": 100,
+        "offset": 58648
+      }
+    },
+    {
+      "opcode": "0x7b",
+      "instruction": "i64.popcnt",
+      "signature": "i64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 1,
+      "firstObserved": {
+        "function": 100,
+        "offset": 58716
+      }
+    },
+    {
+      "opcode": "0x7c",
+      "instruction": "i64.add",
+      "signature": "i64 i64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 494,
+      "firstObserved": {
+        "function": 100,
+        "offset": 52312
+      }
+    },
+    {
+      "opcode": "0x7d",
+      "instruction": "i64.sub",
+      "signature": "i64 i64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 271,
+      "firstObserved": {
+        "function": 100,
+        "offset": 52720
+      }
+    },
+    {
+      "opcode": "0x7e",
+      "instruction": "i64.mul",
+      "signature": "i64 i64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 165,
+      "firstObserved": {
+        "function": 89,
+        "offset": 32199
+      }
+    },
+    {
+      "opcode": "0x7f",
+      "instruction": "i64.div_s",
+      "signature": "i64 i64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 16,
+      "firstObserved": {
+        "function": 100,
+        "offset": 53545
+      }
+    },
+    {
+      "opcode": "0x80",
+      "instruction": "i64.div_u",
+      "signature": "i64 i64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 17,
+      "firstObserved": {
+        "function": 100,
+        "offset": 53779
+      }
+    },
+    {
+      "opcode": "0x81",
+      "instruction": "i64.rem_s",
+      "signature": "i64 i64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 6,
+      "firstObserved": {
+        "function": 100,
+        "offset": 54016
+      }
+    },
+    {
+      "opcode": "0x82",
+      "instruction": "i64.rem_u",
+      "signature": "i64 i64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 5,
+      "firstObserved": {
+        "function": 100,
+        "offset": 54254
+      }
+    },
+    {
+      "opcode": "0x83",
+      "instruction": "i64.and",
+      "signature": "i64 i64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 435,
+      "firstObserved": {
+        "function": 100,
+        "offset": 39950
+      }
+    },
+    {
+      "opcode": "0x84",
+      "instruction": "i64.or",
+      "signature": "i64 i64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 300,
+      "firstObserved": {
+        "function": 100,
+        "offset": 54590
+      }
+    },
+    {
+      "opcode": "0x85",
+      "instruction": "i64.xor",
+      "signature": "i64 i64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 63,
+      "firstObserved": {
+        "function": 100,
+        "offset": 54680
+      }
+    },
+    {
+      "opcode": "0x86",
+      "instruction": "i64.shl",
+      "signature": "i64 i64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 317,
+      "firstObserved": {
+        "function": 100,
+        "offset": 54770
+      }
+    },
+    {
+      "opcode": "0x87",
+      "instruction": "i64.shr_s",
+      "signature": "i64 i64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 24,
+      "firstObserved": {
+        "function": 100,
+        "offset": 54860
+      }
+    },
+    {
+      "opcode": "0x88",
+      "instruction": "i64.shr_u",
+      "signature": "i64 i64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 375,
+      "firstObserved": {
+        "function": 89,
+        "offset": 32202
+      }
+    },
+    {
+      "opcode": "0x89",
+      "instruction": "i64.rotl",
+      "signature": "i64 i64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 16,
+      "firstObserved": {
+        "function": 100,
+        "offset": 58434
+      }
+    },
+    {
+      "opcode": "0x8a",
+      "instruction": "i64.rotr",
+      "signature": "i64 i64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics",
+        "tests/Conformance/i64.json"
+      ],
+      "observedCount": 1,
+      "firstObserved": {
+        "function": 100,
+        "offset": 58512
+      }
+    },
+    {
+      "opcode": "0xa7",
+      "instruction": "i32.wrap_i64",
+      "signature": "i64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics"
+      ],
+      "observedCount": 586,
+      "firstObserved": {
+        "function": 99,
+        "offset": 33234
+      }
+    },
+    {
+      "opcode": "0xac",
+      "instruction": "i64.extend_i32_s",
+      "signature": "i32 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics"
+      ],
+      "observedCount": 164,
+      "firstObserved": {
+        "function": 279,
+        "offset": 125958
+      }
+    },
+    {
+      "opcode": "0xad",
+      "instruction": "i64.extend_i32_u",
+      "signature": "i32 -> i64",
+      "origin": "MVP",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics"
+      ],
+      "observedCount": 544,
+      "firstObserved": {
+        "function": 89,
+        "offset": 32195
+      }
+    },
+    {
+      "opcode": "0xc0",
+      "instruction": "i32.extend8_s",
+      "signature": "i32 -> i32",
+      "origin": "sign-extension",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I32Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics"
+      ],
+      "observedCount": 262,
+      "firstObserved": {
+        "function": 100,
+        "offset": 55616
+      }
+    },
+    {
+      "opcode": "0xc1",
+      "instruction": "i32.extend16_s",
+      "signature": "i32 -> i32",
+      "origin": "sign-extension",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I32Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics"
+      ],
+      "observedCount": 151,
+      "firstObserved": {
+        "function": 100,
+        "offset": 56030
+      }
+    },
+    {
+      "opcode": "0xc2",
+      "instruction": "i64.extend8_s",
+      "signature": "i64 -> i64",
+      "origin": "sign-extension",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics"
+      ],
+      "observedCount": 0
+    },
+    {
+      "opcode": "0xc3",
+      "instruction": "i64.extend16_s",
+      "signature": "i64 -> i64",
+      "origin": "sign-extension",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics"
+      ],
+      "observedCount": 0
+    },
+    {
+      "opcode": "0xc4",
+      "instruction": "i64.extend32_s",
+      "signature": "i64 -> i64",
+      "origin": "sign-extension",
+      "owner": "SH-03",
+      "status": "implemented; fixture validation only",
+      "implementation": "src/Wasm2Cs/I64Operations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Numerics"
+      ],
+      "observedCount": 5,
+      "firstObserved": {
+        "function": 2359,
+        "offset": 560597
+      }
+    }
+  ],
+  "deferred": [
+    {
+      "instruction": "i64.reinterpret_f64",
+      "owner": "SH-04",
+      "status": "unsupported; explicit diagnostic",
+      "observedCount": 148,
+      "firstObserved": {
+        "function": 100,
+        "offset": 39938
+      },
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Validation"
+      ]
+    },
+    {
+      "instruction": "i64.trunc_f32_s",
+      "owner": "SH-04",
+      "status": "unsupported; explicit diagnostic",
+      "observedCount": 3,
+      "firstObserved": {
+        "function": 100,
+        "offset": 56643
+      },
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Validation"
+      ]
+    },
+    {
+      "instruction": "i64.trunc_f32_u",
+      "owner": "SH-04",
+      "status": "unsupported; explicit diagnostic",
+      "observedCount": 3,
+      "firstObserved": {
+        "function": 100,
+        "offset": 65633
+      },
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Validation"
+      ]
+    },
+    {
+      "instruction": "i64.trunc_f64_s",
+      "owner": "SH-04",
+      "status": "unsupported; explicit diagnostic",
+      "observedCount": 24,
+      "firstObserved": {
+        "function": 100,
+        "offset": 56715
+      },
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Validation"
+      ]
+    },
+    {
+      "instruction": "i64.trunc_f64_u",
+      "owner": "SH-04",
+      "status": "unsupported; explicit diagnostic",
+      "observedCount": 8,
+      "firstObserved": {
+        "function": 100,
+        "offset": 65751
+      },
+      "tests": [
+        "tests/Wasm2Cs.Tests/I64Checks.cs:Validation"
+      ]
+    }
+  ],
+  "boundaries": {
+    "globals": [
+      "src/Wasm2Cs/Decoder.cs:Constant",
+      "tests/Conformance/i64-memory.json",
+      "tests/Wasm2Cs.Tests/I64Checks.cs:MemoryAndGlobals"
+    ],
+    "imports": [
+      "src/Wasm2Cs/CSharpEmitter.cs",
+      "tests/Wasm2Cs.Tests/I64Checks.cs:Imports"
+    ],
+    "packaging": [
+      "scripts/test-package.mjs"
+    ]
+  }
+}

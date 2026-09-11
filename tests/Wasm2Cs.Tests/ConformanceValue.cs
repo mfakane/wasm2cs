@@ -1,7 +1,10 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
-internal sealed record ConformanceValue(string Type, string? Bits = null, string? NaN = null)
+internal sealed record ConformanceValue(string Type,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Bits = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? NaN = null)
 {
     internal static ConformanceValue Read(JsonElement element) => element.Deserialize<ConformanceValue>()
         ?? throw new Exception("Missing conformance value.");

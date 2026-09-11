@@ -79,6 +79,8 @@ internal static class TypedIrChecks
         var start = new ProcessStartInfo("node") { RedirectStandardOutput = true, RedirectStandardError = true };
         start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "ConformanceTools/test.mjs"));
         start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "Conformance/typed-ir.json"));
+        start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "Conformance/i64.json"));
+        start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "Conformance/i64-memory.json"));
         using var node = Process.Start(start)!;
         var output = node.StandardOutput.ReadToEndAsync();
         var error = node.StandardError.ReadToEndAsync();

@@ -8,6 +8,8 @@ internal static class ConformanceChecks
     public static void Verify()
     {
         VerifyFile("i32.json", (350, 9, 54, 29));
+        VerifyFile("i64.json", (350, 9, 29, 0), portable: true);
+        VerifyFile("i64-memory.json", (23, 5, 6, 0), portable: true);
         VerifyFile("typed-ir.json", (32, 2, 23, 0), portable: true);
     }
     private static void VerifyFile(string file, (int, int, int, int) expected, bool portable = false)

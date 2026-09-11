@@ -1,0 +1,520 @@
+{
+  "SchemaVersion": 2,
+  "Source": "i64-memory.wast",
+  "SourceSha256": "5be458709d48069c8fe292c9ae4cc1d63c0861c0073099d9b1ed347d3572a8ed",
+  "Wabt": "1.0.41",
+  "Engine": {
+    "Node": "v22.17.0",
+    "V8": "12.4.254.21-node.26"
+  },
+  "Counts": {
+    "Returns": 23,
+    "Traps": 5,
+    "Invalid": 6
+  },
+  "Cases": [
+    {
+      "Kind": "module",
+      "Line": 2,
+      "Binary": "AGFzbQEAAAABFARgAX8BfmACf34AYAF+AX5gAX4AAxEQAAAAAAAAAAEBAQEAAQACAwUDAQABBh0CfgFCgYCAgICAgICAfwt+AEL///////////8ACwfFARMGbWVtb3J5AgABZwMABWZpeGVkAwEEbG9hZAAAB2xvYWQ4X3MAAQdsb2FkOF91AAIIbG9hZDE2X3MAAwhsb2FkMTZfdQAECGxvYWQzMl9zAAUIbG9hZDMyX3UABgVzdG9yZQAHBnN0b3JlOAAIB3N0b3JlMTYACQdzdG9yZTMyAAoLbG9hZF9vZmZzZXQACwxzdG9yZV9vZmZzZXQADApsb2FkX3BsdXMzAA0Jcm91bmR0cmlwAA4Kc2V0X2dsb2JhbAAPCp0BEAcAIAApAwALBwAgADAAAAsHACAAMQAACwcAIAAyAQALBwAgADMBAAsHACAANAIACwcAIAA1AgALCQAgACABNwMACwkAIAAgATwAAAsJACAAIAE9AQALCQAgACABPgIACwsAIAApA/////8PCw0AIAAgATcD/////w8LBwAgACkAAwsSACAAJABBAyMANwAAQQMpAAALBgAgACQACwsOAQBBAAsI/ty6mHZUMhA="
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 26,
+      "Action": "get",
+      "Export": "g",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "8000000000000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 27,
+      "Action": "get",
+      "Export": "fixed",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "7fffffffffffffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 28,
+      "Action": "invoke",
+      "Export": "load",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "1032547698badcfe"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 29,
+      "Action": "invoke",
+      "Export": "load",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "001032547698badc"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 30,
+      "Action": "invoke",
+      "Export": "load8_s",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "fffffffffffffffe"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 31,
+      "Action": "invoke",
+      "Export": "load8_u",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "00000000000000fe"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 32,
+      "Action": "invoke",
+      "Export": "load16_s",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "ffffffffffffdcfe"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 33,
+      "Action": "invoke",
+      "Export": "load16_u",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "000000000000dcfe"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 34,
+      "Action": "invoke",
+      "Export": "load32_s",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "ffffffff98badcfe"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 35,
+      "Action": "invoke",
+      "Export": "load32_u",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "0000000098badcfe"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 36,
+      "Action": "invoke",
+      "Export": "load",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "0000fff8"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "0000000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_trap",
+      "Line": 37,
+      "Action": "invoke",
+      "Export": "load",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "0000fff9"
+        }
+      ],
+      "Trap": "MemoryOutOfBounds"
+    },
+    {
+      "Kind": "assert_trap",
+      "Line": 38,
+      "Action": "invoke",
+      "Export": "load",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "ffffffff"
+        }
+      ],
+      "Trap": "MemoryOutOfBounds"
+    },
+    {
+      "Kind": "assert_trap",
+      "Line": 39,
+      "Action": "invoke",
+      "Export": "load_offset",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "00000001"
+        }
+      ],
+      "Trap": "MemoryOutOfBounds"
+    },
+    {
+      "Kind": "assert_trap",
+      "Line": 40,
+      "Action": "invoke",
+      "Export": "store_offset",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "i64",
+          "Bits": "ffffffffffffffff"
+        }
+      ],
+      "Trap": "MemoryOutOfBounds"
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 41,
+      "Action": "invoke",
+      "Export": "roundtrip",
+      "Args": [
+        {
+          "Type": "i64",
+          "Bits": "0020000000000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "0020000000000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 42,
+      "Action": "get",
+      "Export": "g",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "0020000000000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 43,
+      "Action": "invoke",
+      "Export": "load_plus3",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "0020000000000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 44,
+      "Action": "invoke",
+      "Export": "store8",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "00000014"
+        },
+        {
+          "Type": "i64",
+          "Bits": "ffffffffffffffff"
+        }
+      ],
+      "Expected": []
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 45,
+      "Action": "invoke",
+      "Export": "load",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "00000014"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "00000000000000ff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 46,
+      "Action": "invoke",
+      "Export": "store16",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "00000015"
+        },
+        {
+          "Type": "i64",
+          "Bits": "ffffffffffffffff"
+        }
+      ],
+      "Expected": []
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 47,
+      "Action": "invoke",
+      "Export": "load",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "00000014"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "0000000000ffffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 48,
+      "Action": "invoke",
+      "Export": "store32",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "00000017"
+        },
+        {
+          "Type": "i64",
+          "Bits": "ffffffffffffffff"
+        }
+      ],
+      "Expected": []
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 49,
+      "Action": "invoke",
+      "Export": "load",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "00000014"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "00ffffffffffffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 50,
+      "Action": "invoke",
+      "Export": "store",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "0000fff8"
+        },
+        {
+          "Type": "i64",
+          "Bits": "8000000000000001"
+        }
+      ],
+      "Expected": []
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 51,
+      "Action": "invoke",
+      "Export": "load",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "0000fff8"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "8000000000000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_trap",
+      "Line": 52,
+      "Action": "invoke",
+      "Export": "store",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "0000fff9"
+        },
+        {
+          "Type": "i64",
+          "Bits": "ffffffffffffffff"
+        }
+      ],
+      "Trap": "MemoryOutOfBounds"
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 53,
+      "Action": "invoke",
+      "Export": "load",
+      "Args": [
+        {
+          "Type": "i32",
+          "Bits": "0000fff8"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "8000000000000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_invalid",
+      "Line": 54,
+      "Binary": "AGFzbQEAAAAGBgF/AEIACw=="
+    },
+    {
+      "Kind": "assert_invalid",
+      "Line": 55,
+      "Binary": "AGFzbQEAAAAGBgF+AEEACw=="
+    },
+    {
+      "Kind": "assert_invalid",
+      "Line": 56,
+      "Binary": "AGFzbQEAAAAFAwEAAQsHAQBCAAsBeA=="
+    },
+    {
+      "Kind": "assert_invalid",
+      "Line": 57,
+      "Binary": "AGFzbQEAAAABBgFgAX4BfgMCAQAFAwEAAQoJAQcAIAApAwAL"
+    },
+    {
+      "Kind": "assert_invalid",
+      "Line": 58,
+      "Binary": "AGFzbQEAAAABBgFgAn9/AAMCAQAFAwEAAQoLAQkAIAAgATcDAAs="
+    },
+    {
+      "Kind": "assert_invalid",
+      "Line": 59,
+      "Binary": "AGFzbQEAAAABBAFgAAADAgEABQMBAAEKCgEIAEEAKQQAGgs="
+    }
+  ]
+}

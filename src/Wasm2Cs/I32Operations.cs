@@ -2,7 +2,7 @@ namespace Wasm2Cs;
 
 internal static class I32Operations
 {
-    public static int Arity(byte opcode) => opcode == 0x45 || (opcode >= 0x67 && opcode <= 0x69) ? 1 :
+    public static int Arity(byte opcode) => opcode == 0x45 || (opcode >= 0x67 && opcode <= 0x69) || opcode == 0xc0 || opcode == 0xc1 ? 1 :
         (opcode >= 0x46 && opcode <= 0x4f) || (opcode >= 0x6a && opcode <= 0x78) ? 2 : 0;
 
     public static string Expression(byte opcode, string a, string b)
@@ -24,6 +24,7 @@ internal static class I32Operations
             0x76 => $"(int)((uint){a} >> ({b} & 31))",
             0x77 => $"(int)(((uint){a} << ({b} & 31)) | ((uint){a} >> ((32 - {b}) & 31)))",
             0x78 => $"(int)(((uint){a} >> ({b} & 31)) | ((uint){a} << ((32 - {b}) & 31)))",
+            0xc0 => $"(int)(sbyte){a}", 0xc1 => $"(int)(short){a}",
             _ => throw new InvalidOperationException("Unknown validated i32 instruction.")
         };
         return $"unchecked({expression})";

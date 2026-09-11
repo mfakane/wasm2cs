@@ -78,7 +78,7 @@ internal static class Decoder
                         var globalType = section.ValueType();
                         byte mutable = section.Byte();
                         if (mutable > 1) throw new WasmException("Invalid global mutability.");
-                        module.Globals.Add(new Global(globalType, mutable == 1, Constant(section), ValueType.I32));
+                        module.Globals.Add(new Global(globalType, mutable == 1, Constant(section)));
                     }
                     break;
                 case 8: module.Start = section.Count(); break;
@@ -92,7 +92,9 @@ internal static class Decoder
                         int flags = section.Count();
                         if (flags != 0 && flags != 2) throw new WasmException("Only active data segments are supported.");
                         if (flags == 2 && section.Count() != 0) throw new WasmException("Invalid data memory index.");
-                        uint offset = unchecked((uint)Constant(section));
+                        var initialOffset = Constant(section);
+                        if (initialOffset.Type != ValueType.I32) throw new WasmException("Data offset must have type i32.");
+                        uint offset = (uint)initialOffset.Bits;
                         module.Data.Add(new DataSegment(offset, section.Bytes(section.Count())));
                     }
                     break;
@@ -111,13 +113,18 @@ internal static class Decoder
         }
         return module;
     }
-    private static int Constant(Reader reader)
+    private static ConstantValue Constant(Reader reader)
     {
-        if (reader.Byte() != 0x41) throw new WasmException("Only i32.const initializers are supported.");
-        int value = reader.SignedI32();
+        var value = ReadConstant(reader, reader.Byte());
         if (reader.Byte() != 0x0b) throw new WasmException("Invalid initializer expression.");
         return value;
     }
+    private static ConstantValue ReadConstant(Reader reader, byte opcode) => opcode switch
+    {
+        0x41 => new ConstantValue(ValueType.I32, unchecked((uint)reader.SignedI32())),
+        0x42 => new ConstantValue(ValueType.I64, unchecked((ulong)reader.SignedI64())),
+        _ => throw new WasmException($"Unsupported constant expression opcode 0x{opcode:x2}.")
+    };
     private static Function DecodeBody(Reader body, Signature signature, List<Signature> types)
     {
         var locals = new List<ValueType>(signature.Parameters);
@@ -139,6 +146,7 @@ internal static class Decoder
             uint immediate = 0;
             Signature? blockType = null;
             ValueType? selectType = null;
+            ConstantValue? constant = null;
             switch (opcode)
             {
                 case 0x02: case 0x03: case 0x04:
@@ -161,14 +169,14 @@ internal static class Decoder
                 case 0x3f: case 0x40:
                     if (body.Byte() != 0) throw new WasmException("Invalid memory index.");
                     operand = 0; break;
-                case 0x41: operand = body.SignedI32(); break;
+                case 0x41: case 0x42: constant = ReadConstant(body, opcode); operand = 0; break;
                 case 0x00: case 0x01: case 0x05: case 0x0b: case 0x0f: case 0x1a: case 0x1b:
                 case 0x6a: case 0x6b: case 0x6c: operand = 0; break;
                 default:
-                    if (I32Operations.Arity(opcode) != 0) { operand = 0; break; }
+                    if (I32Operations.Arity(opcode) != 0 || I64Operations.Arity(opcode) != 0) { operand = 0; break; }
                     throw new WasmException($"Offset 0x{offset:x}: Unsupported WASM opcode 0x{opcode:x2}.");
             }
-            instructions.Add(new Instruction(opcode, operand, offset, targets, immediate, blockType, selectType));
+            instructions.Add(new Instruction(opcode, operand, offset, targets, immediate, blockType, selectType, constant));
             if (opcode == 0x0b)
             {
                 if (depth != 0) { depth--; continue; }

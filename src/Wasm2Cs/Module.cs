@@ -6,7 +6,7 @@ internal sealed record Signature(ValueType[] Parameters, ValueType[] Results)
     public static readonly Signature Empty = new Signature(Array.Empty<ValueType>(), Array.Empty<ValueType>());
 }
 internal sealed record Instruction(byte Opcode, int Operand, int Offset, int[]? Targets = null,
-    uint Immediate = 0, Signature? BlockType = null, ValueType? SelectType = null)
+    uint Immediate = 0, Signature? BlockType = null, ValueType? SelectType = null, ConstantValue? Constant = null)
 {
     // Filled by validation. null is the polymorphic bottom, never an executable value type.
     public ValueType?[] ResultTypes { get; set; } = Array.Empty<ValueType?>();
@@ -26,5 +26,6 @@ internal sealed record Module(List<Signature> Types, List<int> Functions,
 }
 internal sealed record FunctionImport(string ModuleName, string Name, int TypeIndex);
 internal sealed record MemoryDefinition(int Minimum, int Maximum);
-internal sealed record Global(ValueType Type, bool Mutable, int InitialValue, ValueType InitialType);
+internal sealed record ConstantValue(ValueType Type, ulong Bits);
+internal sealed record Global(ValueType Type, bool Mutable, ConstantValue InitialValue);
 internal sealed record DataSegment(uint Offset, byte[] Bytes);

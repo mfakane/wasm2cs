@@ -65,6 +65,24 @@ internal sealed class Reader(byte[] bytes, int start = 0, int? end = null)
             throw new WasmException("LEB128 integer is too long.");
         }
         public int SignedI32() => unchecked((int)Leb(true));
+        public long SignedI64()
+        {
+            ulong value = 0;
+            for (int i = 0; i < 10; i++)
+            {
+                byte b = Byte();
+                // Only one payload bit remains in byte 10; all other bits must extend its sign.
+                if (i == 9 && (b & 0x7f) != 0 && (b & 0x7f) != 0x7f)
+                    throw new WasmException("LEB128 integer exceeds 64 bits.");
+                value |= (ulong)(b & 0x7f) << (7 * i);
+                if ((b & 0x80) == 0)
+                {
+                    if (i < 9 && (b & 0x40) != 0) value |= ulong.MaxValue << (7 * (i + 1));
+                    return unchecked((long)value);
+                }
+            }
+            throw new WasmException("LEB128 integer is too long.");
+        }
         public uint UnsignedI32() => Leb(false);
         public byte[] Bytes(int length)
         {

@@ -18,7 +18,7 @@ internal static class Validator
         if (module.Start.HasValue && (module.Start.Value >= module.FunctionCount ||
             (module.FunctionSignature(module.Start.Value).Parameters.Length != 0 || module.FunctionSignature(module.Start.Value).Results.Length != 0))) throw new WasmException("Invalid start function.");
         foreach (var global in module.Globals)
-            if (global.Type != global.InitialType) throw new WasmException("Global initializer type mismatch.");
+            if (global.Type != global.InitialValue.Type) throw new WasmException("Global initializer type mismatch.");
         for (int i = 0; i < module.Bodies.Count; i++) ValidateBody(module, module.Bodies[i], i);
     }
     private sealed class Control(byte opcode, int height, Signature signature)
@@ -130,7 +130,7 @@ internal static class Validator
                     if (instruction.Opcode != 0x20) Pop(localType);
                     if (instruction.Opcode != 0x21) Push(localType);
                     break;
-                case 0x41: Push(ValueType.I32); break;
+                case 0x41: case 0x42: Push(instruction.Constant!.Type); break;
                 case 0x23: case 0x24:
                     if (instruction.Operand >= module.Globals.Count) Fail("Invalid global index.");
                     var global = module.Globals[instruction.Operand];
@@ -150,9 +150,18 @@ internal static class Validator
                     if (instruction.Opcode == 0x40) Pop(ValueType.I32);
                     Push(ValueType.I32); break;
                 default:
-                    int operands = I32Operations.Arity(instruction.Opcode);
-                    for (int p = 0; p < operands; p++) Pop(ValueType.I32);
-                    if (operands != 0) Push(ValueType.I32);
+                    int operands = I64Operations.Arity(instruction.Opcode);
+                    if (operands != 0)
+                    {
+                        for (int p = 0; p < operands; p++) Pop(I64Operations.InputType(instruction.Opcode));
+                        Push(I64Operations.ResultType(instruction.Opcode));
+                    }
+                    else
+                    {
+                        operands = I32Operations.Arity(instruction.Opcode);
+                        for (int p = 0; p < operands; p++) Pop(ValueType.I32);
+                        if (operands != 0) Push(ValueType.I32);
+                    }
                     break;
             }
             instruction.ResultTypes = produced.ToArray();

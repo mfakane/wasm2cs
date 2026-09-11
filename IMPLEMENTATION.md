@@ -19,7 +19,9 @@ Each milestone is committed separately after its checks pass. No registry publis
    reentry and unchanged host exceptions; Unity Editor and Windows x64 IL2CPP verified.
 10. Complete: pinned official WebAssembly 1.0 i32 fixtures (350 returns, 9 typed
     traps, 54 invalid modules, 29 explicit skips), plus MSBuild regeneration tests.
-11. NuGet and UPM distribution with clean-consumer tests.
+11. Complete: NuGet analyzer/targets package and UPM tarball, isolated NuGet-only
+    C# 9 consumer, tarball-only Unity consumer, Editor and Windows x64 IL2CPP.
+    Local artifacts only; registry publication and license selection are deferred.
 
 ## Verification
 
@@ -27,6 +29,18 @@ Every milestone: solution build, the console test executable, Smoke, and
 `node scripts/test-build.mjs`. Unity Editor and Windows x64 IL2CPP execution
 are required for milestones 3, 8, 9, and 11. A missing tool or unavailable
 runtime is not a passing check. Preserve fixed-seed Node.js differential tests.
+
+Final checks passed: solution build (zero warnings/errors), console tests, Smoke,
+MSBuild regeneration tests, NuGet-only consumer, and UPM-only Editor/IL2CPP smoke.
+The official subset contains 350 return assertions, 9 typed traps, 54 invalid
+modules, and 29 documented skips; this is not whole-spec conformance.
+
+Final retained verification artifacts:
+
+- NuGet consumer: `/tmp/wasm2cs-nuget-consumer-NVuBJ4`.
+- Unity logs/project: `C:/Users/fumika/AppData/Local/Temp/wasm2cs-unity-9d052a8581c3439a8b59f4a2e3f6b83f`.
+- Distributions: `artifacts/Wasm2Cs.Generator.0.1.0-preview.1.nupkg` and
+  `artifacts/com.mfakane.wasm2cs-0.1.0-preview.1.tgz` (ignored build outputs).
 
 ## Scope
 

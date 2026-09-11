@@ -13,7 +13,8 @@ Requires the **.NET 10 SDK** to build the tools and tests; Node.js 22+ supplies 
 independent WebAssembly oracle. The core and generator target `netstandard2.0`;
 the generator uses Roslyn 4.3.0 from NuGet. Generated code targets C# 9 and .NET
 Standard 2.0 APIs, verified against reference assemblies. The Unity bridge lives
-under `unity/Packages/com.mfakane.wasm2cs`; package distribution is a subsequent milestone.
+under `unity/Packages/com.mfakane.wasm2cs`; local NuGet and UPM packages can be built
+with `node scripts/pack.mjs` (requires `dotnet`, Node.js, and `tar` on PATH).
 
 The Unity bridge watches `.wasm` assets and maintains Base64 `.additionalfile`
 inputs in `Assets/Wasm2CsGeneratedInputs`. Generated public classes belong only to
@@ -72,6 +73,43 @@ commands are documented alongside the C source.
 
 ## Add a WASM file to a project
 
+For a packaged consumer, put the generated `.nupkg` in a local NuGet feed and add:
+
+```xml
+<ItemGroup>
+  <PackageReference Include="Wasm2Cs.Generator" Version="0.1.0-preview.1" PrivateAssets="all" />
+  <Wasm Include="Arithmetic.wasm" />
+</ItemGroup>
+```
+
+The package automatically imports the MSBuild target and analyzer. No runtime
+package dependency or manual target import is needed. Enable
+`EmitCompilerGeneratedFiles` as below to also persist `.g.cs` files on disk.
+
+For Unity, install `artifacts/com.mfakane.wasm2cs-0.1.0-preview.1.tgz` using Package
+Manager's **Add package from tarball**. Then add `.wasm` files under `Assets` and
+call `Wasm2Cs.Generated` instance methods. Custom asmdefs must reference
+`Wasm2Cs.Modules`. The archive includes the generator DLL and its analyzer metadata;
+the source-only UPM directory is not a ready-to-install distribution.
+
+Build and verify packages locally:
+
+```sh
+node scripts/pack.mjs
+node scripts/test-package.mjs
+```
+
+On Windows, verify the archive in a fresh Unity project with:
+
+```powershell
+./scripts/test-unity.ps1 -PackagePath ./artifacts/com.mfakane.wasm2cs-0.1.0-preview.1.tgz
+```
+
+Package tests use isolated consumers; Unity builds and runs a Windows x64 IL2CPP
+Player. Packages and verification logs are local artifacts only: these scripts do
+not publish to NuGet or a UPM registry. Package licensing has not been designated;
+choose it before public redistribution.
+
 Use the following entries in an SDK-style .NET 10 project, adjusting the repository
 paths. The complete example is `samples/Smoke/Smoke.csproj`.
 
@@ -101,7 +139,7 @@ automatic IDE file-watching behavior has not been verified.
 
 Each filename becomes a sealed class; each function export becomes an instance method.
 Create a module with `new Arithmetic()`. This intentionally replaces the prototype's
-static API so modules can own independent state when memory and globals are added.
+static API so modules own independent memory and global state.
 Names must be ASCII C# identifiers, with keywords escaped using `@`. An export cannot
 have the same name as its class, and module filenames must be unique (ignoring case).
 Translation errors fail the build with `WASM001`; duplicate class names use `WASM002`.
@@ -109,7 +147,8 @@ Translation errors fail the build with `WASM001`; duplicate class names use `WAS
 ## Supported subset
 
 - WASM version 1, function types with `i32` parameters and zero or one `i32` result.
-- Type, function, function export, and code sections; custom sections are skipped.
+- Type, function import, function, memory, global, export, start, code, and active
+  data sections; custom sections are skipped.
 - `local.get`, `local.set`, `local.tee`, `i32.const`, all MVP i32 arithmetic,
   comparisons, bitwise operations, shifts, rotates, and bit counts.
 - `nop`, `drop`, `select`, `unreachable`, `return`, and structured `block`, `loop`,
@@ -150,6 +189,8 @@ ordinary Rust/C/C++ outputs will typically need more instructions and sections.
 All function bodies, including unexported ones, are checked. Parsing validates section
 boundaries/order, LEB128 encodings, indices, and operand/result stack heights within
 the supported subset. There is an implementation limit of 100,000 locals per function.
+This is not an execution sandbox: there is no fuel/time limit, and recursive calls
+use the host stack. Host resource exhaustion is not normalized to a WASM trap.
 
 Design references: [WASM binary modules](https://webassembly.github.io/spec/core/binary/modules.html),
 [integer semantics](https://webassembly.github.io/spec/core/exec/numerics.html), and

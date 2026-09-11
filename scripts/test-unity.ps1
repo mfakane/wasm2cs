@@ -1,5 +1,6 @@
 param(
     [string]$Editor = "C:\Program Files\Unity\Hub\Editor\6000.6.0f1\Editor\Unity.exe",
+    [string]$PackagePath = "",
     [string]$WorkDirectory = (Join-Path $env:TEMP ("wasm2cs-unity-" + [guid]::NewGuid().ToString("N")))
 )
 $ErrorActionPreference = "Stop"
@@ -16,8 +17,13 @@ function RunEditor([string[]]$Arguments, [string]$LogName) {
 }
 New-Item -ItemType Directory -Path $WorkDirectory -Force | Out-Null
 Write-Output "Unity verification artifacts: $WorkDirectory"
-Copy-Item (Join-Path $repo "unity/Packages/com.mfakane.wasm2cs") $package -Recurse
-Copy-Item (Join-Path $repo "src/Wasm2Cs.Generator/bin/Debug/netstandard2.0/Wasm2Cs.Generator.dll") (Join-Path $package "Runtime/Wasm2Cs.Generator.dll")
+if ($PackagePath) {
+    $package = Join-Path $WorkDirectory "com.mfakane.wasm2cs.tgz"
+    Copy-Item $PackagePath $package
+} else {
+    Copy-Item (Join-Path $repo "unity/Packages/com.mfakane.wasm2cs") $package -Recurse
+    Copy-Item (Join-Path $repo "src/Wasm2Cs.Generator/bin/Debug/netstandard2.0/Wasm2Cs.Generator.dll") (Join-Path $package "Runtime/Wasm2Cs.Generator.dll")
+}
 RunEditor @("-createProject", "`"$project`"", "-quit") "create.log"
 New-Item -ItemType Directory -Path (Join-Path $project "Assets/Editor") -Force | Out-Null
 Copy-Item (Join-Path $repo "unity/Bootstrap/PackageInstaller.cs") (Join-Path $project "Assets/Editor/PackageInstaller.cs")

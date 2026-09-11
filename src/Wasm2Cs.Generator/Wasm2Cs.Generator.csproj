@@ -2,9 +2,19 @@
   <PropertyGroup>
     <IsRoslynComponent>true</IsRoslynComponent>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>Wasm2Cs.Generator</PackageId>
+    <Version>0.1.0-preview.1</Version>
+    <Authors>Wasm2Cs contributors</Authors>
+    <Description>Ahead-of-time C# generation for an i32 WebAssembly subset.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.0" PrivateAssets="all" />
     <Compile Include="../Wasm2Cs/*.cs" Link="Core/%(Filename)%(Extension)" />
+    <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="../../build/Wasm2Cs.targets" Pack="true" PackagePath="build/Wasm2Cs.Generator.targets" />
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 </Project>

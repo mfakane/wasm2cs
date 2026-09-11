@@ -1,0 +1,20 @@
+import { mkdirSync, mkdtempSync, cpSync, copyFileSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
+const root=fileURLToPath(new URL('../',import.meta.url));
+const artifacts=join(root,'artifacts');
+const manifest=JSON.parse(readFileSync(join(root,'unity/Packages/com.mfakane.wasm2cs/package.json'),'utf8'));
+const project=readFileSync(join(root,'src/Wasm2Cs.Generator/Wasm2Cs.Generator.csproj'),'utf8');
+if (!project.includes(`<Version>${manifest.version}</Version>`)) throw new Error('NuGet and UPM versions differ');
+mkdirSync(artifacts,{recursive:true});
+execFileSync('dotnet',['pack',join(root,'src/Wasm2Cs.Generator/Wasm2Cs.Generator.csproj'),'-c','Release','-o',artifacts,
+  '-m:1','-p:UseSharedCompilation=false','--nologo'],{cwd:root,stdio:'inherit'});
+const staging=mkdtempSync(join(tmpdir(),'wasm2cs-package-'));
+const packagePath=join(staging,'package');
+cpSync(join(root,'unity/Packages/com.mfakane.wasm2cs'),packagePath,{recursive:true});
+copyFileSync(join(root,'src/Wasm2Cs.Generator/bin/Release/netstandard2.0/Wasm2Cs.Generator.dll'),join(packagePath,'Runtime/Wasm2Cs.Generator.dll'));
+const archive=join(artifacts,`${manifest.name}-${manifest.version}.tgz`);
+execFileSync('tar',['-czf',archive,'-C',staging,'package'],{stdio:'inherit'});
+console.log(`Packages: ${artifacts}\nUPM archive: ${archive}\nStaging retained: ${staging}`);

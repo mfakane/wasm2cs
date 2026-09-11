@@ -68,7 +68,10 @@ including a same-size binary edit with its timestamp preserved and removal of a 
 The checked-in official WebAssembly 1.0 i32 subset adds 350 expected-value checks,
 9 typed traps, and 54 invalid modules. 29 non-i32/WAT-text cases are explicitly
 skipped. See `tests/Conformance/README.md` for pinned provenance, licensing, and
-reproduction. This does not imply conformance to the entire WebAssembly specification.
+reproduction. A separate SH-02 fixture adds 32 typed return checks, 2 traps,
+and 23 invalid modules, including block parameters and multiple results. Its primitive
+values preserve integer and floating-point bits through JSON strings. This does not
+imply conformance to the entire WebAssembly specification.
 
 The sample prints:
 
@@ -166,14 +169,17 @@ Translation errors fail the build with `WASM001`; duplicate class names use `WAS
 
 ## Supported subset
 
-- WASM version 1, function types with `i32` parameters and zero or one `i32` result.
+- WASM version 1; typed parameters, locals, and results (`i32`, `i64`, `f32`,
+  `f64`, `funcref`, `externref`). Multiple results use statically typed C# tuples.
+  Numeric constants and operations currently support i32 only.
 - Type, function import, function, memory, global, export, start, code, and active
   data sections; custom sections are skipped.
 - `local.get`, `local.set`, `local.tee`, `i32.const`, all MVP i32 arithmetic,
   comparisons, bitwise operations, shifts, rotates, and bit counts.
 - `nop`, `drop`, `select`, `unreachable`, `return`, and structured `block`, `loop`,
-  `if`/`else`, `br`, `br_if`, and `br_table`. Blocks have no parameters and zero
-  or one i32 result. Unreachable instructions are still decoded and validated.
+  `if`/`else`, `br`, `br_if`, and `br_table`. Block type indices, block/loop
+  parameters, multiple results, and typed `select` are supported. Unreachable
+  instructions are still decoded and type-checked.
 - Runtime traps use each generated module's nested `TrapException` and `TrapKind`.
   Signed division overflow and division/remainder by zero trap; signed remainder
   of `int.MinValue` by `-1` returns zero.
@@ -190,7 +196,7 @@ Translation errors fail the build with `WASM001`; duplicate class names use `WAS
   `WriteMemory(uint offset, byte[] bytes)`. Reads copy data rather than expose backing
   arrays. Global exports become properties, writable only for mutable globals.
 
-- Function imports with typed i32/void signatures. Constructor arguments follow
+- Function imports with typed parameters and zero, one, or multiple results. Constructor arguments follow
   import-section order (`import0`, `import1`, ...), using generated nested delegate
   types `__wasm_Import0`, etc. Lambdas convert directly; no runtime reflection is used.
   Missing delegates fail before start. Callbacks may use the copy-based memory API
@@ -203,11 +209,11 @@ and verifies callback order, memory exchange, reentry, and exception identity in
 both .NET and Unity. Run `node scripts/create-host-fixture.mjs` to reproduce its
 binary and verify the same callback scenario with WebAssembly.
 
-Imported memories/globals, indirect calls, floating point,
-and other instructions are rejected. This is not yet a general-purpose WASM compiler;
+Imported memories/globals, indirect calls, i64/floating-point numeric instructions,
+reference instructions, and other unsupported instructions are rejected. This is not yet a general-purpose WASM compiler;
 ordinary Rust/C/C++ outputs will typically need more instructions and sections.
 All function bodies, including unexported ones, are checked. Parsing validates section
-boundaries/order, LEB128 encodings, indices, and operand/result stack heights within
+boundaries/order, LEB128 encodings, indices, and operand/result stack types and heights within
 the supported subset. There is an implementation limit of 100,000 locals per function.
 This is not an execution sandbox: there is no fuel/time limit, and recursive calls
 use the host stack. Host resource exhaustion is not normalized to a WASM trap.

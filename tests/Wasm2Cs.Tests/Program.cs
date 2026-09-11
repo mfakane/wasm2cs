@@ -136,6 +136,7 @@ await ExecutionChecks.Memory();
 await ExecutionChecks.CAlgorithms();
 ExecutionChecks.Imports();
 ConformanceChecks.Verify();
+await TypedIrChecks.Verify();
 
 record Call(string Name, int[] Args);
 sealed class Input(string path, string content) : AdditionalText

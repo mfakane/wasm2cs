@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import wabtFactory from 'wabt';
+import { encodeValue, trapKind } from './values.mjs';
 const commit='977f97014c962f7bd1291fcc6d28b41a924882bf'; // official wg-1.0
 const root=new URL('../../tests/Conformance/',import.meta.url);
 mkdirSync(root,{recursive:true});
@@ -65,7 +66,13 @@ while(position<tokens.length) {
   } else if (kind === 'assert_malformed') {
     entry.Kind='skip'; entry.Reason='WAT text syntax test; translator accepts binaries only';
   } else throw new Error(`Unsupported WAST command: ${kind}`);
+  if (entry.Kind === 'assert_return' || entry.Kind === 'assert_trap') {
+    entry.Action = 'invoke';
+    entry.Args = entry.Args.map(value => encodeValue('i32', value));
+    if (entry.Kind === 'assert_return') entry.Expected = [encodeValue('i32', entry.Expected)];
+    else { entry.Trap = trapKind(entry.Message); delete entry.Message; }
+  }
   cases.push(entry);
 }
-writeFileSync(new URL('i32.json',root),JSON.stringify({Commit:commit,Cases:cases},null,2)+'\n');
+writeFileSync(new URL('i32.json',root),JSON.stringify({SchemaVersion:2,Commit:commit,Cases:cases},null,2)+'\n');
 console.log(`${cases.length} official WAST commands prepared at ${commit}:`,Object.fromEntries([...new Set(cases.map(c=>c.Kind))].map(k=>[k,cases.filter(c=>c.Kind===k).length])));

@@ -49,10 +49,11 @@ internal static class ExecutionChecks
             ..Section(1, [1,0x60,..U32(parameters),..Enumerable.Repeat((byte)0x7f,parameters), (byte)results,..(results == 1 ? new byte[] { 0x7f } : Array.Empty<byte>())]),
             ..Section(3, [1,0]), ..Section(7, [1,1,(byte)'f',0,0]), ..Section(10, [1,..U32(body.Length),..body])];
     }
-    internal static Assembly Compile(byte[] bytes, string name = "Subject")
+    internal static Assembly Compile(byte[] bytes, string name = "Subject", bool portable = false)
     {
-        var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
-            .Select(p => MetadataReference.CreateFromFile(p));
+        var paths = portable ? Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "ReferenceAssemblies"), "*.dll") :
+            ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator);
+        var references = paths.Select(p => MetadataReference.CreateFromFile(p));
         var compilation = CSharpCompilation.Create("Execution_" + Guid.NewGuid().ToString("N"),
             [CSharpSyntaxTree.ParseText(Transpiler.Translate(bytes,name),new CSharpParseOptions(LanguageVersion.CSharp9))], references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, checkOverflow:true));

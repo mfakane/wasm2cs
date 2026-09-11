@@ -10,6 +10,9 @@
     <None Include="../../samples/CAlgorithms/Algorithms.wasm" Link="Algorithms.wasm" CopyToOutputDirectory="PreserveNewest" />
     <None Include="oracle.mjs" CopyToOutputDirectory="PreserveNewest" />
     <None Include="execution-oracle.mjs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../scripts/conformance/*.mjs" Link="ConformanceTools/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Conformance/typed-ir.wast" Link="Conformance/typed-ir.wast" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Conformance/typed-ir.json" Link="Conformance/typed-ir.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../Conformance/i32.json" Link="Conformance/i32.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

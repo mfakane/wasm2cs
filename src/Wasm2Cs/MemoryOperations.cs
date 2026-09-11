@@ -4,15 +4,16 @@ internal static class MemoryOperations
 {
     public static int Width(byte op) => op switch
     {
-        0x29 or 0x37 => 8,
-        0x28 or 0x34 or 0x35 or 0x36 or 0x3e => 4,
+        0x29 or 0x2b or 0x37 or 0x39 => 8,
+        0x2a or 0x38 or 0x28 or 0x34 or 0x35 or 0x36 or 0x3e => 4,
         0x2e or 0x2f or 0x32 or 0x33 or 0x3b or 0x3d => 2,
         0x2c or 0x2d or 0x30 or 0x31 or 0x3a or 0x3c => 1,
         _ => throw new InvalidOperationException("Unknown memory instruction.")
     };
-    public static bool IsStore(byte op) => op == 0x36 || op == 0x37 || (op >= 0x3a && op <= 0x3e);
+    public static bool IsStore(byte op) => op >= 0x36 && op <= 0x3e;
     public static bool IsSigned(byte op) => op == 0x2c || op == 0x2e || op == 0x30 || op == 0x32 || op == 0x34;
-    public static ValueType Type(byte op) => op == 0x29 || op == 0x37 || (op >= 0x30 && op <= 0x35) ||
+    public static ValueType Type(byte op) => op == 0x2a || op == 0x38 ? ValueType.F32 :
+        op == 0x2b || op == 0x39 ? ValueType.F64 : op == 0x29 || op == 0x37 || (op >= 0x30 && op <= 0x35) ||
         (op >= 0x3c && op <= 0x3e) ? ValueType.I64 : ValueType.I32;
     public const string Helpers = """
     private byte[] __wasm_memory;

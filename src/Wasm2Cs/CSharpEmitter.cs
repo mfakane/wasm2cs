@@ -9,6 +9,10 @@ internal static class CSharpEmitter
         source.Append("public sealed class @").Append(className).Append("\n{\n");
         source.Append(I32Operations.Helpers);
         if (module.Bodies.Any(f => f.Instructions.Any(i => I64Operations.Arity(i.Opcode) != 0))) source.Append(I64Operations.Helpers);
+        if (module.Globals.Any(g => g.Type == ValueType.F32 || g.Type == ValueType.F64) ||
+            module.Bodies.Any(f => f.Instructions.Any(i => FloatOperations.Arity(i.Opcode) != 0 ||
+                i.Opcode == 0x43 || i.Opcode == 0x44 || i.Opcode == 0x2a || i.Opcode == 0x2b || i.Opcode == 0x38 || i.Opcode == 0x39)))
+            source.Append(FloatOperations.Helpers);
         if (module.Memory != null) source.Append(MemoryOperations.Helpers.Replace("__WASM_MAX_PAGES__", module.Memory.Maximum.ToString(CultureInfo.InvariantCulture)));
         for(int g=0;g<module.Globals.Count;g++) source.Append($"    private {TypeName(module.Globals[g].Type)} __wasm_G{g};\n");
         for (int i=0;i<module.Imports.Count;i++)
@@ -63,6 +67,8 @@ internal static class CSharpEmitter
     {
         ValueType.I32 => unchecked((int)value.Bits).ToString(CultureInfo.InvariantCulture),
         ValueType.I64 => $"unchecked((long)0x{value.Bits.ToString("x16", CultureInfo.InvariantCulture)}UL)",
+        ValueType.F32 => $"__wasm_F32(unchecked((int)0x{value.Bits.ToString("x8", CultureInfo.InvariantCulture)}U))",
+        ValueType.F64 => $"__wasm_F64(unchecked((long)0x{value.Bits.ToString("x16", CultureInfo.InvariantCulture)}UL))",
         _ => throw new WasmException($"Unsupported constant type {value.Type}.")
     };
     private static string TypeName(ValueType type) => type switch
@@ -231,23 +237,37 @@ internal static class CSharpEmitter
                     Line($"v{instruction.Operand} = {localValue.Name};");
                     if (instruction.Opcode == 0x22) stack.Add(localValue);
                     break;
-                case 0x41: case 0x42: Push(ConstantExpression(instruction.Constant!), instruction.Constant!.Type); break;
+                case 0x41: case 0x42: case 0x43: case 0x44: Push(ConstantExpression(instruction.Constant!), instruction.Constant!.Type); break;
                 case 0x23: Push($"__wasm_G{instruction.Operand}", module.Globals[instruction.Operand].Type); break;
                 case 0x24: Line($"__wasm_G{instruction.Operand} = {Pop(module.Globals[instruction.Operand].Type).Name};"); break;
+                case 0x2a: case 0x2b:
                 case 0x28: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
                 case 0x29: case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35:
                     var loadType = MemoryOperations.Type(instruction.Opcode);
-                    string load = loadType == ValueType.I64 ? "__wasm_Load64" : "__wasm_Load";
-                    Push($"{load}({PopI32()}, {instruction.Immediate}u, {MemoryOperations.Width(instruction.Opcode)}, {(MemoryOperations.IsSigned(instruction.Opcode) ? "true" : "false")})", loadType); break;
+                    string load = loadType == ValueType.I64 || loadType == ValueType.F64 ? "__wasm_Load64" : "__wasm_Load";
+                    string loaded = $"{load}({PopI32()}, {instruction.Immediate}u, {MemoryOperations.Width(instruction.Opcode)}, {(MemoryOperations.IsSigned(instruction.Opcode) ? "true" : "false")})";
+                    if (loadType == ValueType.F32) loaded = $"__wasm_F32({loaded})";
+                    if (loadType == ValueType.F64) loaded = $"__wasm_F64({loaded})";
+                    Push(loaded, loadType); break;
+                case 0x38: case 0x39:
                 case 0x36: case 0x3a: case 0x3b:
                 case 0x37: case 0x3c: case 0x3d: case 0x3e:
                     var storeType = MemoryOperations.Type(instruction.Opcode);
-                    string store = storeType == ValueType.I64 ? "__wasm_Store64" : "__wasm_Store";
+                    string store = storeType == ValueType.I64 || storeType == ValueType.F64 ? "__wasm_Store64" : "__wasm_Store";
                     string stored = Pop(storeType).Name, address = PopI32();
+                    if (storeType == ValueType.F32) stored = $"__wasm_Bits32({stored})";
+                    if (storeType == ValueType.F64) stored = $"__wasm_Bits64({stored})";
                     Line($"{store}({address}, {stored}, {instruction.Immediate}u, {MemoryOperations.Width(instruction.Opcode)});"); break;
                 case 0x3f: Push("__wasm_memory.Length / 65536"); break;
                 case 0x40: Push($"__wasm_Grow({PopI32()})"); break;
                 default:
+                    if (FloatOperations.Arity(instruction.Opcode) != 0)
+                    {
+                        var floatType = FloatOperations.InputType(instruction.Opcode);
+                        string rightFloat = FloatOperations.Arity(instruction.Opcode) == 2 ? Pop(floatType).Name : "";
+                        Push(FloatOperations.Expression(instruction.Opcode, Pop(floatType).Name, rightFloat), FloatOperations.ResultType(instruction.Opcode));
+                        break;
+                    }
                     int arity = I64Operations.Arity(instruction.Opcode);
                     if (arity != 0)
                     {

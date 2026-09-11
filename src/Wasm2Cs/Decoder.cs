@@ -123,6 +123,8 @@ internal static class Decoder
     {
         0x41 => new ConstantValue(ValueType.I32, unchecked((uint)reader.SignedI32())),
         0x42 => new ConstantValue(ValueType.I64, unchecked((ulong)reader.SignedI64())),
+        0x43 => new ConstantValue(ValueType.F32, reader.FloatBits(4)),
+        0x44 => new ConstantValue(ValueType.F64, reader.FloatBits(8)),
         _ => throw new WasmException($"Unsupported constant expression opcode 0x{opcode:x2}.")
     };
     private static Function DecodeBody(Reader body, Signature signature, List<Signature> types)
@@ -163,19 +165,21 @@ internal static class Decoder
                     for(int t=0;t<targets.Length;t++) targets[t] = body.Count();
                     operand = 0; break;
                 case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: operand = body.Count(); break;
+                case 0x2a: case 0x2b:
                 case 0x28: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
                 case 0x29: case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35:
+                case 0x38: case 0x39:
                 case 0x36: case 0x3a: case 0x3b:
                 case 0x37: case 0x3c: case 0x3d: case 0x3e:
                     operand = body.Count(); immediate = body.UnsignedI32(); break;
                 case 0x3f: case 0x40:
                     if (body.Byte() != 0) throw new WasmException("Invalid memory index.");
                     operand = 0; break;
-                case 0x41: case 0x42: constant = ReadConstant(body, opcode); operand = 0; break;
+                case 0x41: case 0x42: case 0x43: case 0x44: constant = ReadConstant(body, opcode); operand = 0; break;
                 case 0x00: case 0x01: case 0x05: case 0x0b: case 0x0f: case 0x1a: case 0x1b:
                 case 0x6a: case 0x6b: case 0x6c: operand = 0; break;
                 default:
-                    if (I32Operations.Arity(opcode) != 0 || I64Operations.Arity(opcode) != 0) { operand = 0; break; }
+                    if (I32Operations.Arity(opcode) != 0 || I64Operations.Arity(opcode) != 0 || FloatOperations.Arity(opcode) != 0) { operand = 0; break; }
                     throw new WasmException($"Offset 0x{offset:x}: Unsupported WASM opcode 0x{opcode:x2}.");
             }
             instructions.Add(new Instruction(opcode, operand, offset, targets, immediate, blockType, selectType, constant));

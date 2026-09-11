@@ -83,6 +83,12 @@ internal sealed class Reader(byte[] bytes, int start = 0, int? end = null)
             }
             throw new WasmException("LEB128 integer is too long.");
         }
+        public ulong FloatBits(int width)
+        {
+            ulong bits = 0;
+            for (int i = 0; i < width; i++) bits |= (ulong)Byte() << (8 * i);
+            return bits;
+        }
         public uint UnsignedI32() => Leb(false);
         public byte[] Bytes(int length)
         {

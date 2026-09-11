@@ -130,15 +130,17 @@ internal static class Validator
                     if (instruction.Opcode != 0x20) Pop(localType);
                     if (instruction.Opcode != 0x21) Push(localType);
                     break;
-                case 0x41: case 0x42: Push(instruction.Constant!.Type); break;
+                case 0x41: case 0x42: case 0x43: case 0x44: Push(instruction.Constant!.Type); break;
                 case 0x23: case 0x24:
                     if (instruction.Operand >= module.Globals.Count) Fail("Invalid global index.");
                     var global = module.Globals[instruction.Operand];
                     if (instruction.Opcode == 0x23) Push(global.Type);
                     else { if (!global.Mutable) Fail("Cannot set immutable global."); Pop(global.Type); }
                     break;
+                case 0x2a: case 0x2b:
                 case 0x28: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
                 case 0x29: case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35:
+                case 0x38: case 0x39:
                 case 0x36: case 0x3a: case 0x3b:
                 case 0x37: case 0x3c: case 0x3d: case 0x3e:
                     if (module.Memory == null) Fail("Memory instruction requires memory.");
@@ -153,6 +155,12 @@ internal static class Validator
                     if (instruction.Opcode == 0x40) Pop(ValueType.I32);
                     Push(ValueType.I32); break;
                 default:
+                    if (FloatOperations.Arity(instruction.Opcode) != 0)
+                    {
+                        for (int p = 0; p < FloatOperations.Arity(instruction.Opcode); p++) Pop(FloatOperations.InputType(instruction.Opcode));
+                        Push(FloatOperations.ResultType(instruction.Opcode));
+                        break;
+                    }
                     int operands = I64Operations.Arity(instruction.Opcode);
                     if (operands != 0)
                     {

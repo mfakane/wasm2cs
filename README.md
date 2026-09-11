@@ -74,6 +74,10 @@ values preserve integer and floating-point bits through JSON strings. This does 
 imply conformance to the entire WebAssembly specification. SH-03 adds the pinned
 official i64 suite (350 results, 9 traps, 29 invalid modules), an i64 memory/global
 fixture, and fixed-seed differential tests using hexadecimal bits and Node BigInt.
+SH-04 adds eight pinned official floating-point/conversion suites, exact-bit and
+NaN-aware differential tests, and `samples/Floating` checks shared with Unity and
+the isolated NuGet consumer. WASM-to-WASM reference wrappers preserve signaling
+NaNs across the Node boundary. See the conformance README for explicit WAT-text skips.
 
 The sample prints:
 
@@ -173,12 +177,18 @@ Translation errors fail the build with `WASM001`; duplicate class names use `WAS
 
 - WASM version 1; typed parameters, locals, and results (`i32`, `i64`, `f32`,
   `f64`, `funcref`, `externref`). Multiple results use statically typed C# tuples.
-  Numeric constants and integer operations support i32 and i64; i64 values use C# `long`.
+  Numeric constants and operations support i32/i64/f32/f64. The numeric host API
+  uses C# `int`, `long`, `float`, and `double`; internal float values retain raw bits.
 - Type, function import, function, memory, global, export, start, code, and active
   data sections; custom sections are skipped.
 - `local.get`, `local.set`, `local.tee`, i32/i64 constants and MVP integer arithmetic,
   comparisons, bitwise operations, shifts, rotates, and bit counts. Integer wrap/extend
   conversions and the five integer sign-extension instructions are supported.
+- MVP f32/f64 arithmetic, comparisons, rounding, square root, min/max, and sign
+  operations. Numeric conversions, reinterpret, and all eight saturating truncations
+  are supported. Bit operations preserve NaN payloads; rounding uses ties-to-even
+  and preserves signed zero. Truncation checks NaN and range before casting, using
+  `InvalidConversionToInteger` for NaN and `IntegerOverflow` for out-of-range values.
 - `nop`, `drop`, `select`, `unreachable`, `return`, and structured `block`, `loop`,
   `if`/`else`, `br`, `br_if`, and `br_table`. Block type indices, block/loop
   parameters, multiple results, and typed `select` are supported. Unreachable
@@ -191,8 +201,8 @@ Translation errors fail the build with `WASM001`; duplicate class names use `WAS
 - Direct function calls, including non-exported functions and recursion. Each WASM
   function is emitted once; exports are public wrappers over private instance methods.
 
-- One owned memory32, i32/i64 loads/stores (including signed/unsigned narrow loads),
-  `memory.size/grow`, owned i32/i64 globals, active data segments, and start functions.
+- One owned memory32, i32/i64/f32/f64 loads/stores (including signed/unsigned narrow loads),
+  `memory.size/grow`, owned numeric globals, active data segments, and start functions.
   Addresses remain i32; i64 loads/stores also support 8/16/32-bit storage widths.
   Instantiation initializes memory/globals/data before calling start exactly once.
   Memory is limited to 256 MiB; exceeding growth limits returns -1 without changing state.
@@ -208,13 +218,24 @@ Translation errors fail the build with `WASM001`; duplicate class names use `WAS
   during start. Import module/name pairs are recorded as UTF-8 Base64 in generated
   comments, allowing arbitrary names without injecting C# syntax.
 
+For exact floating-point payloads across host boundaries, each float-bearing export
+also has a `__wasm_bits_<name>` method or global property: f32 uses `int` bits and
+f64 uses `long` bits. Modules with float imports provide `__wasm_FromBits(...)` and
+`__wasm_BitsImportN` delegates. For example, `Floating.__wasm_FromBits(x => x, x => x)`
+constructs the floating sample with callbacks that preserve every bit. Internal
+calls, locals, globals, constants and memory retain bits on all tested runtimes.
+The ordinary float/double host API remains available, but native CLR float handling
+can quiet signaling NaNs (observed in Unity Mono), just as JS Number boundaries can.
+Use the bit API when signaling-NaN payloads must cross the host boundary unchanged.
+Integer-to-float conversion rounds directly from integer bits to avoid Mono's
+intermediate double rounding.
+
 For example, `samples/Host/HostChecks.cs` constructs `new Host(exchange, notify)`
 and verifies callback order, memory exchange, reentry, and exception identity in
 both .NET and Unity. Run `node scripts/create-host-fixture.mjs` to reproduce its
 binary and verify the same callback scenario with WebAssembly.
 
-Imported memories/globals, indirect calls, floating-point numeric instructions and
-conversions (including reinterpret), reference instructions, and other unsupported
+Imported memories/globals, indirect calls, SIMD, reference instructions, and other unsupported
 instructions are rejected. This is not yet a general-purpose WASM compiler;
 ordinary Rust/C/C++ outputs will typically need more instructions and sections.
 All function bodies, including unexported ones, are checked. Parsing validates section

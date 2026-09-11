@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "milestone": "SH-04",
+  "status": "complete",
+  "tools": {
+    "dotnetSdk": "10.0.400",
+    "dotnetRuntime": "10.0.11",
+    "node": "v22.17.0",
+    "v8": "12.4.254.21-node.26",
+    "wabt": "1.0.41",
+    "unity": "6000.6.0f1 (f7f8ed4d1e24)"
+  },
+  "checks": [
+    {
+      "command": "dotnet build Wasm2Cs.slnx -m:1 -p:UseSharedCompilation=false --nologo",
+      "exitCode": 0,
+      "log": "artifacts/self-hosting/sh04/build.log"
+    },
+    {
+      "command": "dotnet tests/Wasm2Cs.Tests/bin/Debug/net10.0/Wasm2Cs.Tests.dll",
+      "exitCode": 0,
+      "log": "artifacts/self-hosting/sh04/tests.log"
+    },
+    {
+      "command": "dotnet samples/Smoke/bin/Debug/net10.0/Smoke.dll",
+      "exitCode": 0,
+      "log": "artifacts/self-hosting/sh04/smoke.log"
+    },
+    {
+      "command": "node scripts/test-build.mjs",
+      "exitCode": 0,
+      "log": "artifacts/self-hosting/sh04/test-build.log"
+    },
+    {
+      "command": "node scripts/pack.mjs",
+      "exitCode": 0,
+      "log": "artifacts/self-hosting/sh04/pack.log"
+    },
+    {
+      "command": "node scripts/test-package.mjs",
+      "exitCode": 0,
+      "log": "artifacts/self-hosting/sh04/test-package.log"
+    },
+    {
+      "command": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/test-unity.ps1 -PackagePath artifacts/com.mfakane.wasm2cs-0.1.0-preview.1.tgz -WorkDirectory C:\\Users\\fumika\\AppData\\Local\\Temp\\wasm2cs-sh04-final",
+      "exitCode": 0,
+      "logs": "artifacts/self-hosting/sh04/unity",
+      "editorMarker": "WASM2CS_FLOATING_PASS",
+      "playerMarker": "WASM2CS_FLOATING_PASS",
+      "target": "Windows x64 IL2CPP",
+      "apiCompatibility": ".NET Standard"
+    }
+  ],
+  "reference": {
+    "commit": "fffc6e12fa454e475455a7b58d3b5dc343980c10",
+    "sourcePins": "scripts/conformance/floats-sources.json",
+    "suites": 8,
+    "returns": 11145,
+    "traps": 67,
+    "invalidBinaries": 65,
+    "watTextSkips": 82
+  },
+  "differential": {
+    "seed": "0xbb67ae8584caa73b",
+    "numericInstructions": 70,
+    "numericCases": 267254,
+    "stateCases": 2649,
+    "boundaryApis": [
+      "native numeric",
+      "integer bits"
+    ],
+    "compilation": "C# 9, checked, .NET Standard 2.0 reference assemblies"
+  },
+  "platformCorrections": [
+    {
+      "problem": "Native Mono floating-point boundaries quiet signaling NaNs",
+      "reproducer": "tests/Platform/MonoFloatBoundary.cs",
+      "originalFailureLog": "artifacts/self-hosting/sh04/editor-before-fix.log",
+      "resolution": "Internal bit-holding structs and an additive bit-preserving import/export/global API. Native float/double APIs retain native host semantics."
+    },
+    {
+      "problem": "u64 0x8000008000000001 to f32 rounded to 0x5f000000 on Mono",
+      "expected": "0x5f000001",
+      "reproducer": "samples/Floating/FloatingChecks.cs",
+      "resolution": "Round directly from integer bits to IEEE significand and exponent."
+    }
+  ],
+  "artifactSha256": {
+    "samples/Floating/Floating.wat": "39dc04b7eb4245be8b761f38580ae5770aa456cb7dade1586bd895b24c35faed",
+    "samples/Floating/Floating.wasm": "af635fa1ddf62279a9ac3797998a373c49517fa41fcb246438fbb3ec50ef761b",
+    "samples/Floating/FloatingChecks.cs": "6f77cc9a8112d78269f69d99543390f6d959be26f330a96204726c4f6207d30f",
+    "samples/Floating/operations.json": "e26486c6acb02c299649106509824fb2d32bb5d536d8029838dfa6e3e259c851",
+    "src/Wasm2Cs.Generator/bin/Release/netstandard2.0/Wasm2Cs.Generator.dll": "f948da6fcb4a32979f6c5a09fb79ad4048ea01c17d257f1fbabfcc07280a6122",
+    "artifacts/Wasm2Cs.Generator.0.1.0-preview.1.nupkg": "8d665c25cb91b9e6560dfd3c545dc2b7769d746db2e3a4fd4310d8badbcf9efc",
+    "artifacts/com.mfakane.wasm2cs-0.1.0-preview.1.tgz": "a0c242d2eb28f900f01826e3859f25347c94500848109bad677ac12fbffd4753",
+    "tests/Conformance/f32.json": "2139efdd8f573489b3ede72ce965b9bae8bc89319b0076735543ad966ad098a8",
+    "tests/Conformance/f64.json": "151b7c02d1bf763dc8e6b6295edd9e6bff57112b1facfc367d468e7adcbe1fa5",
+    "tests/Conformance/f32_cmp.json": "ba843531ecf2995f1ed9c7229e9db4dabc32b6db0e21145b305c8e8daa07453d",
+    "tests/Conformance/f64_cmp.json": "e86a4b4d4c367d550c530292d9128347b1aa549d0ab98fe7b8b30a0bae563515",
+    "tests/Conformance/f32_bitwise.json": "52b7f00efbad4ff23500989dc79e39abd61792330f92080b55b980c6a5048fd7",
+    "tests/Conformance/f64_bitwise.json": "2826ca59b42833a5324a9a6ae9ffa25374d47ff0479dacd323d14ded8c0cbef9",
+    "tests/Conformance/conversions.json": "cf7d4d3db3aefedc333e4a1fee75d46fef2e3a10008c0b6f8c3cefcbe092bc9a",
+    "tests/Conformance/float_literals.json": "65071259dffbb25b9d0b3a8478fb25c9423fae8c66ff7d21a05908f9f40302f6"
+  },
+  "unityArtifacts": {
+    "workDirectory": "/mnt/c/Users/fumika/AppData/Local/Temp/wasm2cs-sh04-final",
+    "playerSha256": "962d510873151effeda23c0b938c4613f519ddcbdc44dcbd7cddbed03a041bc2",
+    "gameAssemblySha256": "2668b272f62b94eed653c7cdade823854f67212a6cb8e8a70cf470bd3a2f0929",
+    "logSha256": {
+      "bridge-changed.log": "d8aabfe9ec743ba9c984364d49963d3dfed8973d15a109272ae44df65a58cbb5",
+      "bridge-missing.log": "82bfeb00bd1e99bd32e5e950cebd4866dfaa58c4db0363b6177984ed1f8cc9e8",
+      "bridge-moved.log": "e4e4079280cbfcad4693bbe0d8dd3b59d1f94e80fee364da57153fef2ecfc1ae",
+      "bridge-present.log": "f214c4250e19e0bd5f991d241cd73c2e2c45fdc158c317429b515428d64b3659",
+      "bridge-remove.log": "1079a1dbb3c382d725ce9e9df1f67068f5eb3e5ed23de373cd0e968ec9c30c7f",
+      "bridge-restore.log": "5966d72edcbbbcde5b40bec519899110fed5f689b8e7837f95e50b1c314e17c9",
+      "bridge-update.log": "51d62192c40230f670ca24f94e917f79687b5426f671e5f2cc4afc5c5eb60708",
+      "build.log": "d729b6122dfd29a985e78d14261147041ec46c8957e7201ba8e65ed6df299413",
+      "create.log": "cc3527ed2d9aaf2fb32ac907f2e6f04d8db355e6ccb68057e84b9bae88d9a762",
+      "editor-test.log": "7c43919fc10ffa4c7b9878e9a93c4f4b99510c9a5a0b496dae74745ec0e75286",
+      "inputs.log": "bb4931cffaa3d6dafabbe02c14ff2a88ff33cc30d50515a1bb5945e04b5f3653",
+      "install.log": "3ced4fe79a95ea1c812241149eeffde0527fe7931b21a420645b1362ca2b08df",
+      "player.log": "b0affe9209fa66dbb48874fd96ebc4d4f2dbe4089b7ef5769e31300b3a70d965"
+    }
+  },
+  "scope": "Small-fixture validation, not execution of the full SH-01 generated runtime"
+}

@@ -1,0 +1,1807 @@
+{
+  "SchemaVersion": 2,
+  "Source": "float_literals.wast",
+  "SourceSha256": "3702a2fa976e18929371b165b8bcdd63866fdc3dfdb1a4f4fdaa5b5ff7e53bb2",
+  "Wabt": "1.0.41",
+  "Engine": {
+    "Node": "v22.17.0",
+    "V8": "12.4.254.21-node.26"
+  },
+  "Counts": {
+    "Returns": 99,
+    "Traps": 0,
+    "Invalid": 0
+  },
+  "Cases": [
+    {
+      "Kind": "module",
+      "Line": 3,
+      "Binary": "AGFzbQEAAAABEQRgAAF/YAABfmAAAX1gAAF8A2NiAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAgICAgICAgICAgMDAwMDAwMDAwMHuR9iFWV4cG9ydF82NjMzMzIyZTZlNjE2ZQAAJ2V4cG9ydF82NjMzMzIyZTcwNmY3MzY5NzQ2OTc2NjU1ZjZlNjE2ZQABJ2V4cG9ydF82NjMzMzIyZTZlNjU2NzYxNzQ2OTc2NjU1ZjZlNjE2ZQACIWV4cG9ydF82NjMzMzIyZTcwNmM2MTY5NmU1ZjZlNjE2ZQADS2V4cG9ydF82NjMzMzIyZTY5NmU2NjZmNzI2ZDYxNmM2Yzc5NWY2YjZlNmY3NzZlNWY2MTczNWY3MDZjNjE2OTZlNWY3MzZlNjE2ZQAEJ2V4cG9ydF82NjMzMzIyZTYxNmM2YzVmNmY2ZTY1NzM1ZjZlNjE2ZQAFH2V4cG9ydF82NjMzMzIyZTZkNjk3MzYzNWY2ZTYxNmUABjFleHBvcnRfNjYzMzMyMmU2ZDY5NzM2MzVmNzA2ZjczNjk3NDY5NzY2NTVmNmU2MTZlAAcxZXhwb3J0XzY2MzMzMjJlNmQ2OTczNjM1ZjZlNjU2NzYxNzQ2OTc2NjU1ZjZlNjE2ZQAIH2V4cG9ydF82NjMzMzIyZTY5NmU2NjY5NmU2OTc0NzkACTFleHBvcnRfNjYzMzMyMmU3MDZmNzM2OTc0Njk3NjY1NWY2OTZlNjY2OTZlNjk3NDc5AAoxZXhwb3J0XzY2MzMzMjJlNmU2NTY3NjE3NDY5NzY2NTVmNjk2ZTY2Njk2ZTY5NzQ3OQALF2V4cG9ydF82NjMzMzIyZTdhNjU3MjZmAAwpZXhwb3J0XzY2MzMzMjJlNzA2ZjczNjk3NDY5NzY2NTVmN2E2NTcyNmYADSlleHBvcnRfNjYzMzMyMmU2ZTY1Njc2MTc0Njk3NjY1NWY3YTY1NzI2ZgAOF2V4cG9ydF82NjMzMzIyZTZkNjk3MzYzAA8nZXhwb3J0XzY2MzMzMjJlNmQ2OTZlNWY3MDZmNzM2OTc0Njk3NjY1ABAjZXhwb3J0XzY2MzMzMjJlNmQ2OTZlNWY2ZTZmNzI2ZDYxNmMAESNleHBvcnRfNjYzMzMyMmU2ZDYxNzg1ZjY2Njk2ZTY5NzQ2NQASKWV4cG9ydF82NjMzMzIyZTZkNjE3ODVmNzM3NTYyNmU2ZjcyNmQ2MTZjABMnZXhwb3J0XzY2MzMzMjJlNzQ3MjYxNjk2YzY5NmU2NzVmNjQ2Zjc0ABQfZXhwb3J0XzY2MzMzMjJlNmQ2OTczNjM1ZjY5NmU3NAAVIWV4cG9ydF82NjMzMzIyZTZjNjE3MjY3NjU1ZjY5NmU3NAAWIWV4cG9ydF82NjMzMzIyZTZkNjk2ZTVmNjk2ZTc0MzMzMgAXIWV4cG9ydF82NjMzMzIyZTZkNjk2ZTVmNjk2ZTc0MzYzNAAYH2V4cG9ydF82NjMzMzI1ZjY0NjU2MzJlN2E2NTcyNmYAGTFleHBvcnRfNjYzMzMyNWY2NDY1NjMyZTcwNmY3MzY5NzQ2OTc2NjU1ZjdhNjU3MjZmABoxZXhwb3J0XzY2MzMzMjVmNjQ2NTYzMmU2ZTY1Njc2MTc0Njk3NjY1NWY3YTY1NzI2ZgAbH2V4cG9ydF82NjMzMzI1ZjY0NjU2MzJlNmQ2OTczNjMAHC9leHBvcnRfNjYzMzMyNWY2NDY1NjMyZTZkNjk2ZTVmNzA2ZjczNjk3NDY5NzY2NQAdK2V4cG9ydF82NjMzMzI1ZjY0NjU2MzJlNmQ2OTZlNWY2ZTZmNzI2ZDYxNmMAHjFleHBvcnRfNjYzMzMyNWY2NDY1NjMyZTZkNjE3ODVmNzM3NTYyNmU2ZjcyNmQ2MTZjAB8rZXhwb3J0XzY2MzMzMjVmNjQ2NTYzMmU2ZDYxNzg1ZjY2Njk2ZTY5NzQ2NQAgL2V4cG9ydF82NjMzMzI1ZjY0NjU2MzJlNzQ3MjYxNjk2YzY5NmU2NzVmNjQ2Zjc0ACEnZXhwb3J0XzY2MzMzMjVmNjQ2NTYzMmU2ZDY5NzM2MzVmNjk2ZTc0ACIpZXhwb3J0XzY2MzMzMjVmNjQ2NTYzMmU2YzYxNzI2NzY1NWY2OTZlNzQAIylleHBvcnRfNjYzMzMyNWY2NDY1NjMyZTZkNjk2ZTVmNjk2ZTc0MzMzMgAkKWV4cG9ydF82NjMzMzI1ZjY0NjU2MzJlNmQ2OTZlNWY2OTZlNzQzNjM0ACU1ZXhwb3J0XzY2MzMzMjVmNjQ2NTYzMmU3MjZmNmY3NDVmNjI2NTY1NzI1ZjY2NmM2ZjYxNzQAJhVleHBvcnRfNjYzNjM0MmU2ZTYxNmUAJydleHBvcnRfNjYzNjM0MmU3MDZmNzM2OTc0Njk3NjY1NWY2ZTYxNmUAKCdleHBvcnRfNjYzNjM0MmU2ZTY1Njc2MTc0Njk3NjY1NWY2ZTYxNmUAKSFleHBvcnRfNjYzNjM0MmU3MDZjNjE2OTZlNWY2ZTYxNmUAKktleHBvcnRfNjYzNjM0MmU2OTZlNjY2ZjcyNmQ2MTZjNmM3OTVmNmI2ZTZmNzc2ZTVmNjE3MzVmNzA2YzYxNjk2ZTVmNzM2ZTYxNmUAKydleHBvcnRfNjYzNjM0MmU2MTZjNmM1ZjZmNmU2NTczNWY2ZTYxNmUALB9leHBvcnRfNjYzNjM0MmU2ZDY5NzM2MzVmNmU2MTZlAC0xZXhwb3J0XzY2MzYzNDJlNmQ2OTczNjM1ZjcwNmY3MzY5NzQ2OTc2NjU1ZjZlNjE2ZQAuMWV4cG9ydF82NjM2MzQyZTZkNjk3MzYzNWY2ZTY1Njc2MTc0Njk3NjY1NWY2ZTYxNmUALx9leHBvcnRfNjYzNjM0MmU2OTZlNjY2OTZlNjk3NDc5ADAxZXhwb3J0XzY2MzYzNDJlNzA2ZjczNjk3NDY5NzY2NTVmNjk2ZTY2Njk2ZTY5NzQ3OQAxMWV4cG9ydF82NjM2MzQyZTZlNjU2NzYxNzQ2OTc2NjU1ZjY5NmU2NjY5NmU2OTc0NzkAMhdleHBvcnRfNjYzNjM0MmU3YTY1NzI2ZgAzKWV4cG9ydF82NjM2MzQyZTcwNmY3MzY5NzQ2OTc2NjU1ZjdhNjU3MjZmADQpZXhwb3J0XzY2MzYzNDJlNmU2NTY3NjE3NDY5NzY2NTVmN2E2NTcyNmYANRdleHBvcnRfNjYzNjM0MmU2ZDY5NzM2MwA2J2V4cG9ydF82NjM2MzQyZTZkNjk2ZTVmNzA2ZjczNjk3NDY5NzY2NQA3I2V4cG9ydF82NjM2MzQyZTZkNjk2ZTVmNmU2ZjcyNmQ2MTZjADgpZXhwb3J0XzY2MzYzNDJlNmQ2MTc4NWY3Mzc1NjI2ZTZmNzI2ZDYxNmMAOSNleHBvcnRfNjYzNjM0MmU2ZDYxNzg1ZjY2Njk2ZTY5NzQ2NQA6J2V4cG9ydF82NjM2MzQyZTc0NzI2MTY5NmM2OTZlNjc1ZjY0NmY3NAA7H2V4cG9ydF82NjM2MzQyZTZkNjk3MzYzNWY2OTZlNzQAPCFleHBvcnRfNjYzNjM0MmU2YzYxNzI2NzY1NWY2OTZlNzQAPSFleHBvcnRfNjYzNjM0MmU2ZDY5NmU1ZjY5NmU3NDMzMzIAPiFleHBvcnRfNjYzNjM0MmU2ZDY5NmU1ZjY5NmU3NDM2MzQAPx9leHBvcnRfNjYzNjM0NWY2NDY1NjMyZTdhNjU3MjZmAEAxZXhwb3J0XzY2MzYzNDVmNjQ2NTYzMmU3MDZmNzM2OTc0Njk3NjY1NWY3YTY1NzI2ZgBBMWV4cG9ydF82NjM2MzQ1ZjY0NjU2MzJlNmU2NTY3NjE3NDY5NzY2NTVmN2E2NTcyNmYAQh9leHBvcnRfNjYzNjM0NWY2NDY1NjMyZTZkNjk3MzYzAEMvZXhwb3J0XzY2MzYzNDVmNjQ2NTYzMmU2ZDY5NmU1ZjcwNmY3MzY5NzQ2OTc2NjUARCtleHBvcnRfNjYzNjM0NWY2NDY1NjMyZTZkNjk2ZTVmNmU2ZjcyNmQ2MTZjAEUxZXhwb3J0XzY2MzYzNDVmNjQ2NTYzMmU2ZDYxNzg1ZjczNzU2MjZlNmY3MjZkNjE2YwBGK2V4cG9ydF82NjM2MzQ1ZjY0NjU2MzJlNmQ2MTc4NWY2NjY5NmU2OTc0NjUARy9leHBvcnRfNjYzNjM0NWY2NDY1NjMyZTc0NzI2MTY5NmM2OTZlNjc1ZjY0NmY3NABIJ2V4cG9ydF82NjM2MzQ1ZjY0NjU2MzJlNmQ2OTczNjM1ZjY5NmU3NABJKWV4cG9ydF82NjM2MzQ1ZjY0NjU2MzJlNmM2MTcyNjc2NTVmNjk2ZTc0AEopZXhwb3J0XzY2MzYzNDVmNjQ2NTYzMmU2ZDY5NmU1ZjY5NmU3NDMzMzIASylleHBvcnRfNjYzNjM0NWY2NDY1NjMyZTZkNjk2ZTVmNjk2ZTc0MzYzNABMNWV4cG9ydF82NjM2MzQ1ZjY0NjU2MzJlNzI2ZjZmNzQ1ZjYyNjU2NTcyNWY2NjZjNmY2MTc0AE0fZXhwb3J0XzY2MzMzMjJkNjQ2NTYzMmQ3MzY1NzAzMQBOH2V4cG9ydF82NjMzMzIyZDY0NjU2MzJkNzM2NTcwMzIATx9leHBvcnRfNjYzMzMyMmQ2NDY1NjMyZDczNjU3MDMzAFAfZXhwb3J0XzY2MzMzMjJkNjQ2NTYzMmQ3MzY1NzAzNABRH2V4cG9ydF82NjMzMzIyZDY0NjU2MzJkNzM2NTcwMzUAUh9leHBvcnRfNjYzMzMyMmQ2ODY1NzgyZDczNjU3MDMxAFMfZXhwb3J0XzY2MzMzMjJkNjg2NTc4MmQ3MzY1NzAzMgBUH2V4cG9ydF82NjMzMzIyZDY4NjU3ODJkNzM2NTcwMzMAVR9leHBvcnRfNjYzMzMyMmQ2ODY1NzgyZDczNjU3MDM0AFYfZXhwb3J0XzY2MzMzMjJkNjg2NTc4MmQ3MzY1NzAzNQBXH2V4cG9ydF82NjM2MzQyZDY0NjU2MzJkNzM2NTcwMzEAWB9leHBvcnRfNjYzNjM0MmQ2NDY1NjMyZDczNjU3MDMyAFkfZXhwb3J0XzY2MzYzNDJkNjQ2NTYzMmQ3MzY1NzAzMwBaH2V4cG9ydF82NjM2MzQyZDY0NjU2MzJkNzM2NTcwMzQAWx9leHBvcnRfNjYzNjM0MmQ2NDY1NjMyZDczNjU3MDM1AFwfZXhwb3J0XzY2MzYzNDJkNjg2NTc4MmQ3MzY1NzAzMQBdH2V4cG9ydF82NjM2MzQyZDY4NjU3ODJkNzM2NTcwMzIAXh9leHBvcnRfNjYzNjM0MmQ2ODY1NzgyZDczNjU3MDMzAF8fZXhwb3J0XzY2MzYzNDJkNjg2NTc4MmQ3MzY1NzAzNABgH2V4cG9ydF82NjM2MzQyZDY4NjU3ODJkNzM2NTcwMzUAYQqjCGIIAEMAAMB/vAsIAEMAAMB/vAsIAEMAAMD/vAsIAEMAAMB/vAsIAEMAAKB/vAsIAEP/////vAsIAENFI4F/vAsIAENQQLB/vAsIAEPevKr/vAsIAEMAAIB/vAsIAEMAAIB/vAsIAEMAAID/vAsIAEMAAAAAvAsIAEMAAAAAvAsIAEMAAACAvAsIAEPbD8lAvAsIAEMBAAAAvAsIAEMAAIAAvAsIAEP//39/vAsIAEP//38AvAsIAEMAAIBEvAsIAEOAopFHvAsIAEMAAIBnvAsIAEMAAADPvAsIAEMAAADfvAsIAEMAAAAAvAsIAEMAAAAAvAsIAEMAAACAvAsIAEPbD8lAvAsIAEMBAAAAvAsIAEMAAIAAvAsIAEP//38AvAsIAEP//39/vAsIAEP5AhVQvAsIAEMA5EBGvAsIAEPseK1gvAsIAEMAAADPvAsIAEMAAADfvAsIAEMBAIA/vAsMAEQAAAAAAAD4f70LDABEAAAAAAAA+H+9CwwARAAAAAAAAPj/vQsMAEQAAAAAAAD4f70LDABEAAAAAAAA9H+9CwwARP//////////vQsMAES8mnhWNBLwf70LDABECQgHBgUE83+9CwwAREUjAe/Nq/L/vQsMAEQAAAAAAADwf70LDABEAAAAAAAA8H+9CwwARAAAAAAAAPD/vQsMAEQAAAAAAAAAAL0LDABEAAAAAAAAAAC9CwwARAAAAAAAAACAvQsMAEQYLURU+yEZQL0LDABEAQAAAAAAAAC9CwwARAAAAAAAABAAvQsMAET///////8PAL0LDABE////////73+9CwwARAAAAAAAADBGvQsMAEQAAAAAUDTyQL0LDABEAAAAAAAA8ES9CwwARAAAAAAAAODBvQsMAEQAAAAAAADgw70LDABEAAAAAAAAAAC9CwwARAAAAAAAAAAAvQsMAEQAAAAAAAAAgL0LDABEGC1EVPshGUC9CwwARAEAAAAAAAAAvQsMAEQAAAAAAAAQAL0LDABE////////DwC9CwwARP///////+9/vQsMAER9w5QlrUmyVL0LDABEAAAAAIAcyEC9CwwARECMtXgdrxVEvQsMAEQAAAAAAADgwb0LDABEAAAAAAAA4MO9CwwARCSe8R8AAPA/vQsHAEMAJHRJCwcAQwAAekQLBwBDEMl6RAsHAEOWGWFYCwcAQ3SuHW4LBwBDCvAgTQsHAEOAB9VHCwcAQ/H/IEcLBwBDAADwSQsHAEMowKtVCwsARAAAAACAhC5BCwsARAAAAAAAQI9ACwsARACL/PohWY9ACwsAREXMt1tzXNAmCwsARJzeW3LOtcNFCwsARDIzAQAe4CVDCwsARAAAAADwoPpACwsARECzNCj+H+RACwsARAAAAAAAAD5BCwsARABwnw8FeLVCCw=="
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 121,
+      "Action": "invoke",
+      "Export": "export_6633322e6e616e",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 122,
+      "Action": "invoke",
+      "Export": "export_6633322e706f7369746976655f6e616e",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 123,
+      "Action": "invoke",
+      "Export": "export_6633322e6e656761746976655f6e616e",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 124,
+      "Action": "invoke",
+      "Export": "export_6633322e706c61696e5f6e616e",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 125,
+      "Action": "invoke",
+      "Export": "export_6633322e696e666f726d616c6c795f6b6e6f776e5f61735f706c61696e5f736e616e",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "7fa00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 126,
+      "Action": "invoke",
+      "Export": "export_6633322e616c6c5f6f6e65735f6e616e",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "ffffffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 127,
+      "Action": "invoke",
+      "Export": "export_6633322e6d6973635f6e616e",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "7f812345"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 128,
+      "Action": "invoke",
+      "Export": "export_6633322e6d6973635f706f7369746976655f6e616e",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "7fb04050"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 129,
+      "Action": "invoke",
+      "Export": "export_6633322e6d6973635f6e656761746976655f6e616e",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "ffaabcde"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 130,
+      "Action": "invoke",
+      "Export": "export_6633322e696e66696e697479",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 131,
+      "Action": "invoke",
+      "Export": "export_6633322e706f7369746976655f696e66696e697479",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 132,
+      "Action": "invoke",
+      "Export": "export_6633322e6e656761746976655f696e66696e697479",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 133,
+      "Action": "invoke",
+      "Export": "export_6633322e7a65726f",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 134,
+      "Action": "invoke",
+      "Export": "export_6633322e706f7369746976655f7a65726f",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 135,
+      "Action": "invoke",
+      "Export": "export_6633322e6e656761746976655f7a65726f",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 136,
+      "Action": "invoke",
+      "Export": "export_6633322e6d697363",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 137,
+      "Action": "invoke",
+      "Export": "export_6633322e6d696e5f706f736974697665",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 138,
+      "Action": "invoke",
+      "Export": "export_6633322e6d696e5f6e6f726d616c",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 139,
+      "Action": "invoke",
+      "Export": "export_6633322e6d61785f7375626e6f726d616c",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "007fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 140,
+      "Action": "invoke",
+      "Export": "export_6633322e6d61785f66696e697465",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 141,
+      "Action": "invoke",
+      "Export": "export_6633322e747261696c696e675f646f74",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "44800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 142,
+      "Action": "invoke",
+      "Export": "export_6633322e6d6973635f696e74",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "4791a280"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 143,
+      "Action": "invoke",
+      "Export": "export_6633322e6c617267655f696e74",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "67800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 144,
+      "Action": "invoke",
+      "Export": "export_6633322e6d696e5f696e743332",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "cf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 145,
+      "Action": "invoke",
+      "Export": "export_6633322e6d696e5f696e743634",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "df000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 146,
+      "Action": "invoke",
+      "Export": "export_6633325f6465632e7a65726f",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 147,
+      "Action": "invoke",
+      "Export": "export_6633325f6465632e706f7369746976655f7a65726f",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 148,
+      "Action": "invoke",
+      "Export": "export_6633325f6465632e6e656761746976655f7a65726f",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 149,
+      "Action": "invoke",
+      "Export": "export_6633325f6465632e6d697363",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 150,
+      "Action": "invoke",
+      "Export": "export_6633325f6465632e6d696e5f706f736974697665",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 151,
+      "Action": "invoke",
+      "Export": "export_6633325f6465632e6d696e5f6e6f726d616c",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 152,
+      "Action": "invoke",
+      "Export": "export_6633325f6465632e6d61785f7375626e6f726d616c",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "007fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 153,
+      "Action": "invoke",
+      "Export": "export_6633325f6465632e6d61785f66696e697465",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 154,
+      "Action": "invoke",
+      "Export": "export_6633325f6465632e747261696c696e675f646f74",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "501502f9"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 155,
+      "Action": "invoke",
+      "Export": "export_6633325f6465632e726f6f745f626565725f666c6f6174",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "3f800001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 156,
+      "Action": "invoke",
+      "Export": "export_6633325f6465632e6d6973635f696e74",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "4640e400"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 157,
+      "Action": "invoke",
+      "Export": "export_6633325f6465632e6c617267655f696e74",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "60ad78ec"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 158,
+      "Action": "invoke",
+      "Export": "export_6633325f6465632e6d696e5f696e743332",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "cf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 159,
+      "Action": "invoke",
+      "Export": "export_6633325f6465632e6d696e5f696e743634",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i32",
+          "Bits": "df000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 161,
+      "Action": "invoke",
+      "Export": "export_6636342e6e616e",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "7ff8000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 162,
+      "Action": "invoke",
+      "Export": "export_6636342e706f7369746976655f6e616e",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "7ff8000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 163,
+      "Action": "invoke",
+      "Export": "export_6636342e6e656761746976655f6e616e",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "fff8000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 164,
+      "Action": "invoke",
+      "Export": "export_6636342e706c61696e5f6e616e",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "7ff8000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 165,
+      "Action": "invoke",
+      "Export": "export_6636342e696e666f726d616c6c795f6b6e6f776e5f61735f706c61696e5f736e616e",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "7ff4000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 166,
+      "Action": "invoke",
+      "Export": "export_6636342e616c6c5f6f6e65735f6e616e",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "ffffffffffffffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 167,
+      "Action": "invoke",
+      "Export": "export_6636342e6d6973635f6e616e",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "7ff0123456789abc"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 168,
+      "Action": "invoke",
+      "Export": "export_6636342e6d6973635f706f7369746976655f6e616e",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "7ff3040506070809"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 169,
+      "Action": "invoke",
+      "Export": "export_6636342e6d6973635f6e656761746976655f6e616e",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "fff2abcdef012345"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 170,
+      "Action": "invoke",
+      "Export": "export_6636342e696e66696e697479",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "7ff0000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 171,
+      "Action": "invoke",
+      "Export": "export_6636342e706f7369746976655f696e66696e697479",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "7ff0000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 172,
+      "Action": "invoke",
+      "Export": "export_6636342e6e656761746976655f696e66696e697479",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "fff0000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 173,
+      "Action": "invoke",
+      "Export": "export_6636342e7a65726f",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "0000000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 174,
+      "Action": "invoke",
+      "Export": "export_6636342e706f7369746976655f7a65726f",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "0000000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 175,
+      "Action": "invoke",
+      "Export": "export_6636342e6e656761746976655f7a65726f",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "8000000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 176,
+      "Action": "invoke",
+      "Export": "export_6636342e6d697363",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "401921fb54442d18"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 177,
+      "Action": "invoke",
+      "Export": "export_6636342e6d696e5f706f736974697665",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "0000000000000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 178,
+      "Action": "invoke",
+      "Export": "export_6636342e6d696e5f6e6f726d616c",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "0010000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 179,
+      "Action": "invoke",
+      "Export": "export_6636342e6d61785f7375626e6f726d616c",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "000fffffffffffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 180,
+      "Action": "invoke",
+      "Export": "export_6636342e6d61785f66696e697465",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "7fefffffffffffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 181,
+      "Action": "invoke",
+      "Export": "export_6636342e747261696c696e675f646f74",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "4630000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 182,
+      "Action": "invoke",
+      "Export": "export_6636342e6d6973635f696e74",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "40f2345000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 183,
+      "Action": "invoke",
+      "Export": "export_6636342e6c617267655f696e74",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "44f0000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 184,
+      "Action": "invoke",
+      "Export": "export_6636342e6d696e5f696e743332",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "c1e0000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 185,
+      "Action": "invoke",
+      "Export": "export_6636342e6d696e5f696e743634",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "c3e0000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 186,
+      "Action": "invoke",
+      "Export": "export_6636345f6465632e7a65726f",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "0000000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 187,
+      "Action": "invoke",
+      "Export": "export_6636345f6465632e706f7369746976655f7a65726f",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "0000000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 188,
+      "Action": "invoke",
+      "Export": "export_6636345f6465632e6e656761746976655f7a65726f",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "8000000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 189,
+      "Action": "invoke",
+      "Export": "export_6636345f6465632e6d697363",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "401921fb54442d18"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 190,
+      "Action": "invoke",
+      "Export": "export_6636345f6465632e6d696e5f706f736974697665",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "0000000000000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 191,
+      "Action": "invoke",
+      "Export": "export_6636345f6465632e6d696e5f6e6f726d616c",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "0010000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 192,
+      "Action": "invoke",
+      "Export": "export_6636345f6465632e6d61785f7375626e6f726d616c",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "000fffffffffffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 193,
+      "Action": "invoke",
+      "Export": "export_6636345f6465632e6d61785f66696e697465",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "7fefffffffffffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 194,
+      "Action": "invoke",
+      "Export": "export_6636345f6465632e747261696c696e675f646f74",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "54b249ad2594c37d"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 195,
+      "Action": "invoke",
+      "Export": "export_6636345f6465632e726f6f745f626565725f666c6f6174",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "3ff000001ff19e24"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 196,
+      "Action": "invoke",
+      "Export": "export_6636345f6465632e6d6973635f696e74",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "40c81c8000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 197,
+      "Action": "invoke",
+      "Export": "export_6636345f6465632e6c617267655f696e74",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "4415af1d78b58c40"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 198,
+      "Action": "invoke",
+      "Export": "export_6636345f6465632e6d696e5f696e743332",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "c1e0000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 199,
+      "Action": "invoke",
+      "Export": "export_6636345f6465632e6d696e5f696e743634",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "i64",
+          "Bits": "c3e0000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 201,
+      "Action": "invoke",
+      "Export": "export_6633322d6465632d73657031",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "49742400"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 202,
+      "Action": "invoke",
+      "Export": "export_6633322d6465632d73657032",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "447a0000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 203,
+      "Action": "invoke",
+      "Export": "export_6633322d6465632d73657033",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "447ac910"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 204,
+      "Action": "invoke",
+      "Export": "export_6633322d6465632d73657034",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "58611996"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 205,
+      "Action": "invoke",
+      "Export": "export_6633322d6465632d73657035",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "6e1dae74"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 206,
+      "Action": "invoke",
+      "Export": "export_6633322d6865782d73657031",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "4d20f00a"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 207,
+      "Action": "invoke",
+      "Export": "export_6633322d6865782d73657032",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "47d50780"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 208,
+      "Action": "invoke",
+      "Export": "export_6633322d6865782d73657033",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "4720fff1"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 209,
+      "Action": "invoke",
+      "Export": "export_6633322d6865782d73657034",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "49f00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 210,
+      "Action": "invoke",
+      "Export": "export_6633322d6865782d73657035",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "55abc028"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 212,
+      "Action": "invoke",
+      "Export": "export_6636342d6465632d73657031",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f64",
+          "Bits": "412e848000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 213,
+      "Action": "invoke",
+      "Export": "export_6636342d6465632d73657032",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f64",
+          "Bits": "408f400000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 214,
+      "Action": "invoke",
+      "Export": "export_6636342d6465632d73657033",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f64",
+          "Bits": "408f5921fafc8b00"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 215,
+      "Action": "invoke",
+      "Export": "export_6636342d6465632d73657034",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f64",
+          "Bits": "26d05c735bb7cc45"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 216,
+      "Action": "invoke",
+      "Export": "export_6636342d6465632d73657035",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f64",
+          "Bits": "45c3b5ce725bde9c"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 217,
+      "Action": "invoke",
+      "Export": "export_6636342d6865782d73657031",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f64",
+          "Bits": "4325e01e00013332"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 218,
+      "Action": "invoke",
+      "Export": "export_6636342d6865782d73657032",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f64",
+          "Bits": "40faa0f000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 219,
+      "Action": "invoke",
+      "Export": "export_6636342d6865782d73657033",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f64",
+          "Bits": "40e41ffe2834b340"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 220,
+      "Action": "invoke",
+      "Export": "export_6636342d6865782d73657034",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f64",
+          "Bits": "413e000000000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 221,
+      "Action": "invoke",
+      "Export": "export_6636342d6865782d73657035",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f64",
+          "Bits": "42b578050f9f7000"
+        }
+      ]
+    },
+    {
+      "Kind": "module",
+      "Line": 224,
+      "Binary": "AGFzbQEAAAABhYCAgAABYAABfAOCgICAAAEABx8BG2V4cG9ydF8zNDMyMzkzNDM5MzYzNzMyMzQzOQAACpGAgIAAAYuAgIAAAEQAACD6///vQQs="
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 233,
+      "Action": "invoke",
+      "Export": "export_34323934393637323439",
+      "Args": [],
+      "Expected": [
+        {
+          "Type": "f64",
+          "Bits": "41effffffa200000"
+        }
+      ]
+    },
+    {
+      "Kind": "skip",
+      "Line": 236,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 240,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 244,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 248,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 252,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 256,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 260,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 264,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 268,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 272,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 276,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 280,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 284,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 288,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 292,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 296,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 300,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 304,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 308,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 312,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 316,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 320,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 324,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 328,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 332,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 336,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 340,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 344,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 348,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 352,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 356,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 360,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 364,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 368,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 372,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 376,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 380,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 384,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 388,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 393,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 397,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 401,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 405,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 409,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 413,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 417,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 421,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 425,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 429,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 433,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 437,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 441,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 445,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 449,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 453,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 457,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 461,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 465,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 469,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 473,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 477,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 481,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 485,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 489,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 493,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 497,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 501,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 505,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 509,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 513,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 517,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 521,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 525,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 529,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 533,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 537,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 541,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    },
+    {
+      "Kind": "skip",
+      "Line": 545,
+      "Reason": "WAT text syntax test; translator accepts binaries only"
+    }
+  ],
+  "Commit": "fffc6e12fa454e475455a7b58d3b5dc343980c10",
+  "SourceUrl": "https://raw.githubusercontent.com/WebAssembly/spec/fffc6e12fa454e475455a7b58d3b5dc343980c10/test/core/float_literals.wast",
+  "ExportRenames": {
+    "4294967249": "export_34323934393637323439",
+    "f32.nan": "export_6633322e6e616e",
+    "f32.positive_nan": "export_6633322e706f7369746976655f6e616e",
+    "f32.negative_nan": "export_6633322e6e656761746976655f6e616e",
+    "f32.plain_nan": "export_6633322e706c61696e5f6e616e",
+    "f32.informally_known_as_plain_snan": "export_6633322e696e666f726d616c6c795f6b6e6f776e5f61735f706c61696e5f736e616e",
+    "f32.all_ones_nan": "export_6633322e616c6c5f6f6e65735f6e616e",
+    "f32.misc_nan": "export_6633322e6d6973635f6e616e",
+    "f32.misc_positive_nan": "export_6633322e6d6973635f706f7369746976655f6e616e",
+    "f32.misc_negative_nan": "export_6633322e6d6973635f6e656761746976655f6e616e",
+    "f32.infinity": "export_6633322e696e66696e697479",
+    "f32.positive_infinity": "export_6633322e706f7369746976655f696e66696e697479",
+    "f32.negative_infinity": "export_6633322e6e656761746976655f696e66696e697479",
+    "f32.zero": "export_6633322e7a65726f",
+    "f32.positive_zero": "export_6633322e706f7369746976655f7a65726f",
+    "f32.negative_zero": "export_6633322e6e656761746976655f7a65726f",
+    "f32.misc": "export_6633322e6d697363",
+    "f32.min_positive": "export_6633322e6d696e5f706f736974697665",
+    "f32.min_normal": "export_6633322e6d696e5f6e6f726d616c",
+    "f32.max_finite": "export_6633322e6d61785f66696e697465",
+    "f32.max_subnormal": "export_6633322e6d61785f7375626e6f726d616c",
+    "f32.trailing_dot": "export_6633322e747261696c696e675f646f74",
+    "f32.misc_int": "export_6633322e6d6973635f696e74",
+    "f32.large_int": "export_6633322e6c617267655f696e74",
+    "f32.min_int32": "export_6633322e6d696e5f696e743332",
+    "f32.min_int64": "export_6633322e6d696e5f696e743634",
+    "f32_dec.zero": "export_6633325f6465632e7a65726f",
+    "f32_dec.positive_zero": "export_6633325f6465632e706f7369746976655f7a65726f",
+    "f32_dec.negative_zero": "export_6633325f6465632e6e656761746976655f7a65726f",
+    "f32_dec.misc": "export_6633325f6465632e6d697363",
+    "f32_dec.min_positive": "export_6633325f6465632e6d696e5f706f736974697665",
+    "f32_dec.min_normal": "export_6633325f6465632e6d696e5f6e6f726d616c",
+    "f32_dec.max_subnormal": "export_6633325f6465632e6d61785f7375626e6f726d616c",
+    "f32_dec.max_finite": "export_6633325f6465632e6d61785f66696e697465",
+    "f32_dec.trailing_dot": "export_6633325f6465632e747261696c696e675f646f74",
+    "f32_dec.misc_int": "export_6633325f6465632e6d6973635f696e74",
+    "f32_dec.large_int": "export_6633325f6465632e6c617267655f696e74",
+    "f32_dec.min_int32": "export_6633325f6465632e6d696e5f696e743332",
+    "f32_dec.min_int64": "export_6633325f6465632e6d696e5f696e743634",
+    "f32_dec.root_beer_float": "export_6633325f6465632e726f6f745f626565725f666c6f6174",
+    "f64.nan": "export_6636342e6e616e",
+    "f64.positive_nan": "export_6636342e706f7369746976655f6e616e",
+    "f64.negative_nan": "export_6636342e6e656761746976655f6e616e",
+    "f64.plain_nan": "export_6636342e706c61696e5f6e616e",
+    "f64.informally_known_as_plain_snan": "export_6636342e696e666f726d616c6c795f6b6e6f776e5f61735f706c61696e5f736e616e",
+    "f64.all_ones_nan": "export_6636342e616c6c5f6f6e65735f6e616e",
+    "f64.misc_nan": "export_6636342e6d6973635f6e616e",
+    "f64.misc_positive_nan": "export_6636342e6d6973635f706f7369746976655f6e616e",
+    "f64.misc_negative_nan": "export_6636342e6d6973635f6e656761746976655f6e616e",
+    "f64.infinity": "export_6636342e696e66696e697479",
+    "f64.positive_infinity": "export_6636342e706f7369746976655f696e66696e697479",
+    "f64.negative_infinity": "export_6636342e6e656761746976655f696e66696e697479",
+    "f64.zero": "export_6636342e7a65726f",
+    "f64.positive_zero": "export_6636342e706f7369746976655f7a65726f",
+    "f64.negative_zero": "export_6636342e6e656761746976655f7a65726f",
+    "f64.misc": "export_6636342e6d697363",
+    "f64.min_positive": "export_6636342e6d696e5f706f736974697665",
+    "f64.min_normal": "export_6636342e6d696e5f6e6f726d616c",
+    "f64.max_subnormal": "export_6636342e6d61785f7375626e6f726d616c",
+    "f64.max_finite": "export_6636342e6d61785f66696e697465",
+    "f64.trailing_dot": "export_6636342e747261696c696e675f646f74",
+    "f64.misc_int": "export_6636342e6d6973635f696e74",
+    "f64.large_int": "export_6636342e6c617267655f696e74",
+    "f64.min_int32": "export_6636342e6d696e5f696e743332",
+    "f64.min_int64": "export_6636342e6d696e5f696e743634",
+    "f64_dec.zero": "export_6636345f6465632e7a65726f",
+    "f64_dec.positive_zero": "export_6636345f6465632e706f7369746976655f7a65726f",
+    "f64_dec.negative_zero": "export_6636345f6465632e6e656761746976655f7a65726f",
+    "f64_dec.misc": "export_6636345f6465632e6d697363",
+    "f64_dec.min_positive": "export_6636345f6465632e6d696e5f706f736974697665",
+    "f64_dec.min_normal": "export_6636345f6465632e6d696e5f6e6f726d616c",
+    "f64_dec.max_subnormal": "export_6636345f6465632e6d61785f7375626e6f726d616c",
+    "f64_dec.max_finite": "export_6636345f6465632e6d61785f66696e697465",
+    "f64_dec.trailing_dot": "export_6636345f6465632e747261696c696e675f646f74",
+    "f64_dec.misc_int": "export_6636345f6465632e6d6973635f696e74",
+    "f64_dec.large_int": "export_6636345f6465632e6c617267655f696e74",
+    "f64_dec.min_int32": "export_6636345f6465632e6d696e5f696e743332",
+    "f64_dec.min_int64": "export_6636345f6465632e6d696e5f696e743634",
+    "f64_dec.root_beer_float": "export_6636345f6465632e726f6f745f626565725f666c6f6174",
+    "f32-dec-sep1": "export_6633322d6465632d73657031",
+    "f32-dec-sep2": "export_6633322d6465632d73657032",
+    "f32-dec-sep3": "export_6633322d6465632d73657033",
+    "f32-dec-sep4": "export_6633322d6465632d73657034",
+    "f32-dec-sep5": "export_6633322d6465632d73657035",
+    "f32-hex-sep1": "export_6633322d6865782d73657031",
+    "f32-hex-sep2": "export_6633322d6865782d73657032",
+    "f32-hex-sep3": "export_6633322d6865782d73657033",
+    "f32-hex-sep4": "export_6633322d6865782d73657034",
+    "f32-hex-sep5": "export_6633322d6865782d73657035",
+    "f64-dec-sep1": "export_6636342d6465632d73657031",
+    "f64-dec-sep2": "export_6636342d6465632d73657032",
+    "f64-dec-sep3": "export_6636342d6465632d73657033",
+    "f64-dec-sep4": "export_6636342d6465632d73657034",
+    "f64-dec-sep5": "export_6636342d6465632d73657035",
+    "f64-hex-sep1": "export_6636342d6865782d73657031",
+    "f64-hex-sep2": "export_6636342d6865782d73657032",
+    "f64-hex-sep3": "export_6636342d6865782d73657033",
+    "f64-hex-sep4": "export_6636342d6865782d73657034",
+    "f64-hex-sep5": "export_6636342d6865782d73657035"
+  }
+}

@@ -1,0 +1,1332 @@
+{
+  "schemaVersion": 1,
+  "milestone": "SH-04",
+  "bundleSha256": "10e2f5cee5fecd86681ef9e043082a04df131a0d7eb76855ac895ea0cbf3c9e6",
+  "source": "artifacts/self-hosting/inventory.json",
+  "evidenceScope": "SH-01 inventory and small fixtures; full generated runtime execution is not yet verified",
+  "implemented": [
+    {
+      "opcode": "0x2a",
+      "instruction": "f32.load",
+      "signature": "i32 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/MemoryOperations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/FloatChecks.cs",
+        "samples/Floating/FloatingChecks.cs"
+      ],
+      "observedCount": 151,
+      "firstObserved": {
+        "function": 100,
+        "offset": 39836
+      }
+    },
+    {
+      "opcode": "0x2b",
+      "instruction": "f64.load",
+      "signature": "i32 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/MemoryOperations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/FloatChecks.cs",
+        "samples/Floating/FloatingChecks.cs"
+      ],
+      "observedCount": 517,
+      "firstObserved": {
+        "function": 100,
+        "offset": 39933
+      }
+    },
+    {
+      "opcode": "0x38",
+      "instruction": "f32.store",
+      "signature": "i32 f32 ->",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/MemoryOperations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/FloatChecks.cs",
+        "samples/Floating/FloatingChecks.cs"
+      ],
+      "observedCount": 66,
+      "firstObserved": {
+        "function": 100,
+        "offset": 49757
+      }
+    },
+    {
+      "opcode": "0x39",
+      "instruction": "f64.store",
+      "signature": "i32 f64 ->",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/MemoryOperations.cs",
+      "tests": [
+        "tests/Wasm2Cs.Tests/FloatChecks.cs",
+        "samples/Floating/FloatingChecks.cs"
+      ],
+      "observedCount": 287,
+      "firstObserved": {
+        "function": 100,
+        "offset": 49820
+      }
+    },
+    {
+      "opcode": "0x43",
+      "instruction": "f32.const",
+      "signature": "-> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/Reader.cs",
+      "tests": [
+        "tests/Conformance/float_literals.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs",
+        "samples/Floating/FloatingChecks.cs"
+      ],
+      "observedCount": 248,
+      "firstObserved": {
+        "function": 100,
+        "offset": 55593
+      }
+    },
+    {
+      "opcode": "0x44",
+      "instruction": "f64.const",
+      "signature": "-> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/Reader.cs",
+      "tests": [
+        "tests/Conformance/float_literals.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs",
+        "samples/Floating/FloatingChecks.cs"
+      ],
+      "observedCount": 1000,
+      "firstObserved": {
+        "function": 100,
+        "offset": 55657
+      }
+    },
+    {
+      "opcode": "0x5b",
+      "instruction": "f32.eq",
+      "signature": "f32 f32 -> i32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32_cmp.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 12,
+      "firstObserved": {
+        "function": 100,
+        "offset": 43110
+      }
+    },
+    {
+      "opcode": "0x5c",
+      "instruction": "f32.ne",
+      "signature": "f32 f32 -> i32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32_cmp.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 5,
+      "firstObserved": {
+        "function": 100,
+        "offset": 39892
+      }
+    },
+    {
+      "opcode": "0x5d",
+      "instruction": "f32.lt",
+      "signature": "f32 f32 -> i32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32_cmp.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 45,
+      "firstObserved": {
+        "function": 100,
+        "offset": 41820
+      }
+    },
+    {
+      "opcode": "0x5e",
+      "instruction": "f32.gt",
+      "signature": "f32 f32 -> i32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32_cmp.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 19,
+      "firstObserved": {
+        "function": 100,
+        "offset": 41176
+      }
+    },
+    {
+      "opcode": "0x5f",
+      "instruction": "f32.le",
+      "signature": "f32 f32 -> i32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32_cmp.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 8,
+      "firstObserved": {
+        "function": 100,
+        "offset": 42464
+      }
+    },
+    {
+      "opcode": "0x60",
+      "instruction": "f32.ge",
+      "signature": "f32 f32 -> i32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32_cmp.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 18,
+      "firstObserved": {
+        "function": 100,
+        "offset": 40532
+      }
+    },
+    {
+      "opcode": "0x61",
+      "instruction": "f64.eq",
+      "signature": "f64 f64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64_cmp.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 55,
+      "firstObserved": {
+        "function": 100,
+        "offset": 43230
+      }
+    },
+    {
+      "opcode": "0x62",
+      "instruction": "f64.ne",
+      "signature": "f64 f64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64_cmp.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 45,
+      "firstObserved": {
+        "function": 100,
+        "offset": 40009
+      }
+    },
+    {
+      "opcode": "0x63",
+      "instruction": "f64.lt",
+      "signature": "f64 f64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64_cmp.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 189,
+      "firstObserved": {
+        "function": 100,
+        "offset": 41938
+      }
+    },
+    {
+      "opcode": "0x64",
+      "instruction": "f64.gt",
+      "signature": "f64 f64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64_cmp.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 75,
+      "firstObserved": {
+        "function": 100,
+        "offset": 41294
+      }
+    },
+    {
+      "opcode": "0x65",
+      "instruction": "f64.le",
+      "signature": "f64 f64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64_cmp.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 26,
+      "firstObserved": {
+        "function": 100,
+        "offset": 42582
+      }
+    },
+    {
+      "opcode": "0x66",
+      "instruction": "f64.ge",
+      "signature": "f64 f64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64_cmp.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 64,
+      "firstObserved": {
+        "function": 100,
+        "offset": 40650
+      }
+    },
+    {
+      "opcode": "0x8b",
+      "instruction": "f32.abs",
+      "signature": "f32 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32_bitwise.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 22,
+      "firstObserved": {
+        "function": 100,
+        "offset": 55592
+      }
+    },
+    {
+      "opcode": "0x8c",
+      "instruction": "f32.neg",
+      "signature": "f32 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32_bitwise.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 15,
+      "firstObserved": {
+        "function": 100,
+        "offset": 55380
+      }
+    },
+    {
+      "opcode": "0x8d",
+      "instruction": "f32.ceil",
+      "signature": "f32 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 2,
+      "firstObserved": {
+        "function": 100,
+        "offset": 83133
+      }
+    },
+    {
+      "opcode": "0x8e",
+      "instruction": "f32.floor",
+      "signature": "f32 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 2,
+      "firstObserved": {
+        "function": 100,
+        "offset": 83306
+      }
+    },
+    {
+      "opcode": "0x8f",
+      "instruction": "f32.trunc",
+      "signature": "f32 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 0
+    },
+    {
+      "opcode": "0x90",
+      "instruction": "f32.nearest",
+      "signature": "f32 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 0
+    },
+    {
+      "opcode": "0x91",
+      "instruction": "f32.sqrt",
+      "signature": "f32 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 3,
+      "firstObserved": {
+        "function": 100,
+        "offset": 83479
+      }
+    },
+    {
+      "opcode": "0x92",
+      "instruction": "f32.add",
+      "signature": "f32 f32 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 113,
+      "firstObserved": {
+        "function": 100,
+        "offset": 52357
+      }
+    },
+    {
+      "opcode": "0x93",
+      "instruction": "f32.sub",
+      "signature": "f32 f32 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 51,
+      "firstObserved": {
+        "function": 100,
+        "offset": 52765
+      }
+    },
+    {
+      "opcode": "0x94",
+      "instruction": "f32.mul",
+      "signature": "f32 f32 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 118,
+      "firstObserved": {
+        "function": 100,
+        "offset": 53263
+      }
+    },
+    {
+      "opcode": "0x95",
+      "instruction": "f32.div",
+      "signature": "f32 f32 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 48,
+      "firstObserved": {
+        "function": 100,
+        "offset": 53590
+      }
+    },
+    {
+      "opcode": "0x96",
+      "instruction": "f32.min",
+      "signature": "f32 f32 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 1,
+      "firstObserved": {
+        "function": 11656,
+        "offset": 2118878
+      }
+    },
+    {
+      "opcode": "0x97",
+      "instruction": "f32.max",
+      "signature": "f32 f32 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 1,
+      "firstObserved": {
+        "function": 11652,
+        "offset": 2118734
+      }
+    },
+    {
+      "opcode": "0x98",
+      "instruction": "f32.copysign",
+      "signature": "f32 f32 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f32_bitwise.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 5,
+      "firstObserved": {
+        "function": 11576,
+        "offset": 2105546
+      }
+    },
+    {
+      "opcode": "0x99",
+      "instruction": "f64.abs",
+      "signature": "f64 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64_bitwise.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 109,
+      "firstObserved": {
+        "function": 100,
+        "offset": 55656
+      }
+    },
+    {
+      "opcode": "0x9a",
+      "instruction": "f64.neg",
+      "signature": "f64 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64_bitwise.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 49,
+      "firstObserved": {
+        "function": 100,
+        "offset": 55414
+      }
+    },
+    {
+      "opcode": "0x9b",
+      "instruction": "f64.ceil",
+      "signature": "f64 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 6,
+      "firstObserved": {
+        "function": 100,
+        "offset": 81919
+      }
+    },
+    {
+      "opcode": "0x9c",
+      "instruction": "f64.floor",
+      "signature": "f64 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 16,
+      "firstObserved": {
+        "function": 100,
+        "offset": 82092
+      }
+    },
+    {
+      "opcode": "0x9d",
+      "instruction": "f64.trunc",
+      "signature": "f64 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 0
+    },
+    {
+      "opcode": "0x9e",
+      "instruction": "f64.nearest",
+      "signature": "f64 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 0
+    },
+    {
+      "opcode": "0x9f",
+      "instruction": "f64.sqrt",
+      "signature": "f64 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 4,
+      "firstObserved": {
+        "function": 100,
+        "offset": 82265
+      }
+    },
+    {
+      "opcode": "0xa0",
+      "instruction": "f64.add",
+      "signature": "f64 f64 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 585,
+      "firstObserved": {
+        "function": 100,
+        "offset": 52402
+      }
+    },
+    {
+      "opcode": "0xa1",
+      "instruction": "f64.sub",
+      "signature": "f64 f64 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 214,
+      "firstObserved": {
+        "function": 100,
+        "offset": 52810
+      }
+    },
+    {
+      "opcode": "0xa2",
+      "instruction": "f64.mul",
+      "signature": "f64 f64 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 568,
+      "firstObserved": {
+        "function": 100,
+        "offset": 53308
+      }
+    },
+    {
+      "opcode": "0xa3",
+      "instruction": "f64.div",
+      "signature": "f64 f64 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 109,
+      "firstObserved": {
+        "function": 100,
+        "offset": 53635
+      }
+    },
+    {
+      "opcode": "0xa4",
+      "instruction": "f64.min",
+      "signature": "f64 f64 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 1,
+      "firstObserved": {
+        "function": 11654,
+        "offset": 2118806
+      }
+    },
+    {
+      "opcode": "0xa5",
+      "instruction": "f64.max",
+      "signature": "f64 f64 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 1,
+      "firstObserved": {
+        "function": 11650,
+        "offset": 2118662
+      }
+    },
+    {
+      "opcode": "0xa6",
+      "instruction": "f64.copysign",
+      "signature": "f64 f64 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/FloatOperations.cs",
+      "tests": [
+        "tests/Conformance/f64_bitwise.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 8,
+      "firstObserved": {
+        "function": 11572,
+        "offset": 2104437
+      }
+    },
+    {
+      "opcode": "0xa8",
+      "instruction": "i32.trunc_f32_s",
+      "signature": "f32 -> i32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 12,
+      "firstObserved": {
+        "function": 100,
+        "offset": 55603
+      }
+    },
+    {
+      "opcode": "0xa9",
+      "instruction": "i32.trunc_f32_u",
+      "signature": "f32 -> i32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 8,
+      "firstObserved": {
+        "function": 100,
+        "offset": 55809
+      }
+    },
+    {
+      "opcode": "0xaa",
+      "instruction": "i32.trunc_f64_s",
+      "signature": "f64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 66,
+      "firstObserved": {
+        "function": 100,
+        "offset": 55671
+      }
+    },
+    {
+      "opcode": "0xab",
+      "instruction": "i32.trunc_f64_u",
+      "signature": "f64 -> i32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 18,
+      "firstObserved": {
+        "function": 100,
+        "offset": 55888
+      }
+    },
+    {
+      "opcode": "0xae",
+      "instruction": "i64.trunc_f32_s",
+      "signature": "f32 -> i64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 3,
+      "firstObserved": {
+        "function": 100,
+        "offset": 56643
+      }
+    },
+    {
+      "opcode": "0xaf",
+      "instruction": "i64.trunc_f32_u",
+      "signature": "f32 -> i64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 3,
+      "firstObserved": {
+        "function": 100,
+        "offset": 65633
+      }
+    },
+    {
+      "opcode": "0xb0",
+      "instruction": "i64.trunc_f64_s",
+      "signature": "f64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 24,
+      "firstObserved": {
+        "function": 100,
+        "offset": 56715
+      }
+    },
+    {
+      "opcode": "0xb1",
+      "instruction": "i64.trunc_f64_u",
+      "signature": "f64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 8,
+      "firstObserved": {
+        "function": 100,
+        "offset": 65751
+      }
+    },
+    {
+      "opcode": "0xb2",
+      "instruction": "f32.convert_i32_s",
+      "signature": "i32 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 22,
+      "firstObserved": {
+        "function": 100,
+        "offset": 56766
+      }
+    },
+    {
+      "opcode": "0xb3",
+      "instruction": "f32.convert_i32_u",
+      "signature": "i32 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 6,
+      "firstObserved": {
+        "function": 1123,
+        "offset": 320366
+      }
+    },
+    {
+      "opcode": "0xb4",
+      "instruction": "f32.convert_i64_s",
+      "signature": "i64 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 6,
+      "firstObserved": {
+        "function": 100,
+        "offset": 56800
+      }
+    },
+    {
+      "opcode": "0xb5",
+      "instruction": "f32.convert_i64_u",
+      "signature": "i64 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 1,
+      "firstObserved": {
+        "function": 1910,
+        "offset": 485842
+      }
+    },
+    {
+      "opcode": "0xb6",
+      "instruction": "f32.demote_f64",
+      "signature": "f64 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 43,
+      "firstObserved": {
+        "function": 100,
+        "offset": 56834
+      }
+    },
+    {
+      "opcode": "0xb7",
+      "instruction": "f64.convert_i32_s",
+      "signature": "i32 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 199,
+      "firstObserved": {
+        "function": 100,
+        "offset": 56868
+      }
+    },
+    {
+      "opcode": "0xb8",
+      "instruction": "f64.convert_i32_u",
+      "signature": "i32 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 32,
+      "firstObserved": {
+        "function": 100,
+        "offset": 60335
+      }
+    },
+    {
+      "opcode": "0xb9",
+      "instruction": "f64.convert_i64_s",
+      "signature": "i64 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 45,
+      "firstObserved": {
+        "function": 100,
+        "offset": 56902
+      }
+    },
+    {
+      "opcode": "0xba",
+      "instruction": "f64.convert_i64_u",
+      "signature": "i64 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 22,
+      "firstObserved": {
+        "function": 100,
+        "offset": 60369
+      }
+    },
+    {
+      "opcode": "0xbb",
+      "instruction": "f64.promote_f32",
+      "signature": "f32 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 52,
+      "firstObserved": {
+        "function": 100,
+        "offset": 56936
+      }
+    },
+    {
+      "opcode": "0xbc",
+      "instruction": "i32.reinterpret_f32",
+      "signature": "f32 -> i32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 113,
+      "firstObserved": {
+        "function": 100,
+        "offset": 39841
+      }
+    },
+    {
+      "opcode": "0xbd",
+      "instruction": "i64.reinterpret_f64",
+      "signature": "f64 -> i64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 148,
+      "firstObserved": {
+        "function": 100,
+        "offset": 39938
+      }
+    },
+    {
+      "opcode": "0xbe",
+      "instruction": "f32.reinterpret_i32",
+      "signature": "i32 -> f32",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 17,
+      "firstObserved": {
+        "function": 11562,
+        "offset": 2103063
+      }
+    },
+    {
+      "opcode": "0xbf",
+      "instruction": "f64.reinterpret_i64",
+      "signature": "i64 -> f64",
+      "origin": "MVP",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 45,
+      "firstObserved": {
+        "function": 7781,
+        "offset": 1444794
+      }
+    },
+    {
+      "opcode": "0xfc/0",
+      "instruction": "i32.trunc_sat_f32_s",
+      "signature": "f32 -> i32",
+      "origin": "non-trapping-float-to-int",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 0
+    },
+    {
+      "opcode": "0xfc/1",
+      "instruction": "i32.trunc_sat_f32_u",
+      "signature": "f32 -> i32",
+      "origin": "non-trapping-float-to-int",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 0
+    },
+    {
+      "opcode": "0xfc/2",
+      "instruction": "i32.trunc_sat_f64_s",
+      "signature": "f64 -> i32",
+      "origin": "non-trapping-float-to-int",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 0
+    },
+    {
+      "opcode": "0xfc/3",
+      "instruction": "i32.trunc_sat_f64_u",
+      "signature": "f64 -> i32",
+      "origin": "non-trapping-float-to-int",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 0
+    },
+    {
+      "opcode": "0xfc/4",
+      "instruction": "i64.trunc_sat_f32_s",
+      "signature": "f32 -> i64",
+      "origin": "non-trapping-float-to-int",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 0
+    },
+    {
+      "opcode": "0xfc/5",
+      "instruction": "i64.trunc_sat_f32_u",
+      "signature": "f32 -> i64",
+      "origin": "non-trapping-float-to-int",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 0
+    },
+    {
+      "opcode": "0xfc/6",
+      "instruction": "i64.trunc_sat_f64_s",
+      "signature": "f64 -> i64",
+      "origin": "non-trapping-float-to-int",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 0
+    },
+    {
+      "opcode": "0xfc/7",
+      "instruction": "i64.trunc_sat_f64_u",
+      "signature": "f64 -> i64",
+      "origin": "non-trapping-float-to-int",
+      "owner": "SH-04",
+      "status": "implemented; small-fixture validation",
+      "implementation": "src/Wasm2Cs/ConversionOperations.cs",
+      "tests": [
+        "tests/Conformance/conversions.json",
+        "tests/Wasm2Cs.Tests/FloatChecks.cs"
+      ],
+      "observedCount": 0
+    }
+  ],
+  "deferred": []
+}

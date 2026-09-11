@@ -5,7 +5,7 @@
     <PackageId>Wasm2Cs.Generator</PackageId>
     <Version>0.1.0-preview.1</Version>
     <Authors>Wasm2Cs contributors</Authors>
-    <Description>Ahead-of-time C# generation for an integer WebAssembly subset.</Description>
+    <Description>Ahead-of-time C# generation for a typed numeric WebAssembly subset.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>

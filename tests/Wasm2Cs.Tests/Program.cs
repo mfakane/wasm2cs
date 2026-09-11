@@ -8,6 +8,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using Wasm2Cs;
 
+if (args.Contains("--floating")) { ConformanceChecks.VerifyFloating(); await FloatChecks.Verify(); return; }
+
 var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
     .Select(p => MetadataReference.CreateFromFile(p)).ToArray();
 CSharpCompilation Compilation(string source) => CSharpCompilation.Create("Test_" + Guid.NewGuid().ToString("N"),
@@ -138,6 +140,7 @@ ExecutionChecks.Imports();
 ConformanceChecks.Verify();
 await TypedIrChecks.Verify();
 await I64Checks.Verify();
+await FloatChecks.Verify();
 
 record Call(string Name, int[] Args);
 sealed class Input(string path, string content) : AdditionalText

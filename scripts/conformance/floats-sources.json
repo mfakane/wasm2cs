@@ -1,0 +1,13 @@
+{
+  "Commit": "fffc6e12fa454e475455a7b58d3b5dc343980c10",
+  "Files": {
+    "f32": "91c9e9edf5500659040c6b7657fbaa942ad6c0526d80d2ea558e406257a8674f",
+    "f64": "b8b85a753f13ae27d20ca8cb97ab58b30606854deb4fb829caac93785a90b0f7",
+    "f32_cmp": "dc16e4361250dbf9ef2b91481e25964d6c31f9f593f2e31f08d5b4f5028a376f",
+    "f64_cmp": "aabcd2c5af0670a9f7ce2cfd19befd3142c300fa5091575fad21a3726dcfb8c0",
+    "f32_bitwise": "8a514cd0c6c34cccbcd4deda8b3f1898cab2985a360d0ec10a4b1725027f0b64",
+    "f64_bitwise": "efd4e70d58ee853b4509352292058841b775ccea4cfd3060ddd350b8ccd4db32",
+    "conversions": "70eeec77b5c5c4fa6c9547f97ac56c1e21ebd5e2a10e7318f2e22100d5f6f056",
+    "float_literals": "3702a2fa976e18929371b165b8bcdd63866fdc3dfdb1a4f4fdaa5b5ff7e53bb2"
+  }
+}

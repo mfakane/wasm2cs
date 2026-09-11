@@ -17,7 +17,18 @@
     <None Include="../Conformance/i64-memory.wast" Link="Conformance/i64-memory.wast" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../Conformance/i64.json" Link="Conformance/i64.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../Conformance/i64.wast" Link="Conformance/i64.wast" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="float-oracle.mjs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../samples/Floating/Floating.wasm" Link="Floating/Floating.wasm" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../samples/Floating/operations.json" Link="Floating/operations.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="i64-oracle.mjs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Conformance/f32.*" Link="Conformance/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Conformance/f64.*" Link="Conformance/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Conformance/f32_cmp.*" Link="Conformance/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Conformance/f64_cmp.*" Link="Conformance/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Conformance/f32_bitwise.*" Link="Conformance/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Conformance/f64_bitwise.*" Link="Conformance/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Conformance/conversions.*" Link="Conformance/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../Conformance/float_literals.*" Link="Conformance/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../Conformance/i32.json" Link="Conformance/i32.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

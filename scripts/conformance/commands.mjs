@@ -1,3 +1,4 @@
+import { invokeBits, getBits } from './bit-bridge.mjs';
 import { fromWabt, decodeValue, encodeValue, matches, trapKind } from './values.mjs';
 
 // Consume WABT's command JSON explicitly. This is intentionally not a general WAST runtime.
@@ -22,7 +23,10 @@ export function convertCommands(document, loadBinary) {
         if (action.type === 'get' && action.args !== undefined) throw new Error('Get action cannot have arguments');
         entry.Args = action.type === 'invoke' ? action.args.map(value => fromWabt(value)) : [];
         if (command.type === 'assert_return') entry.Expected = command.expected.map(value => fromWabt(value, true));
-        else entry.Trap = trapKind(command.text);
+        else {
+          entry.Trap = trapKind(command.text);
+          if (entry.Args.some(value => value.Type.startsWith('f'))) entry.Results = command.expected.map(value => value.type);
+        }
         break;
       }
       case 'assert_invalid': case 'assert_malformed':
@@ -48,18 +52,23 @@ export function verifyReference(cases) {
       case 'module': instance = new WebAssembly.Instance(new WebAssembly.Module(Buffer.from(test.Binary, 'base64'))); break;
       case 'assert_return': case 'assert_trap': {
         if (!['invoke', 'get'].includes(test.Action)) throw new Error(`Unknown conformance action: ${test.Action}`);
-        let result;
+        let result, encoded;
         try {
-          result = test.Action === 'get' ? instance.exports[test.Export].value : instance.exports[test.Export](...test.Args.map(decodeValue));
+          if (test.Args.some(a => a.Type.startsWith('f')) || test.Expected?.some(a => a.Type.startsWith('f'))) {
+            encoded = test.Action === 'get' ? [getBits(instance.exports[test.Export], test.Expected[0].Type)] :
+              invokeBits(instance.exports[test.Export], test.Args, test.Expected?.map(v => v.Type) ?? test.Results);
+          } else result = test.Action === 'get' ? instance.exports[test.Export].value : instance.exports[test.Export](...test.Args.map(decodeValue));
         } catch (error) {
           if (test.Kind !== 'assert_trap' || !(error instanceof WebAssembly.RuntimeError)) throw error;
           // V8's wording for division by zero differs from WAST's wording.
-          if (referenceTrap(error) !== test.Trap) throw error;
+          const trap = referenceTrap(error);
+          if (trap !== test.Trap && !(trap === 'FloatUnrepresentable' && ['IntegerOverflow', 'InvalidConversionToInteger'].includes(test.Trap))) throw error;
           traps++; break;
         }
         if (test.Kind === 'assert_trap') throw new Error(`Line ${test.Line}: missing reference trap`);
-        const results = result === undefined ? [] : Array.isArray(result) ? result : [result];
-        if (results.length !== test.Expected.length || results.some((value, i) => !matches(test.Expected[i], encodeValue(test.Expected[i].Type, value))))
+        const values = result === undefined ? [] : Array.isArray(result) ? result : [result];
+        const results = encoded ?? values.map((v, i) => encodeValue(test.Expected[i].Type, v));
+        if (results.length !== test.Expected.length || results.some((value, i) => !matches(test.Expected[i], value)))
           throw new Error(`Line ${test.Line}: reference result differs`);
         returns++; break;
       }
@@ -75,6 +84,7 @@ export function verifyReference(cases) {
 
 export function referenceTrap(error) {
   if (!(error instanceof WebAssembly.RuntimeError)) throw error;
+  if (error.message.includes('float unrepresentable')) return 'FloatUnrepresentable';
   const messages = { Unreachable: ['unreachable'], DivisionByZero: ['divide by zero', 'remainder by zero'],
     IntegerOverflow: ['unrepresentable'], MemoryOutOfBounds: ['out of bounds'] };
   for (const [kind, fragments] of Object.entries(messages))

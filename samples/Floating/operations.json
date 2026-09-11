@@ -1,0 +1,736 @@
+[
+  {
+    "Name": "f32_eq",
+    "Instruction": "f32.eq",
+    "Opcode": 91,
+    "Parameters": [
+      "f32",
+      "f32"
+    ],
+    "Result": "i32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f32_ne",
+    "Instruction": "f32.ne",
+    "Opcode": 92,
+    "Parameters": [
+      "f32",
+      "f32"
+    ],
+    "Result": "i32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f32_lt",
+    "Instruction": "f32.lt",
+    "Opcode": 93,
+    "Parameters": [
+      "f32",
+      "f32"
+    ],
+    "Result": "i32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f32_gt",
+    "Instruction": "f32.gt",
+    "Opcode": 94,
+    "Parameters": [
+      "f32",
+      "f32"
+    ],
+    "Result": "i32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f32_le",
+    "Instruction": "f32.le",
+    "Opcode": 95,
+    "Parameters": [
+      "f32",
+      "f32"
+    ],
+    "Result": "i32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f32_ge",
+    "Instruction": "f32.ge",
+    "Opcode": 96,
+    "Parameters": [
+      "f32",
+      "f32"
+    ],
+    "Result": "i32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f32_abs",
+    "Instruction": "f32.abs",
+    "Opcode": 139,
+    "Parameters": [
+      "f32"
+    ],
+    "Result": "f32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f32_neg",
+    "Instruction": "f32.neg",
+    "Opcode": 140,
+    "Parameters": [
+      "f32"
+    ],
+    "Result": "f32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f32_ceil",
+    "Instruction": "f32.ceil",
+    "Opcode": 141,
+    "Parameters": [
+      "f32"
+    ],
+    "Result": "f32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f32_floor",
+    "Instruction": "f32.floor",
+    "Opcode": 142,
+    "Parameters": [
+      "f32"
+    ],
+    "Result": "f32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f32_trunc",
+    "Instruction": "f32.trunc",
+    "Opcode": 143,
+    "Parameters": [
+      "f32"
+    ],
+    "Result": "f32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f32_nearest",
+    "Instruction": "f32.nearest",
+    "Opcode": 144,
+    "Parameters": [
+      "f32"
+    ],
+    "Result": "f32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f32_sqrt",
+    "Instruction": "f32.sqrt",
+    "Opcode": 145,
+    "Parameters": [
+      "f32"
+    ],
+    "Result": "f32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f32_add",
+    "Instruction": "f32.add",
+    "Opcode": 146,
+    "Parameters": [
+      "f32",
+      "f32"
+    ],
+    "Result": "f32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f32_sub",
+    "Instruction": "f32.sub",
+    "Opcode": 147,
+    "Parameters": [
+      "f32",
+      "f32"
+    ],
+    "Result": "f32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f32_mul",
+    "Instruction": "f32.mul",
+    "Opcode": 148,
+    "Parameters": [
+      "f32",
+      "f32"
+    ],
+    "Result": "f32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f32_div",
+    "Instruction": "f32.div",
+    "Opcode": 149,
+    "Parameters": [
+      "f32",
+      "f32"
+    ],
+    "Result": "f32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f32_min",
+    "Instruction": "f32.min",
+    "Opcode": 150,
+    "Parameters": [
+      "f32",
+      "f32"
+    ],
+    "Result": "f32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f32_max",
+    "Instruction": "f32.max",
+    "Opcode": 151,
+    "Parameters": [
+      "f32",
+      "f32"
+    ],
+    "Result": "f32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f32_copysign",
+    "Instruction": "f32.copysign",
+    "Opcode": 152,
+    "Parameters": [
+      "f32",
+      "f32"
+    ],
+    "Result": "f32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f64_eq",
+    "Instruction": "f64.eq",
+    "Opcode": 97,
+    "Parameters": [
+      "f64",
+      "f64"
+    ],
+    "Result": "i32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f64_ne",
+    "Instruction": "f64.ne",
+    "Opcode": 98,
+    "Parameters": [
+      "f64",
+      "f64"
+    ],
+    "Result": "i32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f64_lt",
+    "Instruction": "f64.lt",
+    "Opcode": 99,
+    "Parameters": [
+      "f64",
+      "f64"
+    ],
+    "Result": "i32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f64_gt",
+    "Instruction": "f64.gt",
+    "Opcode": 100,
+    "Parameters": [
+      "f64",
+      "f64"
+    ],
+    "Result": "i32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f64_le",
+    "Instruction": "f64.le",
+    "Opcode": 101,
+    "Parameters": [
+      "f64",
+      "f64"
+    ],
+    "Result": "i32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f64_ge",
+    "Instruction": "f64.ge",
+    "Opcode": 102,
+    "Parameters": [
+      "f64",
+      "f64"
+    ],
+    "Result": "i32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f64_abs",
+    "Instruction": "f64.abs",
+    "Opcode": 153,
+    "Parameters": [
+      "f64"
+    ],
+    "Result": "f64",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f64_neg",
+    "Instruction": "f64.neg",
+    "Opcode": 154,
+    "Parameters": [
+      "f64"
+    ],
+    "Result": "f64",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f64_ceil",
+    "Instruction": "f64.ceil",
+    "Opcode": 155,
+    "Parameters": [
+      "f64"
+    ],
+    "Result": "f64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f64_floor",
+    "Instruction": "f64.floor",
+    "Opcode": 156,
+    "Parameters": [
+      "f64"
+    ],
+    "Result": "f64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f64_trunc",
+    "Instruction": "f64.trunc",
+    "Opcode": 157,
+    "Parameters": [
+      "f64"
+    ],
+    "Result": "f64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f64_nearest",
+    "Instruction": "f64.nearest",
+    "Opcode": 158,
+    "Parameters": [
+      "f64"
+    ],
+    "Result": "f64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f64_sqrt",
+    "Instruction": "f64.sqrt",
+    "Opcode": 159,
+    "Parameters": [
+      "f64"
+    ],
+    "Result": "f64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f64_add",
+    "Instruction": "f64.add",
+    "Opcode": 160,
+    "Parameters": [
+      "f64",
+      "f64"
+    ],
+    "Result": "f64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f64_sub",
+    "Instruction": "f64.sub",
+    "Opcode": 161,
+    "Parameters": [
+      "f64",
+      "f64"
+    ],
+    "Result": "f64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f64_mul",
+    "Instruction": "f64.mul",
+    "Opcode": 162,
+    "Parameters": [
+      "f64",
+      "f64"
+    ],
+    "Result": "f64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f64_div",
+    "Instruction": "f64.div",
+    "Opcode": 163,
+    "Parameters": [
+      "f64",
+      "f64"
+    ],
+    "Result": "f64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f64_min",
+    "Instruction": "f64.min",
+    "Opcode": 164,
+    "Parameters": [
+      "f64",
+      "f64"
+    ],
+    "Result": "f64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f64_max",
+    "Instruction": "f64.max",
+    "Opcode": 165,
+    "Parameters": [
+      "f64",
+      "f64"
+    ],
+    "Result": "f64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f64_copysign",
+    "Instruction": "f64.copysign",
+    "Opcode": 166,
+    "Parameters": [
+      "f64",
+      "f64"
+    ],
+    "Result": "f64",
+    "Arithmetic": false
+  },
+  {
+    "Name": "i32_trunc_f32_s",
+    "Instruction": "i32.trunc_f32_s",
+    "Opcode": 168,
+    "Parameters": [
+      "f32"
+    ],
+    "Result": "i32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "i32_trunc_f32_u",
+    "Instruction": "i32.trunc_f32_u",
+    "Opcode": 169,
+    "Parameters": [
+      "f32"
+    ],
+    "Result": "i32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "i32_trunc_f64_s",
+    "Instruction": "i32.trunc_f64_s",
+    "Opcode": 170,
+    "Parameters": [
+      "f64"
+    ],
+    "Result": "i32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "i32_trunc_f64_u",
+    "Instruction": "i32.trunc_f64_u",
+    "Opcode": 171,
+    "Parameters": [
+      "f64"
+    ],
+    "Result": "i32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "i64_trunc_f32_s",
+    "Instruction": "i64.trunc_f32_s",
+    "Opcode": 174,
+    "Parameters": [
+      "f32"
+    ],
+    "Result": "i64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "i64_trunc_f32_u",
+    "Instruction": "i64.trunc_f32_u",
+    "Opcode": 175,
+    "Parameters": [
+      "f32"
+    ],
+    "Result": "i64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "i64_trunc_f64_s",
+    "Instruction": "i64.trunc_f64_s",
+    "Opcode": 176,
+    "Parameters": [
+      "f64"
+    ],
+    "Result": "i64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "i64_trunc_f64_u",
+    "Instruction": "i64.trunc_f64_u",
+    "Opcode": 177,
+    "Parameters": [
+      "f64"
+    ],
+    "Result": "i64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f32_convert_i32_s",
+    "Instruction": "f32.convert_i32_s",
+    "Opcode": 178,
+    "Parameters": [
+      "i32"
+    ],
+    "Result": "f32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f32_convert_i32_u",
+    "Instruction": "f32.convert_i32_u",
+    "Opcode": 179,
+    "Parameters": [
+      "i32"
+    ],
+    "Result": "f32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f32_convert_i64_s",
+    "Instruction": "f32.convert_i64_s",
+    "Opcode": 180,
+    "Parameters": [
+      "i64"
+    ],
+    "Result": "f32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f32_convert_i64_u",
+    "Instruction": "f32.convert_i64_u",
+    "Opcode": 181,
+    "Parameters": [
+      "i64"
+    ],
+    "Result": "f32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f32_demote_f64",
+    "Instruction": "f32.demote_f64",
+    "Opcode": 182,
+    "Parameters": [
+      "f64"
+    ],
+    "Result": "f32",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f64_convert_i32_s",
+    "Instruction": "f64.convert_i32_s",
+    "Opcode": 183,
+    "Parameters": [
+      "i32"
+    ],
+    "Result": "f64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f64_convert_i32_u",
+    "Instruction": "f64.convert_i32_u",
+    "Opcode": 184,
+    "Parameters": [
+      "i32"
+    ],
+    "Result": "f64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f64_convert_i64_s",
+    "Instruction": "f64.convert_i64_s",
+    "Opcode": 185,
+    "Parameters": [
+      "i64"
+    ],
+    "Result": "f64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f64_convert_i64_u",
+    "Instruction": "f64.convert_i64_u",
+    "Opcode": 186,
+    "Parameters": [
+      "i64"
+    ],
+    "Result": "f64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "f64_promote_f32",
+    "Instruction": "f64.promote_f32",
+    "Opcode": 187,
+    "Parameters": [
+      "f32"
+    ],
+    "Result": "f64",
+    "Arithmetic": true
+  },
+  {
+    "Name": "i32_reinterpret_f32",
+    "Instruction": "i32.reinterpret_f32",
+    "Opcode": 188,
+    "Parameters": [
+      "f32"
+    ],
+    "Result": "i32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "i64_reinterpret_f64",
+    "Instruction": "i64.reinterpret_f64",
+    "Opcode": 189,
+    "Parameters": [
+      "f64"
+    ],
+    "Result": "i64",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f32_reinterpret_i32",
+    "Instruction": "f32.reinterpret_i32",
+    "Opcode": 190,
+    "Parameters": [
+      "i32"
+    ],
+    "Result": "f32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "f64_reinterpret_i64",
+    "Instruction": "f64.reinterpret_i64",
+    "Opcode": 191,
+    "Parameters": [
+      "i64"
+    ],
+    "Result": "f64",
+    "Arithmetic": false
+  },
+  {
+    "Name": "i32_trunc_sat_f32_s",
+    "Instruction": "i32.trunc_sat_f32_s",
+    "Opcode": 252,
+    "Subopcode": 0,
+    "Parameters": [
+      "f32"
+    ],
+    "Result": "i32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "i32_trunc_sat_f32_u",
+    "Instruction": "i32.trunc_sat_f32_u",
+    "Opcode": 252,
+    "Subopcode": 1,
+    "Parameters": [
+      "f32"
+    ],
+    "Result": "i32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "i32_trunc_sat_f64_s",
+    "Instruction": "i32.trunc_sat_f64_s",
+    "Opcode": 252,
+    "Subopcode": 2,
+    "Parameters": [
+      "f64"
+    ],
+    "Result": "i32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "i32_trunc_sat_f64_u",
+    "Instruction": "i32.trunc_sat_f64_u",
+    "Opcode": 252,
+    "Subopcode": 3,
+    "Parameters": [
+      "f64"
+    ],
+    "Result": "i32",
+    "Arithmetic": false
+  },
+  {
+    "Name": "i64_trunc_sat_f32_s",
+    "Instruction": "i64.trunc_sat_f32_s",
+    "Opcode": 252,
+    "Subopcode": 4,
+    "Parameters": [
+      "f32"
+    ],
+    "Result": "i64",
+    "Arithmetic": false
+  },
+  {
+    "Name": "i64_trunc_sat_f32_u",
+    "Instruction": "i64.trunc_sat_f32_u",
+    "Opcode": 252,
+    "Subopcode": 5,
+    "Parameters": [
+      "f32"
+    ],
+    "Result": "i64",
+    "Arithmetic": false
+  },
+  {
+    "Name": "i64_trunc_sat_f64_s",
+    "Instruction": "i64.trunc_sat_f64_s",
+    "Opcode": 252,
+    "Subopcode": 6,
+    "Parameters": [
+      "f64"
+    ],
+    "Result": "i64",
+    "Arithmetic": false
+  },
+  {
+    "Name": "i64_trunc_sat_f64_u",
+    "Instruction": "i64.trunc_sat_f64_u",
+    "Opcode": 252,
+    "Subopcode": 7,
+    "Parameters": [
+      "f64"
+    ],
+    "Result": "i64",
+    "Arithmetic": false
+  }
+]

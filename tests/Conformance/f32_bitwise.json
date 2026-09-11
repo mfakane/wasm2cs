@@ -1,0 +1,7816 @@
+{
+  "SchemaVersion": 2,
+  "Source": "f32_bitwise.wast",
+  "SourceSha256": "8a514cd0c6c34cccbcd4deda8b3f1898cab2985a360d0ec10a4b1725027f0b64",
+  "Wabt": "1.0.41",
+  "Engine": {
+    "Node": "v22.17.0",
+    "V8": "12.4.254.21-node.26"
+  },
+  "Counts": {
+    "Returns": 360,
+    "Traps": 0,
+    "Invalid": 3
+  },
+  "Cases": [
+    {
+      "Kind": "module",
+      "Line": 4,
+      "Binary": "AGFzbQEAAAABDAJgAX0BfWACfX0BfQMEAwAAAQcYAwNhYnMAAANuZWcAAQhjb3B5c2lnbgACChUDBQAgAIsLBQAgAIwLBwAgACABmAs="
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 10,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 11,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 12,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 13,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 14,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 15,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 16,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 17,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 18,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 19,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 20,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 21,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 22,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 23,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 24,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 25,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 26,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 27,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 28,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 29,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 30,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 31,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 32,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 33,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 34,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 35,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 36,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 37,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 38,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 39,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 40,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 41,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 42,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 43,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 44,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 45,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 46,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 47,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 48,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 49,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 50,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 51,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 52,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 53,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 54,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 55,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 56,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 57,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 58,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 59,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 60,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 61,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 62,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 63,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 64,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 65,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 66,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 67,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 68,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 69,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 70,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 71,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 72,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 73,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 74,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 75,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 76,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 77,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 78,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 79,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 80,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 81,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 82,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 83,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 84,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 85,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 86,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 87,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 88,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 89,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 90,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 91,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 92,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 93,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 94,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 95,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 96,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 97,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 98,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 99,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 100,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 101,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 102,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 103,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 104,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 105,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 106,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 107,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 108,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 109,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 110,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 111,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 112,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 113,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 114,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 115,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 116,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 117,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 118,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 119,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 120,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 121,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 122,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 123,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 124,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 125,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 126,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 127,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 128,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 129,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 130,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 131,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 132,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 133,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 134,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 135,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 136,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 137,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 138,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 139,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 140,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 141,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 142,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 143,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 144,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 145,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 146,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 147,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 148,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 149,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 150,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 151,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 152,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 153,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 154,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 155,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 156,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 157,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 158,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 159,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 160,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 161,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 162,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 163,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 164,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 165,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 166,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 167,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 168,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 169,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 170,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 171,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 172,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 173,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 174,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 175,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 176,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 177,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 178,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 179,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 180,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 181,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 182,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 183,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 184,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 185,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 186,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 187,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 188,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 189,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 190,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 191,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 192,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 193,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 194,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 195,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 196,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 197,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 198,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 199,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 200,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 201,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 202,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 203,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 204,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 205,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 206,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 207,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 208,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 209,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 210,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 211,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 212,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 213,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 214,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 215,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 216,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 217,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 218,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 219,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 220,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 221,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 222,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 223,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 224,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 225,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 226,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 227,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 228,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 229,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 230,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 231,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 232,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 233,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 234,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 235,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 236,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 237,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 238,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 239,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 240,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 241,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 242,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 243,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 244,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 245,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 246,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 247,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 248,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 249,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 250,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 251,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 252,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 253,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 254,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 255,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 256,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 257,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 258,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 259,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 260,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 261,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 262,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 263,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 264,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 265,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 266,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 267,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 268,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 269,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 270,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 271,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 272,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 273,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 274,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 275,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 276,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 277,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 278,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 279,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 280,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 281,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 282,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 283,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 284,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 285,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 286,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 287,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 288,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 289,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 290,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 291,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 292,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 293,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 294,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 295,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 296,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 297,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 298,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 299,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 300,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 301,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 302,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 303,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 304,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 305,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 306,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 307,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 308,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 309,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 310,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 311,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 312,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 313,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 314,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 315,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 316,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 317,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 318,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 319,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 320,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 321,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 322,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 323,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 324,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 325,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 326,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 327,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 328,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 329,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 330,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 331,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 332,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 333,
+      "Action": "invoke",
+      "Export": "copysign",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        },
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 334,
+      "Action": "invoke",
+      "Export": "abs",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 335,
+      "Action": "invoke",
+      "Export": "abs",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 336,
+      "Action": "invoke",
+      "Export": "abs",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 337,
+      "Action": "invoke",
+      "Export": "abs",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 338,
+      "Action": "invoke",
+      "Export": "abs",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 339,
+      "Action": "invoke",
+      "Export": "abs",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 340,
+      "Action": "invoke",
+      "Export": "abs",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 341,
+      "Action": "invoke",
+      "Export": "abs",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 342,
+      "Action": "invoke",
+      "Export": "abs",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 343,
+      "Action": "invoke",
+      "Export": "abs",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 344,
+      "Action": "invoke",
+      "Export": "abs",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 345,
+      "Action": "invoke",
+      "Export": "abs",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 346,
+      "Action": "invoke",
+      "Export": "abs",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 347,
+      "Action": "invoke",
+      "Export": "abs",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 348,
+      "Action": "invoke",
+      "Export": "abs",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 349,
+      "Action": "invoke",
+      "Export": "abs",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 350,
+      "Action": "invoke",
+      "Export": "abs",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 351,
+      "Action": "invoke",
+      "Export": "abs",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 352,
+      "Action": "invoke",
+      "Export": "neg",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 353,
+      "Action": "invoke",
+      "Export": "neg",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 354,
+      "Action": "invoke",
+      "Export": "neg",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 355,
+      "Action": "invoke",
+      "Export": "neg",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00000001"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80000001"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 356,
+      "Action": "invoke",
+      "Export": "neg",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 357,
+      "Action": "invoke",
+      "Export": "neg",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "00800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "80800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 358,
+      "Action": "invoke",
+      "Export": "neg",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 359,
+      "Action": "invoke",
+      "Export": "neg",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f000000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf000000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 360,
+      "Action": "invoke",
+      "Export": "neg",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 361,
+      "Action": "invoke",
+      "Export": "neg",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "3f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "bf800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 362,
+      "Action": "invoke",
+      "Export": "neg",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 363,
+      "Action": "invoke",
+      "Export": "neg",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "40c90fdb"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "c0c90fdb"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 364,
+      "Action": "invoke",
+      "Export": "neg",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 365,
+      "Action": "invoke",
+      "Export": "neg",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f7fffff"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff7fffff"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 366,
+      "Action": "invoke",
+      "Export": "neg",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 367,
+      "Action": "invoke",
+      "Export": "neg",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7f800000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ff800000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 368,
+      "Action": "invoke",
+      "Export": "neg",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_return",
+      "Line": 369,
+      "Action": "invoke",
+      "Export": "neg",
+      "Args": [
+        {
+          "Type": "f32",
+          "Bits": "7fc00000"
+        }
+      ],
+      "Expected": [
+        {
+          "Type": "f32",
+          "Bits": "ffc00000"
+        }
+      ]
+    },
+    {
+      "Kind": "assert_invalid",
+      "Line": 374,
+      "Binary": "AGFzbQEAAAABBQFgAAF9AwIBAAoQAQ4AQgBEAAAAAAAAAACYCw=="
+    },
+    {
+      "Kind": "assert_invalid",
+      "Line": 375,
+      "Binary": "AGFzbQEAAAABBQFgAAF9AwIBAAoHAQUAQgCLCw=="
+    },
+    {
+      "Kind": "assert_invalid",
+      "Line": 376,
+      "Binary": "AGFzbQEAAAABBQFgAAF9AwIBAAoHAQUAQgCMCw=="
+    }
+  ],
+  "Commit": "fffc6e12fa454e475455a7b58d3b5dc343980c10",
+  "SourceUrl": "https://raw.githubusercontent.com/WebAssembly/spec/fffc6e12fa454e475455a7b58d3b5dc343980c10/test/core/f32_bitwise.wast",
+  "ExportRenames": {}
+}

@@ -11,3 +11,5 @@ uint crc = unchecked((uint)algorithms.crc32((int)buffer, 9));
 if (crc != 0xcbf43926u) throw new Exception("CRC32 differs.");
 Console.WriteLine($"Clang CRC32(123456789) = {crc:x8}");
 HostChecks.Verify();
+FloatingChecks.Verify();
+Console.WriteLine("Floating-point semantics passed.");

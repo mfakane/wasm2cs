@@ -7,6 +7,8 @@
   <ItemGroup>
     <ProjectReference Include="../../src/Wasm2Cs.Generator/Wasm2Cs.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <Wasm Include="Arithmetic.wasm" />
+    <Wasm Include="../Floating/Floating.wasm" />
+    <Compile Include="../Floating/FloatingChecks.cs" Link="FloatingChecks.cs" />
     <Wasm Include="../CAlgorithms/Algorithms.wasm" />
     <Wasm Include="../Host/Host.wasm" />
     <Compile Include="../Host/HostChecks.cs" Link="HostChecks.cs" />

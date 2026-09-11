@@ -60,7 +60,7 @@ export function matches(expected, actual) {
 export function trapKind(message) {
   const kinds = {
     'unreachable': 'Unreachable', 'integer divide by zero': 'DivisionByZero',
-    'integer overflow': 'IntegerOverflow', 'out of bounds memory access': 'MemoryOutOfBounds'
+    'integer overflow': 'IntegerOverflow', 'invalid conversion to integer': 'InvalidConversionToInteger', 'out of bounds memory access': 'MemoryOutOfBounds'
   };
   if (!Object.hasOwn(kinds, message)) throw new Error(`Unsupported WAST trap: ${message}`);
   return kinds[message];

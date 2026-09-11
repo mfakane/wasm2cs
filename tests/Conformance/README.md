@@ -55,7 +55,7 @@ Floating-point expectations may instead use `{ "Type": "f32", "NaN": "canonical"
 or `"arithmetic"`. Exact bits, including signed zero and NaN payloads, are distinct
 from these NaN matching rules. NaN patterns are expectations only, never arguments.
 `Trap` is one of `Unreachable`, `DivisionByZero`, `IntegerOverflow`, or
-`MemoryOutOfBounds`. Reference-type execution is tested separately in C#; the JSON
+`MemoryOutOfBounds`, or `InvalidConversionToInteger`. Reference-type execution is tested separately in C#; the JSON
 value codec currently accepts only the four primitive numeric types.
 
 The console executable runs all JSON suites, compiles the typed fixture against
@@ -99,4 +99,76 @@ a JSON number. The same run verifies final memory/global contents, callback orde
 all invalid tenth-byte LEB payloads, overlong/truncated LEBs, and type mismatches.
 Generated sources compile with C# 9, checked arithmetic, and .NET Standard 2.0
 reference assemblies. A NuGet-only consumer calls the official i64 and memory
-fixtures directly. Floating-point conversions and reinterpret belong to SH-04.
+fixtures directly. Floating-point conversions and reinterpret are covered below.
+
+
+## Floating-point and conversion coverage
+
+The eight SH-04 source files are unmodified files from
+[WebAssembly/spec wg-2.0](https://github.com/WebAssembly/spec/tree/fffc6e12fa454e475455a7b58d3b5dc343980c10/test/core),
+commit `fffc6e12fa454e475455a7b58d3b5dc343980c10`. The upstream license applies;
+`scripts/conformance/floats-sources.json` pins every source SHA-256. Generated JSON
+records the source hash, commit, URL, WABT 1.0.41, Node v22.17.0 and V8 version.
+
+| Suite | Return assertions | Traps | Invalid binaries | Explicit WAT-text skips |
+|---|---:|---:|---:|---:|
+| f32 / f64 (each) | 2,500 | 0 | 11 | 2 |
+| f32_cmp / f64_cmp (each) | 2,400 | 0 | 6 | 0 |
+| f32_bitwise / f64_bitwise (each) | 360 | 0 | 3 | 0 |
+| conversions | 526 | 67 | 25 | 0 |
+| float_literals | 99 | 0 | 0 | 78 |
+
+Regenerate all eight with `node scripts/conformance/prepare-floats.mjs`. The adapter
+first verifies the original binaries in V8. It then changes only export-section
+names that cannot be C# identifiers and matching action names, records that mapping
+in `ExportRenames`, and verifies the adapted binaries again. This includes the
+binary-literal module in `float_literals.wast`; no instruction bytes are rewritten.
+There are no skipped binary or numeric assertions. WAT syntax errors are outside
+this binary translator and retain explicit skip records.
+
+`bit-bridge.mjs` imports each reference WASM function into another WASM module.
+The wrapper reinterprets float arguments/results inside WASM, so only i32/i64 bits
+cross the JavaScript boundary. This preserves signaling NaNs for abs, neg,
+copysign, reinterpret, transport and memory. Arithmetic assertions use the spec's
+canonical/arithmetic NaN sets instead of requiring one engine's chosen payload.
+A global wrapper likewise reads bits inside WASM. The checked-in trap commands
+with float inputs include `Results`, supplying the wrapper's result signature.
+V8 reports NaN and out-of-range float-to-integer traps with the same message;
+reference WAST verification accepts that shared diagnostic for those two expected
+kinds, while C# must match the precise expected kind. The random single-instruction
+oracle distinguishes them from the input bit pattern.
+
+`FloatChecks` uses xorshift64 seed `0xbb67ae8584caa73b`, boundary pairs and 512 random
+inputs per instruction, covering all 70 arithmetic/comparison/conversion opcodes.
+Integer-to-float tests include values immediately around f32/f64 rounding
+midpoints. Floating inputs include signed zeros, subnormals, infinities, signaling
+and quiet NaNs, and adjacent values at truncation limits. Each operation also runs through the generated integer-bit boundary API when its
+signature contains floats. Exact comparisons cover constants, memory, globals, locals, multiple results and host callbacks.
+Trapping stores are checked against final memory contents. Negative tests reject
+incorrect signatures, truncated float immediates and unknown/malformed prefixes.
+Normal tests recheck all eight source hashes and V8 expectations without WABT or
+network access.
+
+`samples/Floating/Floating.wat` is the shared portable fixture. Regenerate with
+`wat2wasm samples/Floating/Floating.wat -o samples/Floating/Floating.wasm` (WABT
+1.0.41). `FloatingChecks.cs` runs statically typed assertions in the .NET sample,
+the isolated NuGet consumer, Unity Editor and the Windows x64 IL2CPP player. It
+includes a rounding-midpoint reproducer, exact signaling-NaN transport, signed
+zero, subnormal arithmetic, conversion limits, all eight saturation instructions,
+and memory traps. No runtime code generation is used by the player.
+
+
+Unity Mono exposed two native-runtime differences during SH-04: moving a signaling
+NaN through CLR floating values quieted it, and converting `0x8000008000000001` as
+u64 to f32 returned `0x5f000000` instead of `0x5f000001`. The generated code now
+keeps both float widths in explicit-layout values whose bits are used for
+non-arithmetic operations; integer-to-float conversion builds the correctly rounded
+bits directly. `tests/Platform/MonoFloatBoundary.cs` reproduces the native NaN
+boundary behavior. The original Editor failure log is retained under
+`artifacts/self-hosting/sh04/editor-before-fix.log`.
+
+Exact host transport uses generated `__wasm_bits_<export>` methods/properties and
+`__wasm_FromBits` import construction. The native float/double API is tested on .NET,
+and remains convenient for numeric values on Unity, but native host conversions can
+quiet signaling NaNs before the translator receives them. The shared platform
+fixture uses the bit API for exact NaN assertions; it does not relax expected bits.

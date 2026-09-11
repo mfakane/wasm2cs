@@ -7,10 +7,22 @@ internal static class ConformanceChecks
 {
     public static void Verify()
     {
+        VerifyFloating();
         VerifyFile("i32.json", (350, 9, 54, 29));
         VerifyFile("i64.json", (350, 9, 29, 0), portable: true);
         VerifyFile("i64-memory.json", (23, 5, 6, 0), portable: true);
         VerifyFile("typed-ir.json", (32, 2, 23, 0), portable: true);
+    }
+    internal static void VerifyFloating()
+    {
+        VerifyFile("f32.json", (2500, 0, 11, 2), portable: true);
+        VerifyFile("f64.json", (2500, 0, 11, 2), portable: true);
+        VerifyFile("f32_cmp.json", (2400, 0, 6, 0), portable: true);
+        VerifyFile("f64_cmp.json", (2400, 0, 6, 0), portable: true);
+        VerifyFile("f32_bitwise.json", (360, 0, 3, 0), portable: true);
+        VerifyFile("f64_bitwise.json", (360, 0, 3, 0), portable: true);
+        VerifyFile("conversions.json", (526, 67, 25, 0), portable: true);
+        VerifyFile("float_literals.json", (99, 0, 0, 78), portable: true);
     }
     private static void VerifyFile(string file, (int, int, int, int) expected, bool portable = false)
     {
@@ -62,7 +74,7 @@ internal static class ConformanceChecks
                     catch (TargetInvocationException e) when (kind == "assert_trap" && e.InnerException != null && e.InnerException.GetType().DeclaringType == type && e.InnerException.GetType().Name == "TrapException")
                     {
                         string? expected = test.GetProperty("Trap").GetString();
-                        if (expected is not ("Unreachable" or "DivisionByZero" or "IntegerOverflow" or "MemoryOutOfBounds"))
+                        if (expected is not ("Unreachable" or "DivisionByZero" or "IntegerOverflow" or "MemoryOutOfBounds" or "InvalidConversionToInteger"))
                             throw new Exception("Unsupported conformance trap: " + expected);
                         if (e.InnerException!.GetType().GetProperty("Kind")!.GetValue(e.InnerException)!.ToString() != expected)
                             throw new Exception($"Line {line}: wrong trap kind");

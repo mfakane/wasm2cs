@@ -28,6 +28,14 @@ internal sealed class Reader(byte[] bytes, int start = 0, int? end = null)
             throw new WasmException("LEB128 integer is too long.");
         }
         public int SignedI32() => unchecked((int)Leb(true));
+        public uint UnsignedI32() => Leb(false);
+        public byte[] Bytes(int length)
+        {
+            var slice = Slice(length);
+            var result = new byte[length];
+            Buffer.BlockCopy(bytes, slice.position, result, 0, length);
+            return result;
+        }
         public int Count()
         {
             uint value = Leb(false);

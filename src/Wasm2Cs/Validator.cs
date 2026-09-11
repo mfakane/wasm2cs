@@ -9,8 +9,14 @@ internal static class Validator
         {
             if (!IsIdentifier(export.Key) || export.Key == className || Reserved(export.Key))
                 throw new WasmException($"Export '{export.Key}' cannot be represented as a C# method name.");
-            if (export.Value >= module.Bodies.Count) throw new WasmException("Invalid exported function index.");
+            byte kind = module.ExportKinds[export.Key];
+            if (kind == 0 && export.Value >= module.Bodies.Count) throw new WasmException("Invalid exported function index.");
+            if (kind == 2 && (export.Value != 0 || module.Memory == null)) throw new WasmException("Invalid exported memory index.");
+            if (kind == 3 && export.Value >= module.Globals.Count) throw new WasmException("Invalid exported global index.");
         }
+        if (module.Data.Count != 0 && module.Memory == null) throw new WasmException("Data segments require memory.");
+        if (module.Start.HasValue && (module.Start.Value >= module.Bodies.Count ||
+            module.Bodies[module.Start.Value].Signature != new Signature(0,0))) throw new WasmException("Invalid start function.");
         for (int i = 0; i < module.Bodies.Count; i++) ValidateBody(module, module.Bodies[i], i);
     }
     private sealed class Control(byte opcode, int height, int results)
@@ -88,6 +94,23 @@ internal static class Validator
                     if (instruction.Opcode != 0x21) height++;
                     break;
                 case 0x41: height++; break;
+                case 0x23: case 0x24:
+                    if (instruction.Operand >= module.Globals.Count) Fail("Invalid global index.");
+                    if (instruction.Opcode == 0x23) height++;
+                    else { if (!module.Globals[instruction.Operand].Mutable) Fail("Cannot set immutable global."); Pop(); }
+                    break;
+                case 0x28: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
+                case 0x36: case 0x3a: case 0x3b:
+                    if (module.Memory == null) Fail("Memory instruction requires memory.");
+                    int alignment = MemoryOperations.Width(instruction.Opcode) == 4 ? 2 : MemoryOperations.Width(instruction.Opcode) == 2 ? 1 : 0;
+                    if (instruction.Operand > alignment) Fail("Alignment exceeds natural alignment.");
+                    Pop();
+                    if (MemoryOperations.IsStore(instruction.Opcode)) Pop(); else height++;
+                    break;
+                case 0x3f: case 0x40:
+                    if (module.Memory == null) Fail("Memory instruction requires memory.");
+                    if (instruction.Opcode == 0x40) Pop();
+                    height++; break;
                 default:
                     int operands = I32Operations.Arity(instruction.Opcode);
                     PopResults(operands);

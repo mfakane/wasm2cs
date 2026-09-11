@@ -75,7 +75,7 @@ var invalid = new (byte[] Bytes, string Message)[]
     ([1,97,115,109,1,0,0,0], "magic"),
     (bytes[..^1], "boundary"),
     ([..bytes, 1,0], "out-of-order"),
-    ([0,97,115,109,1,0,0,0, 5,1,0], "Unsupported WASM section"),
+    ([0,97,115,109,1,0,0,0, 4,1,0], "Unsupported WASM section"),
     (Module([0x6a,0x0b]), "underflow"),
     (Module([0x20,0,0x0b]), "local index"),
     (Module([0x41,0,0x41,1,0x0b]), "stack height"),
@@ -132,6 +132,7 @@ Console.WriteLine("PASS: Unity AdditionalFiles, asmdef isolation, and duplicate 
 await ExecutionChecks.Numerics();
 await ExecutionChecks.ControlFlow();
 await ExecutionChecks.Calls();
+await ExecutionChecks.Memory();
 
 record Call(string Name, int[] Args);
 sealed class Input(string path, string content) : AdditionalText

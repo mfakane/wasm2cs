@@ -111,7 +111,15 @@ Translation errors fail the build with `WASM001`; duplicate class names use `WAS
 - Direct function calls, including non-exported functions and recursion. Each WASM
   function is emitted once; exports are public wrappers over private instance methods.
 
-Imports, memory, globals, indirect calls, floating point,
+- One owned memory32, i32 loads/stores (including signed/unsigned 8/16-bit loads),
+  `memory.size/grow`, owned i32 globals, active data segments, and start functions.
+  Instantiation initializes memory/globals/data before calling start exactly once.
+  Memory is limited to 256 MiB; exceeding growth limits returns -1 without changing state.
+  Memory exports use `MemorySize` (bytes), `ReadMemory(uint offset, int count)` and
+  `WriteMemory(uint offset, byte[] bytes)`. Reads copy data rather than expose backing
+  arrays. Global exports become properties, writable only for mutable globals.
+
+Imports, indirect calls, floating point,
 and other instructions are rejected. This is not yet a general-purpose WASM compiler;
 ordinary Rust/C/C++ outputs will typically need more instructions and sections.
 All function bodies, including unexported ones, are checked. Parsing validates section

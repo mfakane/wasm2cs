@@ -11,7 +11,8 @@ Each milestone is committed separately after its checks pass. No registry publis
 5. Complete: structured branches, result transfer, branch tables, unreachable
    validation, and 200 differential GCD loop executions.
 6. Complete: direct/private/void calls, factorial and mutual recursion, exported wrappers.
-7. Single memory32, globals, data, and start initialization.
+7. Complete: memory32 loads/stores/growth, globals, active data and start;
+   differential memory/global snapshots and isolated-instance checks.
 8. Clang-produced array/CRC32 fixtures and differential execution.
 9. Typed host function imports and memory exchange.
 10. Conformance fixtures and regeneration coverage.

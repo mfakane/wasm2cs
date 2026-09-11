@@ -44,6 +44,11 @@ boundaries. It also checks malformed/unsupported modules, generator diagnostics,
 and changes to generator inputs. `test-build.mjs` exercises actual MSBuild builds,
 including a same-size binary edit with its timestamp preserved and removal of a WASM item.
 
+The checked-in official WebAssembly 1.0 i32 subset adds 350 expected-value checks,
+9 typed traps, and 54 invalid modules. 29 non-i32/WAT-text cases are explicitly
+skipped. See `tests/Conformance/README.md` for pinned provenance, licensing, and
+reproduction. This does not imply conformance to the entire WebAssembly specification.
+
 The sample prints:
 
 ```text

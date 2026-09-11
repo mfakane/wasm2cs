@@ -1,0 +1,5 @@
+{
+  "name": "wasm2cs-conformance-tools",
+  "private": true,
+  "devDependencies": { "wabt": "1.0.39" }
+}

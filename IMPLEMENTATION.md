@@ -17,7 +17,8 @@ Each milestone is committed separately after its checks pass. No registry publis
    full memory snapshots; Unity Editor and Windows x64 IL2CPP verified.
 9. Complete: typed host function imports, imported start/export, memory exchange,
    reentry and unchanged host exceptions; Unity Editor and Windows x64 IL2CPP verified.
-10. Conformance fixtures and regeneration coverage.
+10. Complete: pinned official WebAssembly 1.0 i32 fixtures (350 returns, 9 typed
+    traps, 54 invalid modules, 29 explicit skips), plus MSBuild regeneration tests.
 11. NuGet and UPM distribution with clean-consumer tests.
 
 ## Verification

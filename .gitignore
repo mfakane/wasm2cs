@@ -6,3 +6,5 @@
 **/UserSettings/
 **/Build/
 **/Wasm2Cs.Generator.dll
+**/node_modules/
+/artifacts/

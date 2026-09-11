@@ -42,7 +42,7 @@ SIMD と高速化のための近似演算は追加しない。プラットフォ
 - 参照エンジン・Unity 版・ログ: Node.js `v22.17.0`、V8 `12.4.254.21-node.26`、WABT `1.0.41`。公式 commit は `fffc6e12fa454e475455a7b58d3b5dc343980c10`。Unity `6000.6.0f1 (f7f8ed4d1e24)` の Editor と Windows x64 IL2CPP Player がともに終了コード0、`WASM2CS_FLOATING_PASS` と `WASM2CS_SMOKE_PASS` を出力した。UPM archive を `scripts/test-unity.ps1 -PackagePath` で導入し、移動・更新・削除の bridge 回帰も成功。ログは `artifacts/self-hosting/sh04/unity/`、Windows の検証環境は `C:\Users\fumika\AppData\Local\Temp\wasm2cs-sh04-final`。
 - 成果物 SHA-256: `Floating.wasm` は `af635fa1ddf62279a9ac3797998a373c49517fa41fcb246438fbb3ec50ef761b`、検証した UPM archive は `a0c242d2eb28f900f01826e3859f25347c94500848109bad677ac12fbffd4753`。公式 JSON、generator DLL、NuGet、Unity Player のハッシュは検証記録を参照。
 - 未解決事項: SH-04 の合格条件についてはなし。native float/double の signaling NaN はホスト実装の影響を受けるため、完全なビット保存には追加のビット列 API を使う。全 runtime の実行、SIMD、memory64 はこの検証範囲に含めない。
-- 実装コミット: `eb6b362`（定数・memory・浮動小数点演算）、`1479630`（数値変換・飽和変換）、`f715882`（Mono のビット保存・丸めへの対策）。検証・記録の終了コミットは次の文書更新で追記する。
+- 実装コミット: `eb6b362`（定数・memory・浮動小数点演算）、`1479630`（数値変換・飽和変換）、`f715882`（Mono のビット保存・丸めへの対策）。終了コミットは `f2f97a1`（公式適合性テスト・差分テスト・パッケージ・Unity 検証・記録）。
 
 ## 実装内容とプラットフォーム差
 

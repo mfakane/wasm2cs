@@ -122,5 +122,11 @@
       "player.log": "b0affe9209fa66dbb48874fd96ebc4d4f2dbe4089b7ef5769e31300b3a70d965"
     }
   },
-  "scope": "Small-fixture validation, not execution of the full SH-01 generated runtime"
+  "scope": "Small-fixture validation, not execution of the full SH-01 generated runtime",
+  "commits": {
+    "floatingOperations": "eb6b362",
+    "conversions": "1479630",
+    "monoCorrections": "f715882",
+    "completion": "f2f97a1"
+  }
 }

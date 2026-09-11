@@ -90,9 +90,11 @@ internal static class Decoder
             {
                 case 0x20: case 0x21: case 0x22: operand = body.Count(); break;
                 case 0x41: operand = body.SignedI32(); break;
-                case 0x01: case 0x0b: case 0x0f: case 0x1a:
+                case 0x00: case 0x01: case 0x0b: case 0x0f: case 0x1a: case 0x1b:
                 case 0x6a: case 0x6b: case 0x6c: operand = 0; break;
-                default: throw new WasmException($"Offset 0x{offset:x}: Unsupported WASM opcode 0x{opcode:x2}.");
+                default:
+                    if (I32Operations.Arity(opcode) != 0) { operand = 0; break; }
+                    throw new WasmException($"Offset 0x{offset:x}: Unsupported WASM opcode 0x{opcode:x2}.");
             }
             instructions.Add(new Instruction(opcode, operand, offset));
             if (opcode == 0x0b)

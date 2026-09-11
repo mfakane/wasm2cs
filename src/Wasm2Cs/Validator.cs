@@ -4,9 +4,10 @@ internal static class Validator
     public static void Validate(Module module, string className)
     {
         if (!IsIdentifier(className)) throw new WasmException("The WASM filename must be an ASCII C# identifier.");
+        if (Reserved(className)) throw new WasmException("Module name conflicts with generated support members.");
         foreach (var export in module.Exports)
         {
-            if (!IsIdentifier(export.Key) || export.Key == className)
+            if (!IsIdentifier(export.Key) || export.Key == className || Reserved(export.Key))
                 throw new WasmException($"Export '{export.Key}' cannot be represented as a C# method name.");
             if (export.Value >= module.Bodies.Count) throw new WasmException("Invalid exported function index.");
         }
@@ -28,18 +29,24 @@ internal static class Validator
             if (returned) Fail("Instructions following return are not supported.");
             switch (instruction.Opcode)
             {
+                case 0x00: returned = true; break;
                 case 0x0f:
                     if (function.Signature.Results == 1) Pop();
                     returned = true;
                     break;
                 case 0x1a: Pop(); break;
+                case 0x1b: Pop(); Pop(); Pop(); height++; break;
                 case 0x20: case 0x21: case 0x22:
                     if (instruction.Operand >= function.Locals) Fail("Invalid local index.");
                     if (instruction.Opcode != 0x20) Pop();
                     if (instruction.Opcode != 0x21) height++;
                     break;
                 case 0x41: height++; break;
-                case 0x6a: case 0x6b: case 0x6c: Pop(); Pop(); height++; break;
+                default:
+                    int arity = I32Operations.Arity(instruction.Opcode);
+                    for (int p = 0; p < arity; p++) Pop();
+                    if (arity != 0) height++;
+                    break;
             }
         }
     }
@@ -47,4 +54,6 @@ internal static class Validator
         (IsLetter(name[0]) || name[0] == '_') &&
         name.All(c => IsLetter(c) || (c >= '0' && c <= '9') || c == '_');
     private static bool IsLetter(char c) => (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+    private static bool Reserved(string name) => name.StartsWith("__wasm_", StringComparison.Ordinal) ||
+        name == "TrapKind" || name == "TrapException" || name == "ReadMemory" || name == "WriteMemory" || name == "MemorySize";
 }

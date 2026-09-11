@@ -7,7 +7,7 @@ Each milestone is committed separately after its checks pass. No registry publis
 2. Complete (`a7aad72`): portable netstandard2.0 generator (Roslyn 4.3.0) and instance API.
 3. Complete: Unity input bridge, asmdef isolation, create/move/change/delete/restart
    checks, Editor and Windows x64 IL2CPP smoke (Unity 6000.6.0f1).
-4. i32 numeric operations and traps.
+4. Complete: i32 numeric operations and traps; 3,073 additional differential outcomes.
 5. Structured control flow and validation of unreachable instructions.
 6. Direct calls, recursion, and exported wrappers.
 7. Single memory32, globals, data, and start initialization.

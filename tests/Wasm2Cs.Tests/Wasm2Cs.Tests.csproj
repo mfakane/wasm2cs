@@ -8,5 +8,6 @@
     <None Include="$(PkgNETStandard_Library)/build/netstandard2.0/ref/*.dll" Link="ReferenceAssemblies/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../samples/Smoke/Arithmetic.wasm" Link="Arithmetic.wasm" CopyToOutputDirectory="PreserveNewest" />
     <None Include="oracle.mjs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="execution-oracle.mjs" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -81,7 +81,7 @@ var invalid = new (byte[] Bytes, string Message)[]
     (Module([0x41,0,0x41,1,0x0b]), "stack height"),
     (Module([0x41,0]), "missing end"),
     (Module([0x41,0,0x0b,0x01]), "Trailing bytes"),
-    (Module([0x41,0,0x41,1,0x6d,0x0b]), "opcode 0x6d"),
+    (Module([0x41,0,0x41,1,0x7c,0x0b]), "opcode 0x7c"),
     (Module([0x41,0x80,0x80,0x80,0x80,0x08,0x0b]), "32 bits"),
     (Module([0x41,0x80,0x80,0x80,0x80,0x80,0,0x0b]), "too long"),
 };
@@ -129,6 +129,7 @@ unityDriver = unityDriver.ReplaceAdditionalText(unityInput, duplicate)
     .RunGenerators(Compilation("").WithAssemblyName("Wasm2Cs.Modules"));
 Assert(unityDriver.GetRunResult().Diagnostics.Any(d => d.Id == "WASM002"), "Duplicate Unity input not diagnosed.");
 Console.WriteLine("PASS: Unity AdditionalFiles, asmdef isolation, and duplicate diagnostics.");
+await ExecutionChecks.Numerics();
 
 record Call(string Name, int[] Args);
 sealed class Input(string path, string content) : AdditionalText

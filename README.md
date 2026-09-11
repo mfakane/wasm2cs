@@ -98,12 +98,16 @@ Translation errors fail the build with `WASM001`; duplicate class names use `WAS
 
 - WASM version 1, function types with `i32` parameters and zero or one `i32` result.
 - Type, function, function export, and code sections; custom sections are skipped.
-- `local.get`, `local.set`, `local.tee`, `i32.const`, `i32.add`, `i32.sub`, `i32.mul`.
-- `nop`, `drop`, final `end`, and `return` immediately followed by final `end`.
+- `local.get`, `local.set`, `local.tee`, `i32.const`, all MVP i32 arithmetic,
+  comparisons, bitwise operations, shifts, rotates, and bit counts.
+- `nop`, `drop`, `select`, `unreachable`, final `end`, and `return` immediately followed by final `end`.
+- Runtime traps use each generated module's nested `TrapException` and `TrapKind`.
+  Signed division overflow and division/remainder by zero trap; signed remainder
+  of `int.MinValue` by `-1` returns zero.
 - Zero-initialized locals and wrapping 32-bit integer arithmetic. Stack values are
   materialized into temporary variables so later local assignments cannot change them.
 
-Imports, memory, globals, calls, branching/loops, floating point, integer division,
+Imports, memory, globals, calls, branching/loops, floating point,
 and other instructions are rejected. This is not yet a general-purpose WASM compiler;
 ordinary Rust/C/C++ outputs will typically need more instructions and sections.
 All function bodies, including unexported ones, are checked. Parsing validates section

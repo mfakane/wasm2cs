@@ -8,7 +8,8 @@ Each milestone is committed separately after its checks pass. No registry publis
 3. Complete: Unity input bridge, asmdef isolation, create/move/change/delete/restart
    checks, Editor and Windows x64 IL2CPP smoke (Unity 6000.6.0f1).
 4. Complete: i32 numeric operations and traps; 3,073 additional differential outcomes.
-5. Structured control flow and validation of unreachable instructions.
+5. Complete: structured branches, result transfer, branch tables, unreachable
+   validation, and 200 differential GCD loop executions.
 6. Direct calls, recursion, and exported wrappers.
 7. Single memory32, globals, data, and start initialization.
 8. Clang-produced array/CRC32 fixtures and differential execution.

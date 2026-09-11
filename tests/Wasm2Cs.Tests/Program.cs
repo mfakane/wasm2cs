@@ -130,6 +130,7 @@ unityDriver = unityDriver.ReplaceAdditionalText(unityInput, duplicate)
 Assert(unityDriver.GetRunResult().Diagnostics.Any(d => d.Id == "WASM002"), "Duplicate Unity input not diagnosed.");
 Console.WriteLine("PASS: Unity AdditionalFiles, asmdef isolation, and duplicate diagnostics.");
 await ExecutionChecks.Numerics();
+await ExecutionChecks.ControlFlow();
 
 record Call(string Name, int[] Args);
 sealed class Input(string path, string content) : AdditionalText

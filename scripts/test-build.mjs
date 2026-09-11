@@ -38,7 +38,7 @@ try {
   build();
   assert.equal(run(), '42');
   const generated = join(directory, 'obj/generated/Wasm2Cs.Generator/Wasm2Cs.WasmGenerator/Counter.g.cs');
-  assert.match(readFileSync(generated, 'utf8'), /int s0 = 42;/);
+  assert.match(readFileSync(generated, 'utf8'), /class @Counter/);
 
   const encoded = join(directory, 'obj/Debug/net10.0/wasm2cs/Counter.wasm.base64');
   const encodedTime = statSync(encoded).mtimeMs;
@@ -50,7 +50,7 @@ try {
   utimesSync(path, original.atime, original.mtime);
   build();
   assert.equal(run(), '43', 'Same-length binary change with preserved timestamp was ignored');
-  assert.match(readFileSync(generated, 'utf8'), /int s0 = 43;/);
+  assert.match(readFileSync(generated, 'utf8'), /class @Counter/);
 
   const invalid = binary(42);
   invalid[invalid.length - 3] = 0xff;

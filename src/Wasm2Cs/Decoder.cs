@@ -81,24 +81,38 @@ internal static class Decoder
             locals += count;
         }
         var instructions = new List<Instruction>();
+        int depth = 0;
         while (!body.End)
         {
             int offset = body.Offset;
             byte opcode = body.Byte();
             int operand;
+            int[]? targets = null;
             switch (opcode)
             {
+                case 0x02: case 0x03: case 0x04:
+                    byte blockType = body.Byte();
+                    if (blockType != 0x40 && blockType != 0x7f) throw new WasmException("Only empty or i32 block results are supported.");
+                    operand = blockType == 0x7f ? 1 : 0; depth++; break;
+                case 0x0c: case 0x0d: operand = body.Count(); break;
+                case 0x0e:
+                    int count = body.Count();
+                    if (count >= body.Remaining) throw new WasmException("Branch table extends past body boundary.");
+                    targets = new int[count+1];
+                    for(int t=0;t<targets.Length;t++) targets[t] = body.Count();
+                    operand = 0; break;
                 case 0x20: case 0x21: case 0x22: operand = body.Count(); break;
                 case 0x41: operand = body.SignedI32(); break;
-                case 0x00: case 0x01: case 0x0b: case 0x0f: case 0x1a: case 0x1b:
+                case 0x00: case 0x01: case 0x05: case 0x0b: case 0x0f: case 0x1a: case 0x1b:
                 case 0x6a: case 0x6b: case 0x6c: operand = 0; break;
                 default:
                     if (I32Operations.Arity(opcode) != 0) { operand = 0; break; }
                     throw new WasmException($"Offset 0x{offset:x}: Unsupported WASM opcode 0x{opcode:x2}.");
             }
-            instructions.Add(new Instruction(opcode, operand, offset));
+            instructions.Add(new Instruction(opcode, operand, offset, targets));
             if (opcode == 0x0b)
             {
+                if (depth != 0) { depth--; continue; }
                 body.RequireEnd();
                 return new Function(signature, locals, instructions);
             }

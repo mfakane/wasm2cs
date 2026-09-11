@@ -5,6 +5,7 @@ internal sealed class Reader(byte[] bytes, int start = 0, int? end = null)
         private int position = start;
         private readonly int limit = end ?? bytes.Length;
         public int Offset => position;
+        public int Remaining => limit - position;
         public bool End => position == limit;
         public byte Byte() => position < limit ? bytes[position++] : throw new WasmException("Unexpected end of WASM binary.");
         public void RequireEnd() { if (!End) throw new WasmException("Trailing bytes in section or function."); }

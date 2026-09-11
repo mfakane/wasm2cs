@@ -7,7 +7,12 @@ The generated application does not need a WebAssembly runtime.
 The translator separates binary decoding, a module/instruction representation,
 validation, and C# emission. Invalid instructions and operand stacks include
 function indices and byte offsets in diagnostics. See `IMPLEMENTATION.md` for
-the staged Unity/IL2CPP implementation milestones.
+the completed Unity/IL2CPP implementation milestones.
+
+The next goal is to execute `Wasm2Cs.dll` inside a .NET WebAssembly runtime
+translated to C#, first on .NET and then on Unity IL2CPP. The Japanese
+[self-hosting roadmap](docs/README.md) defines the implementation order and
+acceptance criteria. This goal is planned, not yet implemented.
 
 Requires the **.NET 10 SDK** to build the tools and tests; Node.js 22+ supplies the
 independent WebAssembly oracle. The core and generator target `netstandard2.0`;

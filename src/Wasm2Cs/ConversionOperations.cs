@@ -22,24 +22,57 @@ internal static class ConversionOperations
     public static string Expression(byte op, int sub, string value)
     {
         int normalized = Normalize(op, sub);
+        string numeric = InputType(op, sub) == ValueType.F32 || InputType(op, sub) == ValueType.F64 ? value + ".Value" : value;
         if ((normalized >= 0xa8 && normalized <= 0xab) || (normalized >= 0xae && normalized <= 0xb1))
-            return $"__wasm_Trunc{(ResultType(op, sub) == ValueType.I32 ? "32" : "64")}({value}, {(normalized % 2 == 0 ? "true" : "false")}, {(op == 0xfc ? "true" : "false")})";
+            return $"__wasm_Trunc{(ResultType(op, sub) == ValueType.I32 ? "32" : "64")}({numeric}, {(normalized % 2 == 0 ? "true" : "false")}, {(op == 0xfc ? "true" : "false")})";
+        if ((op >= 0xb2 && op <= 0xb5) || (op >= 0xb7 && op <= 0xba))
+        {
+            bool single = op <= 0xb5, signed = single ? op % 2 == 0 : op % 2 != 0;
+            string integer = op == 0xb3 || op == 0xb8 ? $"(long)(uint){value}" : value;
+            return $"unchecked(__wasm_F{(single ? "32" : "64")}(({(single ? "int" : "long")})__wasm_IntegerFloat({integer}, {(signed ? "true" : "false")}, {(single ? "23, 127" : "52, 1023")})))";
+        }
         string expression = op switch
         {
-            0xb2 => $"(float){value}", 0xb3 => $"(float)(uint){value}",
-            0xb4 => $"(float){value}", 0xb5 => $"(float)(ulong){value}",
-            0xb6 => $"(float){value}",
-            0xb7 => $"(double){value}", 0xb8 => $"(double)(uint){value}",
-            0xb9 => $"(double){value}", 0xba => $"(double)(ulong){value}",
-            0xbb => $"(double){value}",
+            0xb6 => $"(float){numeric}",
+            0xbb => $"(double){numeric}",
             0xbc => $"__wasm_Bits32({value})", 0xbd => $"__wasm_Bits64({value})",
             0xbe => $"__wasm_F32({value})", 0xbf => $"__wasm_F64({value})",
             _ => throw new InvalidOperationException("Unknown validated conversion instruction.")
         };
+        if (ResultType(op, sub) == ValueType.F32 && op != 0xbe) expression = $"__wasm_FromF32({expression})";
+        if (ResultType(op, sub) == ValueType.F64 && op != 0xbf) expression = $"__wasm_FromF64({expression})";
         return $"unchecked({expression})";
     }
 
     public const string Helpers = """
+    private static ulong __wasm_IntegerFloat(long value, bool signed, int fractionBits, int bias)
+    {
+        // Round once from integer bits. Mono's ulong -> double -> float path
+        // can round a value above a midpoint down to the midpoint first.
+        unchecked
+        {
+            bool negative = signed && value < 0;
+            ulong magnitude = negative ? 0UL - (ulong)value : (ulong)value;
+            if (magnitude == 0) return 0;
+            int exponent = 63;
+            while ((magnitude >> exponent) == 0) exponent--;
+            ulong significand;
+            if (exponent <= fractionBits) significand = magnitude << (fractionBits - exponent);
+            else
+            {
+                int shift = exponent - fractionBits;
+                significand = magnitude >> shift;
+                ulong lost = magnitude & ((1UL << shift) - 1), halfway = 1UL << (shift - 1);
+                if (lost > halfway || (lost == halfway && (significand & 1) != 0))
+                {
+                    significand++;
+                    if (significand == (1UL << (fractionBits + 1))) { significand >>= 1; exponent++; }
+                }
+            }
+            ulong sign = negative ? (fractionBits == 23 ? 0x80000000UL : 0x8000000000000000UL) : 0;
+            return sign | ((ulong)(exponent + bias) << fractionBits) | (significand & ((1UL << fractionBits) - 1));
+        }
+    }
     private static int __wasm_Trunc32(double value, bool signed, bool saturate)
     {
         if (double.IsNaN(value))

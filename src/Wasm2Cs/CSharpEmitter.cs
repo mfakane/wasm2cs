@@ -9,7 +9,8 @@ internal static class CSharpEmitter
         source.Append("public sealed class @").Append(className).Append("\n{\n");
         source.Append(I32Operations.Helpers);
         if (module.Bodies.Any(f => f.Instructions.Any(i => I64Operations.Arity(i.Opcode) != 0))) source.Append(I64Operations.Helpers);
-        if (module.Globals.Any(g => g.Type == ValueType.F32 || g.Type == ValueType.F64) ||
+        if (module.Types.Any(t => t.Parameters.Any(IsFloat) || t.Results.Any(IsFloat)) ||
+            module.Bodies.Any(f => f.Locals.Any(IsFloat)) || module.Globals.Any(g => IsFloat(g.Type)) ||
             module.Bodies.Any(f => f.Instructions.Any(i => FloatOperations.Arity(i.Opcode) != 0 || ConversionOperations.Supports(i.Opcode) ||
                 i.Opcode == 0x43 || i.Opcode == 0x44 || i.Opcode == 0x2a || i.Opcode == 0x2b || i.Opcode == 0x38 || i.Opcode == 0x39)))
             source.Append(FloatOperations.Helpers);
@@ -17,19 +18,43 @@ internal static class CSharpEmitter
             source.Append(ConversionOperations.Helpers);
         if (module.Memory != null) source.Append(MemoryOperations.Helpers.Replace("__WASM_MAX_PAGES__", module.Memory.Maximum.ToString(CultureInfo.InvariantCulture)));
         for(int g=0;g<module.Globals.Count;g++) source.Append($"    private {TypeName(module.Globals[g].Type)} __wasm_G{g};\n");
+        bool floatImports = module.Imports.Select((_, i) => module.FunctionSignature(i)).Any(t => t.Parameters.Any(IsFloat) || t.Results.Any(IsFloat));
         for (int i=0;i<module.Imports.Count;i++)
         {
             var signature = module.FunctionSignature(i);
-            string result = ResultType(signature.Results);
             string parameters = string.Join(", ", signature.Parameters.Select((type, p) => $"{TypeName(type)} v{p}"));
             // Base64 keeps arbitrary UTF-8 import names out of C# syntax and comments.
             source.Append($"    // Import {i}: module/name UTF-8 base64 {Convert.ToBase64String(Encoding.UTF8.GetBytes(module.Imports[i].ModuleName))}/{Convert.ToBase64String(Encoding.UTF8.GetBytes(module.Imports[i].Name))}\n");
-            source.Append($"    public delegate {result} __wasm_Import{i}({parameters});\n");
-            source.Append($"    private readonly __wasm_Import{i} __wasm_host{i};\n");
-            source.Append($"    private {result} __wasm_F{i}({parameters}) {{ {(signature.Results.Length == 0 ? "" : "return ")}__wasm_host{i}({string.Join(", ",Enumerable.Range(0,signature.Parameters.Length).Select(p => $"v{p}"))}); }}\n");
+            source.Append($"    public delegate {BoundaryResultType(signature.Results, false)} __wasm_Import{i}({BoundaryParameters(signature.Parameters, false)});\n");
+            if (floatImports) source.Append($"    public delegate {BoundaryResultType(signature.Results, true)} __wasm_BitsImport{i}({BoundaryParameters(signature.Parameters, true)});\n");
+            source.Append($"    private readonly __wasm_{(floatImports ? "BitsImport" : "Import")}{i} __wasm_host{i};\n");
+            string call = $"__wasm_host{i}({string.Join(", ",signature.Parameters.Select((t,p) => ToBoundary($"v{p}", t, floatImports)))})";
+            source.Append($"    private {ResultType(signature.Results)} __wasm_F{i}({parameters}) {{ {ReturnBoundary(call, signature.Results, true, floatImports)} }}\n");
         }
         source.Append($"    public @{className}({string.Join(", ",Enumerable.Range(0,module.Imports.Count).Select(i => $"__wasm_Import{i} import{i}"))})\n    {{\n");
-        for (int i=0;i<module.Imports.Count;i++) source.Append($"        __wasm_host{i} = import{i} ?? throw new global::System.ArgumentNullException(\"import{i}\");\n");
+        for (int i=0;i<module.Imports.Count;i++)
+        {
+            source.Append($"        if (import{i} == null) throw new global::System.ArgumentNullException(\"import{i}\");\n");
+            if (!floatImports) source.Append($"        __wasm_host{i} = import{i};\n");
+            else
+            {
+                var signature = module.FunctionSignature(i);
+                string call = $"import{i}({string.Join(", ", signature.Parameters.Select((t,p) => ToBoundary(FromBoundary($"v{p}", t, true), t, false)))})";
+                string returned = ReturnConverted(call, signature.Results, (value,t) => ToBoundary(FromBoundary(value,t,false),t,true));
+                source.Append($"        __wasm_host{i} = ({string.Join(", ",Enumerable.Range(0,signature.Parameters.Length).Select(p=>$"v{p}"))}) => {{ {returned} }};\n");
+            }
+        }
+        source.Append("        __wasm_Initialize();\n    }\n");
+        if (floatImports)
+        {
+            string parameters = string.Join(", ",Enumerable.Range(0,module.Imports.Count).Select(i=>$"__wasm_BitsImport{i} import{i}"));
+            string arguments = string.Join(", ",Enumerable.Range(0,module.Imports.Count).Select(i=>$"import{i}"));
+            source.Append($"    public static @{className} __wasm_FromBits({parameters}) {{ return new @{className}({arguments}, true); }}\n");
+            source.Append($"    private @{className}({parameters}, bool __wasm_bits)\n    {{\n");
+            for (int i=0;i<module.Imports.Count;i++) source.Append($"        __wasm_host{i} = import{i} ?? throw new global::System.ArgumentNullException(\"import{i}\");\n");
+            source.Append("        __wasm_Initialize();\n    }\n");
+        }
+        source.Append("    private void __wasm_Initialize()\n    {\n");
         if (module.Memory != null) source.Append($"        __wasm_memory = new byte[{module.Memory.Minimum*65536}];\n");
         for(int g=0;g<module.Globals.Count;g++) source.Append($"        __wasm_G{g} = {ConstantExpression(module.Globals[g].InitialValue)};\n");
         foreach(var data in module.Data) source.Append($"        WriteMemory({data.Offset}u, global::System.Convert.FromBase64String(\"{Convert.ToBase64String(data.Bytes)}\"));\n");
@@ -47,23 +72,45 @@ internal static class CSharpEmitter
         {
             byte kind = module.ExportKinds[export.Key];
             if (kind == 2) continue; // Memory exports use the copy-based host API.
-            if (kind == 3)
+            bool floating = kind == 3 ? IsFloat(module.Globals[export.Value].Type) :
+                module.FunctionSignature(export.Value).Parameters.Any(IsFloat) || module.FunctionSignature(export.Value).Results.Any(IsFloat);
+            foreach (bool bits in floating ? new[] { false, true } : new[] { false })
             {
-                source.Append($"    public {TypeName(module.Globals[export.Value].Type)} @{export.Key} {{ get {{ return __wasm_G{export.Value}; }}");
-                if (module.Globals[export.Value].Mutable) source.Append($" set {{ __wasm_G{export.Value} = value; }}");
-                source.Append(" }\n");
-                continue;
+                string name = bits ? "__wasm_bits_" + export.Key : export.Key;
+                if (kind == 3)
+                {
+                    var global = module.Globals[export.Value];
+                    source.Append($"    public {BoundaryTypeName(global.Type,bits)} @{name} {{ get {{ return {ToBoundary($"__wasm_G{export.Value}",global.Type,bits)}; }}");
+                    if (global.Mutable) source.Append($" set {{ __wasm_G{export.Value} = {FromBoundary("value",global.Type,bits)}; }}");
+                    source.Append(" }\n");
+                    continue;
+                }
+                var signature = module.FunctionSignature(export.Value);
+                string call = $"__wasm_F{export.Value}({string.Join(", ",signature.Parameters.Select((t,p)=>FromBoundary($"v{p}",t,bits)))})";
+                source.Append($"    public {BoundaryResultType(signature.Results,bits)} @{name}({BoundaryParameters(signature.Parameters,bits)})\n    {{\n        {ReturnBoundary(call,signature.Results,false,bits)}\n    }}\n");
             }
-            var exportSignature = module.FunctionSignature(export.Value);
-            source.Append("    public ").Append(ResultType(exportSignature.Results))
-                .Append(" @").Append(export.Key).Append('(');
-            source.Append(string.Join(", ", exportSignature.Parameters.Select((type, i) => $"{TypeName(type)} v{i}")));
-            source.Append(")\n    {\n        ").Append(exportSignature.Results.Length == 0 ? "" : "return ")
-                .Append("__wasm_F").Append(export.Value).Append('(')
-                .Append(string.Join(", ", Enumerable.Range(0, exportSignature.Parameters.Length).Select(p => $"v{p}")))
-                .Append(");\n    }\n");
         }
         return source.Append("}\n}\n").ToString();
+    }
+    private static bool IsFloat(ValueType type) => type == ValueType.F32 || type == ValueType.F64;
+    private static string BoundaryTypeName(ValueType type, bool bits) => type == ValueType.F32 ? (bits ? "int" : "float") :
+        type == ValueType.F64 ? (bits ? "long" : "double") : TypeName(type);
+    private static string BoundaryResultType(ValueType[] types, bool bits) => types.Length == 0 ? "void" :
+        types.Length == 1 ? BoundaryTypeName(types[0],bits) : "("+string.Join(", ",types.Select(t=>BoundaryTypeName(t,bits)))+")";
+    private static string BoundaryParameters(ValueType[] types, bool bits) => string.Join(", ",types.Select((t,p)=>$"{BoundaryTypeName(t,bits)} v{p}"));
+    private static string FromBoundary(string value, ValueType type, bool bits) => type == ValueType.F32 ?
+        (bits ? $"__wasm_F32({value})" : $"__wasm_FromF32({value})") : type == ValueType.F64 ?
+        (bits ? $"__wasm_F64({value})" : $"__wasm_FromF64({value})") : value;
+    private static string ToBoundary(string value, ValueType type, bool bits) => type == ValueType.F32 ?
+        (bits ? $"__wasm_Bits32({value})" : $"({value}).Value") : type == ValueType.F64 ?
+        (bits ? $"__wasm_Bits64({value})" : $"({value}).Value") : value;
+    private static string ReturnBoundary(string call, ValueType[] types, bool from, bool bits) =>
+        ReturnConverted(call, types, (value,type) => from ? FromBoundary(value,type,bits) : ToBoundary(value,type,bits));
+    private static string ReturnConverted(string call, ValueType[] types, Func<string,ValueType,string> convert)
+    {
+        if (types.Length == 0) return call+";";
+        if (types.Length == 1) return "return "+convert(call,types[0])+";";
+        return "var __wasm_result = "+call+"; return ("+string.Join(", ",types.Select((t,i)=>convert($"__wasm_result.Item{i+1}",t)))+");";
     }
     private static string ConstantExpression(ConstantValue value) => value.Type switch
     {
@@ -75,7 +122,7 @@ internal static class CSharpEmitter
     };
     private static string TypeName(ValueType type) => type switch
     {
-        ValueType.I32 => "int", ValueType.I64 => "long", ValueType.F32 => "float", ValueType.F64 => "double",
+        ValueType.I32 => "int", ValueType.I64 => "long", ValueType.F32 => "__wasm_Float32", ValueType.F64 => "__wasm_Float64",
         ValueType.FuncRef => "global::System.Delegate", ValueType.ExternRef => "object",
         _ => throw new WasmException($"Unsupported generated value type {type}.")
     };

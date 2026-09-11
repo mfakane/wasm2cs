@@ -9,20 +9,22 @@ internal static class FloatOperations
     public static string Expression(byte op, string a, string b)
     {
         bool single = InputType(op) == ValueType.F32;
-        string width = single ? "32" : "64", cast = single ? "float" : "double";
+        string width = single ? "32" : "64";
+        string x = a + ".Value", y = b + ".Value";
+        string Rounded(string expression) => $"__wasm_FromF{width}(({(single ? "float" : "double")})({expression}))";
         int normalized = op <= 0x66 ? (single ? op : op - 6) : (single ? op : op - 14);
         string expression = normalized switch
         {
-            0x5b => $"({a} == {b} ? 1 : 0)", 0x5c => $"({a} != {b} ? 1 : 0)",
-            0x5d => $"({a} < {b} ? 1 : 0)", 0x5e => $"({a} > {b} ? 1 : 0)",
-            0x5f => $"({a} <= {b} ? 1 : 0)", 0x60 => $"({a} >= {b} ? 1 : 0)",
+            0x5b => $"({x} == {y} ? 1 : 0)", 0x5c => $"({x} != {y} ? 1 : 0)",
+            0x5d => $"({x} < {y} ? 1 : 0)", 0x5e => $"({x} > {y} ? 1 : 0)",
+            0x5f => $"({x} <= {y} ? 1 : 0)", 0x60 => $"({x} >= {y} ? 1 : 0)",
             0x8b => $"__wasm_F{width}(__wasm_Bits{width}({a}) & {(single ? "0x7fffffff" : "0x7fffffffffffffffL")})",
             0x8c => $"__wasm_F{width}(__wasm_Bits{width}({a}) ^ {(single ? "int.MinValue" : "long.MinValue")})",
-            0x8d => $"({cast})__wasm_Round({a}, 0)", 0x8e => $"({cast})__wasm_Round({a}, 1)",
-            0x8f => $"({cast})__wasm_Round({a}, 2)", 0x90 => $"({cast})__wasm_Round({a}, 3)",
-            0x91 => $"({cast})global::System.Math.Sqrt({a})",
-            0x92 => $"({cast})({a} + {b})", 0x93 => $"({cast})({a} - {b})",
-            0x94 => $"({cast})({a} * {b})", 0x95 => $"({cast})({a} / {b})",
+            0x8d => Rounded($"__wasm_Round({x}, 0)"), 0x8e => Rounded($"__wasm_Round({x}, 1)"),
+            0x8f => Rounded($"__wasm_Round({x}, 2)"), 0x90 => Rounded($"__wasm_Round({x}, 3)"),
+            0x91 => Rounded($"global::System.Math.Sqrt({x})"),
+            0x92 => Rounded($"{x} + {y}"), 0x93 => Rounded($"{x} - {y}"),
+            0x94 => Rounded($"{x} * {y}"), 0x95 => Rounded($"{x} / {y}"),
             0x96 => $"__wasm_MinMax({a}, {b}, false)", 0x97 => $"__wasm_MinMax({a}, {b}, true)",
             0x98 => $"__wasm_F{width}((__wasm_Bits{width}({a}) & {(single ? "int.MaxValue" : "long.MaxValue")}) | (__wasm_Bits{width}({b}) & {(single ? "int.MinValue" : "long.MinValue")}))",
             _ => throw new InvalidOperationException("Unknown validated floating-point instruction.")
@@ -30,8 +32,8 @@ internal static class FloatOperations
         return $"unchecked({expression})";
     }
 
-    // Explicit-layout unions are available in .NET Standard 2.0 and preserve signaling NaNs.
-    // No numeric literal, string conversion, allocation, or machine byte order enters a bitcast.
+    // Keep values in explicit-layout structs: loading a CLR float can quiet signaling NaNs on Mono.
+    // Only arithmetic and the native host API read Value; bit-preserving operations read Bits.
     public const string Helpers = """
     [global::System.Runtime.InteropServices.StructLayout(global::System.Runtime.InteropServices.LayoutKind.Explicit)]
     private struct __wasm_Float32
@@ -45,30 +47,32 @@ internal static class FloatOperations
         [global::System.Runtime.InteropServices.FieldOffset(0)] public long Bits;
         [global::System.Runtime.InteropServices.FieldOffset(0)] public double Value;
     }
-    private static float __wasm_F32(int bits) { return new __wasm_Float32 { Bits = bits }.Value; }
-    private static double __wasm_F64(long bits) { return new __wasm_Float64 { Bits = bits }.Value; }
-    private static int __wasm_Bits32(float value) { return new __wasm_Float32 { Value = value }.Bits; }
-    private static long __wasm_Bits64(double value) { return new __wasm_Float64 { Value = value }.Bits; }
+    private static __wasm_Float32 __wasm_F32(int bits) { return new __wasm_Float32 { Bits = bits }; }
+    private static __wasm_Float32 __wasm_FromF32(float value) { return new __wasm_Float32 { Value = value }; }
+    private static __wasm_Float64 __wasm_F64(long bits) { return new __wasm_Float64 { Bits = bits }; }
+    private static __wasm_Float64 __wasm_FromF64(double value) { return new __wasm_Float64 { Value = value }; }
+    private static int __wasm_Bits32(__wasm_Float32 value) { return value.Bits; }
+    private static long __wasm_Bits64(__wasm_Float64 value) { return value.Bits; }
     private static double __wasm_Round(double value, int mode)
     {
         // Rounding is arithmetic, so quiet a signaling NaN. Abs/neg/copysign do not.
-        if (double.IsNaN(value)) return __wasm_F64(0x7ff8000000000000L);
+        if (double.IsNaN(value)) return __wasm_F64(0x7ff8000000000000L).Value;
         double rounded = mode == 0 ? global::System.Math.Ceiling(value) :
             mode == 1 ? global::System.Math.Floor(value) : mode == 2 ? global::System.Math.Truncate(value) :
             global::System.Math.Round(value, global::System.MidpointRounding.ToEven);
-        return rounded == 0 ? __wasm_F64(__wasm_Bits64(value) & long.MinValue) : rounded;
+        return rounded == 0 ? __wasm_F64(__wasm_Bits64(__wasm_FromF64(value)) & long.MinValue).Value : rounded;
     }
-    private static float __wasm_MinMax(float a, float b, bool maximum)
+    private static __wasm_Float32 __wasm_MinMax(__wasm_Float32 a, __wasm_Float32 b, bool maximum)
     {
-        if (float.IsNaN(a) || float.IsNaN(b)) return __wasm_F32(0x7fc00000);
-        if (a == 0 && b == 0) return __wasm_F32(maximum ? __wasm_Bits32(a) & __wasm_Bits32(b) : __wasm_Bits32(a) | __wasm_Bits32(b));
-        return maximum ? (a > b ? a : b) : (a < b ? a : b);
+        if (float.IsNaN(a.Value) || float.IsNaN(b.Value)) return __wasm_F32(0x7fc00000);
+        if (a.Value == 0 && b.Value == 0) return __wasm_F32(maximum ? __wasm_Bits32(a) & __wasm_Bits32(b) : __wasm_Bits32(a) | __wasm_Bits32(b));
+        return maximum ? (a.Value > b.Value ? a : b) : (a.Value < b.Value ? a : b);
     }
-    private static double __wasm_MinMax(double a, double b, bool maximum)
+    private static __wasm_Float64 __wasm_MinMax(__wasm_Float64 a, __wasm_Float64 b, bool maximum)
     {
-        if (double.IsNaN(a) || double.IsNaN(b)) return __wasm_F64(0x7ff8000000000000L);
-        if (a == 0 && b == 0) return __wasm_F64(maximum ? __wasm_Bits64(a) & __wasm_Bits64(b) : __wasm_Bits64(a) | __wasm_Bits64(b));
-        return maximum ? (a > b ? a : b) : (a < b ? a : b);
+        if (double.IsNaN(a.Value) || double.IsNaN(b.Value)) return __wasm_F64(0x7ff8000000000000L);
+        if (a.Value == 0 && b.Value == 0) return __wasm_F64(maximum ? __wasm_Bits64(a) & __wasm_Bits64(b) : __wasm_Bits64(a) | __wasm_Bits64(b));
+        return maximum ? (a.Value > b.Value ? a : b) : (a.Value < b.Value ? a : b);
     }
 
 """;

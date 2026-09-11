@@ -25,6 +25,7 @@ $env:WASM2CS_UNITY_PACKAGE = $package.Replace('\', '/')
 RunEditor @("-executeMethod", "PackageInstaller.Install") "install.log"
 Copy-Item (Join-Path $repo "samples/Smoke/Arithmetic.wasm") (Join-Path $project "Assets/Arithmetic.wasm")
 Copy-Item (Join-Path $repo "samples/CAlgorithms/Algorithms.wasm") (Join-Path $project "Assets/Algorithms.wasm")
+Copy-Item (Join-Path $repo "samples/Host/Host.wasm") (Join-Path $project "Assets/Host.wasm")
 RunEditor @("-executeMethod", "Wasm2Cs.Editor.WasmAssetBridge.Synchronize", "-quit") "inputs.log"
 Copy-Item (Join-Path $repo "unity/Smoke/Editor/BridgeVerify.cs") (Join-Path $project "Assets/Editor/BridgeVerify.cs")
 RunEditor @("-executeMethod", "BridgeVerify.Present", "-quit") "bridge-present.log"
@@ -49,6 +50,7 @@ RunEditor @("-executeMethod", "BridgeVerify.Missing", "-quit") "bridge-missing.l
 Copy-Item (Join-Path $repo "samples/Smoke/Arithmetic.wasm") (Join-Path $project "Assets/Arithmetic.wasm")
 RunEditor @("-executeMethod", "Wasm2Cs.Editor.WasmAssetBridge.Synchronize", "-quit") "bridge-restore.log"
 Copy-Item (Join-Path $repo "unity/Smoke/SmokeRunner.cs") (Join-Path $project "Assets/SmokeRunner.cs")
+Copy-Item (Join-Path $repo "samples/Host/HostChecks.cs") (Join-Path $project "Assets/HostChecks.cs")
 New-Item -ItemType Directory -Path (Join-Path $project "Assets/Resources") -Force | Out-Null
 Copy-Item (Join-Path $repo "unity/Smoke/AlgorithmsGolden.json") (Join-Path $project "Assets/Resources/AlgorithmsGolden.json")
 Copy-Item (Join-Path $repo "unity/Smoke/Editor/SmokeBuild.cs") (Join-Path $project "Assets/Editor/SmokeBuild.cs")

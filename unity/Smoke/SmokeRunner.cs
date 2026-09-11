@@ -6,6 +6,7 @@ public static class SmokeRunner
 {
     public static void Verify()
     {
+        HostChecks.Verify();
         var module = new Arithmetic();
         if (module.add(20, 22) != 42 || module.square(7) != 49 || module.add(int.MaxValue, 1) != int.MinValue)
             throw new Exception("Generated arithmetic differs from WASM.");

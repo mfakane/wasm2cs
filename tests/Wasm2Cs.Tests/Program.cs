@@ -134,6 +134,7 @@ await ExecutionChecks.ControlFlow();
 await ExecutionChecks.Calls();
 await ExecutionChecks.Memory();
 await ExecutionChecks.CAlgorithms();
+ExecutionChecks.Imports();
 
 record Call(string Name, int[] Args);
 sealed class Input(string path, string content) : AdditionalText

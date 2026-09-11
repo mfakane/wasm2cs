@@ -10,7 +10,19 @@ internal static class CSharpEmitter
         source.Append(I32Operations.Helpers);
         if (module.Memory != null) source.Append(MemoryOperations.Helpers.Replace("__WASM_MAX_PAGES__", module.Memory.Maximum.ToString(CultureInfo.InvariantCulture)));
         for(int g=0;g<module.Globals.Count;g++) source.Append($"    private int __wasm_G{g};\n");
-        source.Append($"    public @{className}()\n    {{\n");
+        for (int i=0;i<module.Imports.Count;i++)
+        {
+            var signature = module.FunctionSignature(i);
+            string result = signature.Results == 0 ? "void" : "int";
+            string parameters = string.Join(", ", Enumerable.Range(0,signature.Parameters).Select(p => $"int v{p}"));
+            // Base64 keeps arbitrary UTF-8 import names out of C# syntax and comments.
+            source.Append($"    // Import {i}: module/name UTF-8 base64 {Convert.ToBase64String(Encoding.UTF8.GetBytes(module.Imports[i].ModuleName))}/{Convert.ToBase64String(Encoding.UTF8.GetBytes(module.Imports[i].Name))}\n");
+            source.Append($"    public delegate {result} __wasm_Import{i}({parameters});\n");
+            source.Append($"    private readonly __wasm_Import{i} __wasm_host{i};\n");
+            source.Append($"    private {result} __wasm_F{i}({parameters}) {{ {(signature.Results == 0 ? "" : "return ")}__wasm_host{i}({string.Join(", ",Enumerable.Range(0,signature.Parameters).Select(p => $"v{p}"))}); }}\n");
+        }
+        source.Append($"    public @{className}({string.Join(", ",Enumerable.Range(0,module.Imports.Count).Select(i => $"__wasm_Import{i} import{i}"))})\n    {{\n");
+        for (int i=0;i<module.Imports.Count;i++) source.Append($"        __wasm_host{i} = import{i} ?? throw new global::System.ArgumentNullException(\"import{i}\");\n");
         if (module.Memory != null) source.Append($"        __wasm_memory = new byte[{module.Memory.Minimum*65536}];\n");
         for(int g=0;g<module.Globals.Count;g++) source.Append($"        __wasm_G{g} = {module.Globals[g].InitialValue.ToString(CultureInfo.InvariantCulture)};\n");
         foreach(var data in module.Data) source.Append($"        WriteMemory({data.Offset}u, global::System.Convert.FromBase64String(\"{Convert.ToBase64String(data.Bytes)}\"));\n");
@@ -20,7 +32,7 @@ internal static class CSharpEmitter
         {
             var function = module.Bodies[i];
             source.Append("    private ").Append(function.Signature.Results == 0 ? "void" : "int")
-                .Append(" __wasm_F").Append(i).Append('(')
+                .Append(" __wasm_F").Append(i + module.Imports.Count).Append('(')
                 .Append(string.Join(", ", Enumerable.Range(0, function.Signature.Parameters).Select(p => $"int v{p}")))
                 .Append(")\n    {\n").Append(EmitBody(module, function)).Append("    }\n");
         }
@@ -35,13 +47,13 @@ internal static class CSharpEmitter
                 source.Append(" }\n");
                 continue;
             }
-            var function = module.Bodies[export.Value];
-            source.Append("    public ").Append(function.Signature.Results == 0 ? "void" : "int")
+            var exportSignature = module.FunctionSignature(export.Value);
+            source.Append("    public ").Append(exportSignature.Results == 0 ? "void" : "int")
                 .Append(" @").Append(export.Key).Append('(');
-            source.Append(string.Join(", ", Enumerable.Range(0, function.Signature.Parameters).Select(i => $"int v{i}")));
-            source.Append(")\n    {\n        ").Append(function.Signature.Results == 0 ? "" : "return ")
+            source.Append(string.Join(", ", Enumerable.Range(0, exportSignature.Parameters).Select(i => $"int v{i}")));
+            source.Append(")\n    {\n        ").Append(exportSignature.Results == 0 ? "" : "return ")
                 .Append("__wasm_F").Append(export.Value).Append('(')
-                .Append(string.Join(", ", Enumerable.Range(0, function.Signature.Parameters).Select(p => $"v{p}")))
+                .Append(string.Join(", ", Enumerable.Range(0, exportSignature.Parameters).Select(p => $"v{p}")))
                 .Append(");\n    }\n");
         }
         return source.Append("}\n}\n").ToString();
@@ -140,7 +152,7 @@ internal static class CSharpEmitter
                     Restore(current);
                     break;
                 case 0x10:
-                    var signature = module.Bodies[instruction.Operand].Signature;
+                    var signature = module.FunctionSignature(instruction.Operand);
                     var arguments = new string[signature.Parameters];
                     for(int p=arguments.Length-1;p>=0;p--) arguments[p] = Pop();
                     string call = $"__wasm_F{instruction.Operand}({string.Join(", ",arguments)})";

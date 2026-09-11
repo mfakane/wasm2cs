@@ -15,7 +15,8 @@ Each milestone is committed separately after its checks pass. No registry publis
    differential memory/global snapshots and isolated-instance checks.
 8. Complete: Clang-produced array/CRC32 fixtures, 35 differential vectors plus
    full memory snapshots; Unity Editor and Windows x64 IL2CPP verified.
-9. Typed host function imports and memory exchange.
+9. Complete: typed host function imports, imported start/export, memory exchange,
+   reentry and unchanged host exceptions; Unity Editor and Windows x64 IL2CPP verified.
 10. Conformance fixtures and regeneration coverage.
 11. NuGet and UPM distribution with clean-consumer tests.
 

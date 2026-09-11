@@ -8,6 +8,8 @@
     <ProjectReference Include="../../src/Wasm2Cs.Generator/Wasm2Cs.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <Wasm Include="Arithmetic.wasm" />
     <Wasm Include="../CAlgorithms/Algorithms.wasm" />
+    <Wasm Include="../Host/Host.wasm" />
+    <Compile Include="../Host/HostChecks.cs" Link="HostChecks.cs" />
   </ItemGroup>
   <Import Project="../../build/Wasm2Cs.targets" />
 </Project>

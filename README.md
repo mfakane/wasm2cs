@@ -126,7 +126,20 @@ Translation errors fail the build with `WASM001`; duplicate class names use `WAS
   `WriteMemory(uint offset, byte[] bytes)`. Reads copy data rather than expose backing
   arrays. Global exports become properties, writable only for mutable globals.
 
-Imports, indirect calls, floating point,
+- Function imports with typed i32/void signatures. Constructor arguments follow
+  import-section order (`import0`, `import1`, ...), using generated nested delegate
+  types `__wasm_Import0`, etc. Lambdas convert directly; no runtime reflection is used.
+  Missing delegates fail before start. Callbacks may use the copy-based memory API
+  and reenter exported functions; host exceptions propagate unchanged, including
+  during start. Import module/name pairs are recorded as UTF-8 Base64 in generated
+  comments, allowing arbitrary names without injecting C# syntax.
+
+For example, `samples/Host/HostChecks.cs` constructs `new Host(exchange, notify)`
+and verifies callback order, memory exchange, reentry, and exception identity in
+both .NET and Unity. Run `node scripts/create-host-fixture.mjs` to reproduce its
+binary and verify the same callback scenario with WebAssembly.
+
+Imported memories/globals, indirect calls, floating point,
 and other instructions are rejected. This is not yet a general-purpose WASM compiler;
 ordinary Rust/C/C++ outputs will typically need more instructions and sections.
 All function bodies, including unexported ones, are checked. Parsing validates section

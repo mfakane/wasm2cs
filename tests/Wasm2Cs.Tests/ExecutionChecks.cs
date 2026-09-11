@@ -7,6 +7,32 @@ using Wasm2Cs;
 
 internal static class ExecutionChecks
 {
+    public static void Imports()
+    {
+        // No defined functions: both start and an export refer to the imported function.
+        byte[] bytes = [0,97,115,109,1,0,0,0,
+            ..Section(1,[1,0x60,0,0]),
+            ..Section(2,[1,3, (byte)'e',10,(byte)'v',1,(byte)'x',0,0]),
+            ..Section(7,[1,1,(byte)'f',0,0]), ..Section(8,[0])];
+        var type = Compile(bytes).GetType("Wasm2Cs.Generated.Subject")!;
+        int calls = 0;
+        Action callback = () => calls++;
+        var import = Delegate.CreateDelegate(type.GetNestedType("__wasm_Import0")!,callback.Target,callback.Method);
+        var instance = Activator.CreateInstance(type,[import]);
+        if (calls != 1) throw new Exception("Imported start function did not run.");
+        type.GetMethod("f")!.Invoke(instance,null);
+        if (calls != 2) throw new Exception("Imported function export did not run.");
+        foreach (byte[] invalid in new byte[][] {
+            [0,97,115,109,1,0,0,0,..Section(2,[1,0,0,0,0])],
+            [0,97,115,109,1,0,0,0,..Section(2,[1,0,0,2,0,0])],
+            [0,97,115,109,1,0,0,0,..Section(2,[1,0,0,3,0x7f,0])]
+        })
+        {
+            try { Transpiler.Translate(invalid,"Subject"); throw new Exception("Accepted invalid/unsupported import."); }
+            catch (WasmException) { }
+        }
+        Console.WriteLine("PASS: imported start/export, arbitrary import names, and invalid/unsupported imports.");
+    }
     internal static byte[] U32(int value)
     {
         var bytes = new List<byte>();

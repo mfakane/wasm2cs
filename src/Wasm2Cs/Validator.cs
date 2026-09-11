@@ -10,13 +10,13 @@ internal static class Validator
             if (!IsIdentifier(export.Key) || export.Key == className || Reserved(export.Key))
                 throw new WasmException($"Export '{export.Key}' cannot be represented as a C# method name.");
             byte kind = module.ExportKinds[export.Key];
-            if (kind == 0 && export.Value >= module.Bodies.Count) throw new WasmException("Invalid exported function index.");
+            if (kind == 0 && export.Value >= module.FunctionCount) throw new WasmException("Invalid exported function index.");
             if (kind == 2 && (export.Value != 0 || module.Memory == null)) throw new WasmException("Invalid exported memory index.");
             if (kind == 3 && export.Value >= module.Globals.Count) throw new WasmException("Invalid exported global index.");
         }
         if (module.Data.Count != 0 && module.Memory == null) throw new WasmException("Data segments require memory.");
-        if (module.Start.HasValue && (module.Start.Value >= module.Bodies.Count ||
-            module.Bodies[module.Start.Value].Signature != new Signature(0,0))) throw new WasmException("Invalid start function.");
+        if (module.Start.HasValue && (module.Start.Value >= module.FunctionCount ||
+            module.FunctionSignature(module.Start.Value) != new Signature(0,0))) throw new WasmException("Invalid start function.");
         for (int i = 0; i < module.Bodies.Count; i++) ValidateBody(module, module.Bodies[i], i);
     }
     private sealed class Control(byte opcode, int height, int results)
@@ -82,8 +82,8 @@ internal static class Validator
                     break;
                 case 0x0f: PopResults(function.Signature.Results); Unreachable(); break;
                 case 0x10:
-                    if (instruction.Operand >= module.Bodies.Count) Fail("Invalid called function index.");
-                    var signature = module.Bodies[instruction.Operand].Signature;
+                    if (instruction.Operand >= module.FunctionCount) Fail("Invalid called function index.");
+                    var signature = module.FunctionSignature(instruction.Operand);
                     PopResults(signature.Parameters); height += signature.Results;
                     break;
                 case 0x1a: Pop(); break;

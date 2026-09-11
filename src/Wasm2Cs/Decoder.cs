@@ -39,6 +39,16 @@ internal static class Decoder
                         types.Add(new(parameters, results));
                     }
                     break;
+                case 2:
+                    for (int i = 0, count = section.Count(); i < count; i++)
+                    {
+                        string importModule = section.Name(), importName = section.Name();
+                        if (section.Byte() != 0) throw new WasmException("Only function imports are supported.");
+                        int type = section.Count();
+                        if (type >= types.Count) throw new WasmException("Invalid imported function type index.");
+                        module.Imports.Add(new FunctionImport(importModule, importName, type));
+                    }
+                    break;
                 case 3:
                     for (int i = 0, count = section.Count(); i < count; i++)
                         functions.Add(section.Count());

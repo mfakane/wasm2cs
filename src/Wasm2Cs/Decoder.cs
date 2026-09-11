@@ -31,12 +31,7 @@ internal static class Decoder
                     for (int i = 0, count = section.Count(); i < count; i++)
                     {
                         if (section.Byte() != 0x60) throw new WasmException("Only function types are supported.");
-                        int parameters = section.Count();
-                        for (int p = 0; p < parameters; p++) section.I32Type();
-                        int results = section.Count();
-                        if (results > 1) throw new WasmException("Multiple results are not supported.");
-                        if (results == 1) section.I32Type();
-                        types.Add(new(parameters, results));
+                        types.Add(new(section.ValueTypes(), section.ValueTypes()));
                     }
                     break;
                 case 2:
@@ -80,10 +75,10 @@ internal static class Decoder
                 case 6:
                     for(int i=0,count=section.Count();i<count;i++)
                     {
-                        section.I32Type();
+                        var globalType = section.ValueType();
                         byte mutable = section.Byte();
                         if (mutable > 1) throw new WasmException("Invalid global mutability.");
-                        module.Globals.Add(new Global(mutable == 1, Constant(section)));
+                        module.Globals.Add(new Global(globalType, mutable == 1, Constant(section), ValueType.I32));
                     }
                     break;
                 case 8: module.Start = section.Count(); break;
@@ -111,7 +106,7 @@ internal static class Decoder
         for (int i = 0; i < functions.Count; i++)
         {
             if (functions[i] >= types.Count) throw new WasmException("Invalid function type index.");
-            try { decoded.Add(DecodeBody(bodies[i], types[functions[i]])); }
+            try { decoded.Add(DecodeBody(bodies[i], types[functions[i]], types)); }
             catch (WasmException e) { throw new WasmException($"Function {i}: {e.Message}"); }
         }
         return module;
@@ -123,15 +118,15 @@ internal static class Decoder
         if (reader.Byte() != 0x0b) throw new WasmException("Invalid initializer expression.");
         return value;
     }
-    private static Function DecodeBody(Reader body, Signature signature)
+    private static Function DecodeBody(Reader body, Signature signature, List<Signature> types)
     {
-        int locals = signature.Parameters;
+        var locals = new List<ValueType>(signature.Parameters);
         for (int i = 0, groups = body.Count(); i < groups; i++)
         {
             int count = body.Count();
-            body.I32Type();
-            if ((long)locals + count > 100_000) throw new WasmException("Too many locals (limit: 100000).");
-            locals += count;
+            var type = body.ValueType();
+            if ((long)locals.Count + count > 100_000) throw new WasmException("Too many locals (limit: 100000).");
+            for (int j = 0; j < count; j++) locals.Add(type);
         }
         var instructions = new List<Instruction>();
         int depth = 0;
@@ -142,12 +137,16 @@ internal static class Decoder
             int operand;
             int[]? targets = null;
             uint immediate = 0;
+            Signature? blockType = null;
+            ValueType? selectType = null;
             switch (opcode)
             {
                 case 0x02: case 0x03: case 0x04:
-                    byte blockType = body.Byte();
-                    if (blockType != 0x40 && blockType != 0x7f) throw new WasmException("Only empty or i32 block results are supported.");
-                    operand = blockType == 0x7f ? 1 : 0; depth++; break;
+                    blockType = body.BlockType(types);
+                    operand = 0; depth++; break;
+                case 0x1c:
+                    if (body.Count() != 1) throw new WasmException("Typed select requires exactly one value type.");
+                    selectType = body.ValueType(); operand = 0; break;
                 case 0x0c: case 0x0d: case 0x10: operand = body.Count(); break;
                 case 0x0e:
                     int count = body.Count();
@@ -169,12 +168,12 @@ internal static class Decoder
                     if (I32Operations.Arity(opcode) != 0) { operand = 0; break; }
                     throw new WasmException($"Offset 0x{offset:x}: Unsupported WASM opcode 0x{opcode:x2}.");
             }
-            instructions.Add(new Instruction(opcode, operand, offset, targets, immediate));
+            instructions.Add(new Instruction(opcode, operand, offset, targets, immediate, blockType, selectType));
             if (opcode == 0x0b)
             {
                 if (depth != 0) { depth--; continue; }
                 body.RequireEnd();
-                return new Function(signature, locals, instructions);
+                return new Function(signature, locals.ToArray(), instructions);
             }
         }
         throw new WasmException("Function body is missing end.");

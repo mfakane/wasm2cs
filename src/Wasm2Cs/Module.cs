@@ -1,7 +1,17 @@
 namespace Wasm2Cs;
-internal sealed record Signature(int Parameters, int Results);
-internal sealed record Instruction(byte Opcode, int Operand, int Offset, int[]? Targets = null, uint Immediate = 0);
-internal sealed record Function(Signature Signature, int Locals, List<Instruction> Instructions);
+// Representable value types are independent of the decoder's supported opcodes.
+internal enum ValueType : byte { I32 = 0x7f, I64 = 0x7e, F32 = 0x7d, F64 = 0x7c, FuncRef = 0x70, ExternRef = 0x6f }
+internal sealed record Signature(ValueType[] Parameters, ValueType[] Results)
+{
+    public static readonly Signature Empty = new Signature(Array.Empty<ValueType>(), Array.Empty<ValueType>());
+}
+internal sealed record Instruction(byte Opcode, int Operand, int Offset, int[]? Targets = null,
+    uint Immediate = 0, Signature? BlockType = null, ValueType? SelectType = null)
+{
+    // Filled by validation. null is the polymorphic bottom, never an executable value type.
+    public ValueType?[] ResultTypes { get; set; } = Array.Empty<ValueType?>();
+}
+internal sealed record Function(Signature Signature, ValueType[] Locals, List<Instruction> Instructions);
 internal sealed record Module(List<Signature> Types, List<int> Functions,
     Dictionary<string, int> Exports, List<Function> Bodies)
 {
@@ -16,5 +26,5 @@ internal sealed record Module(List<Signature> Types, List<int> Functions,
 }
 internal sealed record FunctionImport(string ModuleName, string Name, int TypeIndex);
 internal sealed record MemoryDefinition(int Minimum, int Maximum);
-internal sealed record Global(bool Mutable, int InitialValue);
+internal sealed record Global(ValueType Type, bool Mutable, int InitialValue, ValueType InitialType);
 internal sealed record DataSegment(uint Offset, byte[] Bytes);

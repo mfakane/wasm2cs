@@ -9,17 +9,17 @@ internal static class CSharpEmitter
         source.Append("public sealed class @").Append(className).Append("\n{\n");
         source.Append(I32Operations.Helpers);
         if (module.Memory != null) source.Append(MemoryOperations.Helpers.Replace("__WASM_MAX_PAGES__", module.Memory.Maximum.ToString(CultureInfo.InvariantCulture)));
-        for(int g=0;g<module.Globals.Count;g++) source.Append($"    private int __wasm_G{g};\n");
+        for(int g=0;g<module.Globals.Count;g++) source.Append($"    private {TypeName(module.Globals[g].Type)} __wasm_G{g};\n");
         for (int i=0;i<module.Imports.Count;i++)
         {
             var signature = module.FunctionSignature(i);
-            string result = signature.Results == 0 ? "void" : "int";
-            string parameters = string.Join(", ", Enumerable.Range(0,signature.Parameters).Select(p => $"int v{p}"));
+            string result = ResultType(signature.Results);
+            string parameters = string.Join(", ", signature.Parameters.Select((type, p) => $"{TypeName(type)} v{p}"));
             // Base64 keeps arbitrary UTF-8 import names out of C# syntax and comments.
             source.Append($"    // Import {i}: module/name UTF-8 base64 {Convert.ToBase64String(Encoding.UTF8.GetBytes(module.Imports[i].ModuleName))}/{Convert.ToBase64String(Encoding.UTF8.GetBytes(module.Imports[i].Name))}\n");
             source.Append($"    public delegate {result} __wasm_Import{i}({parameters});\n");
             source.Append($"    private readonly __wasm_Import{i} __wasm_host{i};\n");
-            source.Append($"    private {result} __wasm_F{i}({parameters}) {{ {(signature.Results == 0 ? "" : "return ")}__wasm_host{i}({string.Join(", ",Enumerable.Range(0,signature.Parameters).Select(p => $"v{p}"))}); }}\n");
+            source.Append($"    private {result} __wasm_F{i}({parameters}) {{ {(signature.Results.Length == 0 ? "" : "return ")}__wasm_host{i}({string.Join(", ",Enumerable.Range(0,signature.Parameters.Length).Select(p => $"v{p}"))}); }}\n");
         }
         source.Append($"    public @{className}({string.Join(", ",Enumerable.Range(0,module.Imports.Count).Select(i => $"__wasm_Import{i} import{i}"))})\n    {{\n");
         for (int i=0;i<module.Imports.Count;i++) source.Append($"        __wasm_host{i} = import{i} ?? throw new global::System.ArgumentNullException(\"import{i}\");\n");
@@ -31,9 +31,9 @@ internal static class CSharpEmitter
         for (int i=0;i<module.Bodies.Count;i++)
         {
             var function = module.Bodies[i];
-            source.Append("    private ").Append(function.Signature.Results == 0 ? "void" : "int")
+            source.Append("    private ").Append(ResultType(function.Signature.Results))
                 .Append(" __wasm_F").Append(i + module.Imports.Count).Append('(')
-                .Append(string.Join(", ", Enumerable.Range(0, function.Signature.Parameters).Select(p => $"int v{p}")))
+                .Append(string.Join(", ", function.Signature.Parameters.Select((type, p) => $"{TypeName(type)} v{p}")))
                 .Append(")\n    {\n").Append(EmitBody(module, function)).Append("    }\n");
         }
         foreach (var export in module.Exports)
@@ -42,27 +42,39 @@ internal static class CSharpEmitter
             if (kind == 2) continue; // Memory exports use the copy-based host API.
             if (kind == 3)
             {
-                source.Append($"    public int @{export.Key} {{ get {{ return __wasm_G{export.Value}; }}");
+                source.Append($"    public {TypeName(module.Globals[export.Value].Type)} @{export.Key} {{ get {{ return __wasm_G{export.Value}; }}");
                 if (module.Globals[export.Value].Mutable) source.Append($" set {{ __wasm_G{export.Value} = value; }}");
                 source.Append(" }\n");
                 continue;
             }
             var exportSignature = module.FunctionSignature(export.Value);
-            source.Append("    public ").Append(exportSignature.Results == 0 ? "void" : "int")
+            source.Append("    public ").Append(ResultType(exportSignature.Results))
                 .Append(" @").Append(export.Key).Append('(');
-            source.Append(string.Join(", ", Enumerable.Range(0, exportSignature.Parameters).Select(i => $"int v{i}")));
-            source.Append(")\n    {\n        ").Append(exportSignature.Results == 0 ? "" : "return ")
+            source.Append(string.Join(", ", exportSignature.Parameters.Select((type, i) => $"{TypeName(type)} v{i}")));
+            source.Append(")\n    {\n        ").Append(exportSignature.Results.Length == 0 ? "" : "return ")
                 .Append("__wasm_F").Append(export.Value).Append('(')
-                .Append(string.Join(", ", Enumerable.Range(0, exportSignature.Parameters).Select(p => $"v{p}")))
+                .Append(string.Join(", ", Enumerable.Range(0, exportSignature.Parameters.Length).Select(p => $"v{p}")))
                 .Append(");\n    }\n");
         }
         return source.Append("}\n}\n").ToString();
     }
-    private sealed class Control(byte opcode, List<string> values, string result, int label)
+    private static string TypeName(ValueType type) => type switch
+    {
+        ValueType.I32 => "int", ValueType.I64 => "long", ValueType.F32 => "float", ValueType.F64 => "double",
+        ValueType.FuncRef => "global::System.Delegate", ValueType.ExternRef => "object",
+        _ => throw new WasmException($"Unsupported generated value type {type}.")
+    };
+    private static string ResultType(ValueType[] types) => types.Length == 0 ? "void" :
+        types.Length == 1 ? TypeName(types[0]) : "(" + string.Join(", ", types.Select(TypeName)) + ")";
+    private static string ResultExpression(Value[] values) => values.Length == 0 ? "" :
+        values.Length == 1 ? values[0].Name : "(" + string.Join(", ", values.Select(v => v.Name)) + ")";
+    private sealed record Value(string Name, ValueType? Type);
+    private sealed class Control(byte opcode, List<Value> values, Value[] parameters, Value[] results, int label)
     {
         public byte Opcode = opcode;
-        public List<string> Values = values;
-        public string Result = result;
+        public List<Value> Values = values;
+        public Value[] Parameters = parameters, Results = results;
+        public Value[] LabelValues => Opcode == 0x03 ? Parameters : Results;
         public string Start = $"L{label}_start", End = $"L{label}_end", Else = $"L{label}_else";
         public bool ElseSeen;
     }
@@ -71,118 +83,162 @@ internal static class CSharpEmitter
     {
         var code = new StringBuilder();
         var declarations = new StringBuilder();
-        for (int i = function.Signature.Parameters; i < function.Locals; i++)
-            declarations.Append($"        int v{i} = 0;\n");
-        var stack = new List<string>();
+        for (int i = function.Signature.Parameters.Length; i < function.Locals.Length; i++)
+            declarations.Append($"        {TypeName(function.Locals[i])} v{i} = default({TypeName(function.Locals[i])});\n");
+        var stack = new List<Value>();
         int temporary = 0, label = 0;
-        string Temp()
+        string Temp(string type)
         {
             string name = $"s{temporary++}";
-            declarations.Append($"        int {name} = 0;\n");
+            declarations.Append($"        {type} {name} = default({type});\n");
             return name;
         }
-        var controls = new List<Control> { new Control(0xff, new List<string>(), function.Signature.Results == 1 ? Temp() : "", label++) };
+        Value[] Temps(ValueType[] types) => types.Select(t => new Value(Temp(TypeName(t)), t)).ToArray();
+        var controls = new List<Control> { new Control(0xff, new List<Value>(), Array.Empty<Value>(), Temps(function.Signature.Results), label++) };
         void Line(string text) => code.Append("        ").Append(text).Append('\n');
-        string Pop()
+        Value Pop(ValueType? expected = null)
         {
-            // Validated unreachable code may consume the polymorphic stack bottom.
-            if (stack.Count == controls[controls.Count-1].Values.Count) return "0";
-            string value = stack[stack.Count-1]; stack.RemoveAt(stack.Count-1); return value;
+            // Only the validator can introduce bottom. Give it the consuming instruction's type.
+            var value = new Value("default", null);
+            if (stack.Count > controls[controls.Count-1].Values.Count)
+            {
+                value = stack[stack.Count-1]; stack.RemoveAt(stack.Count-1);
+            }
+            return value.Type.HasValue ? value : new Value($"default({TypeName(expected ?? ValueType.I32)})", expected);
         }
-        void Push(string expression) { string value = Temp(); Line($"{value} = {expression};"); stack.Add(value); }
-        void Restore(Control frame) { stack = new List<string>(frame.Values); }
-        void Branch(Control target, string value)
+        Value[] PopTypes(ValueType[] types)
         {
-            if (target.Opcode != 0x03 && target.Result != "") Line($"{target.Result} = {value};");
+            var values = new Value[types.Length];
+            for (int i = types.Length-1; i >= 0; i--) values[i] = Pop(types[i]);
+            return values;
+        }
+        Value[] PopValues(Value[] destinations) => PopTypes(destinations.Select(v => v.Type!.Value).ToArray());
+        void Push(string expression, ValueType type = ValueType.I32)
+        {
+            var value = new Value(Temp(TypeName(type)), type);
+            Line($"{value.Name} = {expression};"); stack.Add(value);
+        }
+        void Restore(Control frame) { stack = new List<Value>(frame.Values); }
+        void Transfer(Value[] destinations, Value[] values)
+        {
+            // Snapshot all sources before assigning destinations: loop backedges can permute parameters.
+            var snapshots = Temps(destinations.Select(v => v.Type!.Value).ToArray());
+            for (int i = 0; i < values.Length; i++) Line($"{snapshots[i].Name} = {(values[i].Type.HasValue ? values[i].Name : $"default({TypeName(destinations[i].Type!.Value)})")};");
+            for (int i = 0; i < values.Length; i++) Line($"{destinations[i].Name} = {snapshots[i].Name};");
+        }
+        void Branch(Control target, Value[] values)
+        {
+            Transfer(target.LabelValues, values);
             Line($"goto {(target.Opcode == 0x03 ? target.Start : target.End)};");
         }
         foreach (var instruction in function.Instructions)
         {
             var current = controls[controls.Count-1];
             Control Target(int depth) => controls[controls.Count-1-depth];
+            string PopI32() => Pop(ValueType.I32).Name;
             switch (instruction.Opcode)
             {
                 case 0x02: case 0x03: case 0x04:
-                    string condition = instruction.Opcode == 0x04 ? Pop() : "";
-                    var frame = new Control(instruction.Opcode,new List<string>(stack),instruction.Operand == 1 ? Temp() : "",label++);
+                    string condition = instruction.Opcode == 0x04 ? PopI32() : "";
+                    var block = instruction.BlockType!;
+                    var inputs = PopTypes(block.Parameters);
+                    var frame = new Control(instruction.Opcode, new List<Value>(stack), Temps(block.Parameters), Temps(block.Results), label++);
+                    Transfer(frame.Parameters, inputs);
                     controls.Add(frame);
+                    stack.AddRange(frame.Parameters);
                     if (instruction.Opcode == 0x03) Line(frame.Start + ": ;");
                     if (instruction.Opcode == 0x04) Line($"if ({condition} == 0) goto {frame.Else};");
                     break;
                 case 0x05:
-                    if (current.Result != "") Line($"{current.Result} = {Pop()};");
+                    Transfer(current.Results, PopValues(current.Results));
                     Line($"goto {current.End};"); Line(current.Else + ": ;");
-                    current.ElseSeen = true; Restore(current);
+                    current.ElseSeen = true; Restore(current); stack.AddRange(current.Parameters);
                     break;
                 case 0x0b:
-                    if (current.Result != "") Line($"{current.Result} = {Pop()};");
-                    if (current.Opcode == 0x04 && !current.ElseSeen) Line(current.Else + ": ;");
+                    Transfer(current.Results, PopValues(current.Results));
+                    if (current.Opcode == 0x04 && !current.ElseSeen)
+                    {
+                        Line($"goto {current.End};"); Line(current.Else + ": ;");
+                        Transfer(current.Results, current.Parameters);
+                    }
                     Line(current.End + ": ;");
                     Restore(current);
                     controls.RemoveAt(controls.Count-1);
-                    if (current.Opcode == 0xff) Line(current.Result == "" ? "return;" : $"return {current.Result};");
-                    else if (current.Result != "") stack.Add(current.Result);
+                    if (current.Opcode == 0xff) Line("return" + (current.Results.Length == 0 ? "" : " " + ResultExpression(current.Results)) + ";");
+                    else stack.AddRange(current.Results);
                     break;
                 case 0x00: Line("throw new TrapException(TrapKind.Unreachable);"); Restore(current); break;
                 case 0x0c: case 0x0d:
-                    string branchCondition = instruction.Opcode == 0x0d ? Pop() : "";
+                    string branchCondition = instruction.Opcode == 0x0d ? PopI32() : "";
                     var target = Target(instruction.Operand);
-                    string value = target.Opcode != 0x03 && target.Result != "" ? Pop() : "0";
+                    var values = PopValues(target.LabelValues);
                     if (instruction.Opcode == 0x0d)
                     {
-                        Line($"if ({branchCondition} != 0) {{"); Branch(target,value); Line("}");
-                        if (target.Opcode != 0x03 && target.Result != "") stack.Add(value);
+                        Line($"if ({branchCondition} != 0) {{"); Branch(target, values); Line("}");
+                        stack.AddRange(values);
                     }
-                    else { Branch(target,value); Restore(current); }
+                    else { Branch(target, values); Restore(current); }
                     break;
                 case 0x0e:
-                    string selector = Pop();
+                    string selector = PopI32();
                     var targets = instruction.Targets!;
-                    var first = Target(targets[0]);
-                    string branchValue = first.Opcode != 0x03 && first.Result != "" ? Pop() : "0";
+                    var branchValues = new Value[Target(targets[0]).LabelValues.Length];
+                    for (int p = branchValues.Length-1; p >= 0; p--) branchValues[p] = Pop();
                     Line($"switch (unchecked((uint){selector})) {{");
-                    for(int i=0;i<targets.Length;i++)
+                    for (int i = 0; i < targets.Length; i++)
                     {
                         Line(i == targets.Length-1 ? "default:" : $"case {i}u:");
-                        Branch(Target(targets[i]),branchValue);
+                        Branch(Target(targets[i]), branchValues);
                     }
                     Line("}"); Restore(current); break;
                 case 0x0f:
-                    Line(function.Signature.Results == 0 ? "return;" : $"return {Pop()};");
+                    var returned = PopTypes(function.Signature.Results);
+                    Line("return" + (returned.Length == 0 ? "" : " " + ResultExpression(returned)) + ";");
                     Restore(current);
                     break;
                 case 0x10:
                     var signature = module.FunctionSignature(instruction.Operand);
-                    var arguments = new string[signature.Parameters];
-                    for(int p=arguments.Length-1;p>=0;p--) arguments[p] = Pop();
-                    string call = $"__wasm_F{instruction.Operand}({string.Join(", ",arguments)})";
-                    if (signature.Results == 1) Push(call); else Line(call+";");
+                    var arguments = PopTypes(signature.Parameters);
+                    string call = $"__wasm_F{instruction.Operand}({string.Join(", ", arguments.Select(v => v.Name))})";
+                    if (signature.Results.Length == 0) Line(call + ";");
+                    else if (signature.Results.Length == 1) Push(call, signature.Results[0]);
+                    else
+                    {
+                        string tuple = Temp(ResultType(signature.Results));
+                        Line($"{tuple} = {call};");
+                        for (int i = 0; i < signature.Results.Length; i++)
+                            stack.Add(new Value($"{tuple}.Item{i+1}", signature.Results[i]));
+                    }
                     break;
                 case 0x1a: Pop(); break;
-                case 0x1b:
-                    string selected = Pop(), b = Pop(), a = Pop();
-                    Push($"{selected} != 0 ? {a} : {b}"); break;
-                case 0x20: Push($"v{instruction.Operand}"); break;
+                case 0x1b: case 0x1c:
+                    string selected = PopI32();
+                    var selectedType = instruction.ResultTypes[0];
+                    var b = Pop(selectedType); var a = Pop(selectedType);
+                    if (selectedType.HasValue) Push($"{selected} != 0 ? {a.Name} : {b.Name}", selectedType.Value);
+                    else stack.Add(new Value("default", null));
+                    break;
+                case 0x20: Push($"v{instruction.Operand}", function.Locals[instruction.Operand]); break;
                 case 0x21: case 0x22:
-                    string localValue = Pop();
-                    Line($"v{instruction.Operand} = {localValue};");
+                    var localValue = Pop(function.Locals[instruction.Operand]);
+                    Line($"v{instruction.Operand} = {localValue.Name};");
                     if (instruction.Opcode == 0x22) stack.Add(localValue);
                     break;
                 case 0x41: Push(instruction.Operand.ToString(CultureInfo.InvariantCulture)); break;
-                case 0x23: Push($"__wasm_G{instruction.Operand}"); break;
-                case 0x24: Line($"__wasm_G{instruction.Operand} = {Pop()};"); break;
+                case 0x23: Push($"__wasm_G{instruction.Operand}", module.Globals[instruction.Operand].Type); break;
+                case 0x24: Line($"__wasm_G{instruction.Operand} = {Pop(module.Globals[instruction.Operand].Type).Name};"); break;
                 case 0x28: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
-                    Push($"__wasm_Load({Pop()}, {instruction.Immediate}u, {MemoryOperations.Width(instruction.Opcode)}, {(instruction.Opcode == 0x2c || instruction.Opcode == 0x2e ? "true" : "false")})"); break;
+                    Push($"__wasm_Load({PopI32()}, {instruction.Immediate}u, {MemoryOperations.Width(instruction.Opcode)}, {(instruction.Opcode == 0x2c || instruction.Opcode == 0x2e ? "true" : "false")})"); break;
                 case 0x36: case 0x3a: case 0x3b:
-                    string stored = Pop(), address = Pop();
+                    string stored = PopI32(), address = PopI32();
                     Line($"__wasm_Store({address}, {stored}, {instruction.Immediate}u, {MemoryOperations.Width(instruction.Opcode)});"); break;
                 case 0x3f: Push("__wasm_memory.Length / 65536"); break;
-                case 0x40: Push($"__wasm_Grow({Pop()})"); break;
+                case 0x40: Push($"__wasm_Grow({PopI32()})"); break;
                 default:
                     int arity = I32Operations.Arity(instruction.Opcode);
                     if (arity == 0) break;
-                    string right = arity == 2 ? Pop() : "";
-                    Push(I32Operations.Expression(instruction.Opcode, Pop(), right));
+                    string right = arity == 2 ? PopI32() : "";
+                    Push(I32Operations.Expression(instruction.Opcode, PopI32(), right));
                     break;
             }
         }

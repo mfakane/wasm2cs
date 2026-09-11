@@ -9,7 +9,44 @@ internal sealed class Reader(byte[] bytes, int start = 0, int? end = null)
         public bool End => position == limit;
         public byte Byte() => position < limit ? bytes[position++] : throw new WasmException("Unexpected end of WASM binary.");
         public void RequireEnd() { if (!End) throw new WasmException("Trailing bytes in section or function."); }
-        public void I32Type() { if (Byte() != 0x7f) throw new WasmException("Only i32 values are supported."); }
+        private static bool IsValueType(byte value) => value == 0x7f || value == 0x7e || value == 0x7d ||
+            value == 0x7c || value == 0x70 || value == 0x6f;
+        public ValueType ValueType()
+        {
+            byte value = Byte();
+            if (!IsValueType(value)) throw new WasmException($"Unsupported WASM value type 0x{value:x2}.");
+            return (ValueType)value;
+        }
+        public ValueType[] ValueTypes()
+        {
+            int count = Count();
+            if (count > Remaining) throw new WasmException("Value type vector extends past binary boundary.");
+            var types = new ValueType[count];
+            for (int i = 0; i < count; i++) types[i] = ValueType();
+            return types;
+        }
+        public Signature BlockType(List<Signature> types)
+        {
+            byte first = Byte();
+            if (first == 0x40) return Signature.Empty;
+            if (IsValueType(first)) return new Signature(Array.Empty<ValueType>(), new[] { (ValueType)first });
+            // Type indices use s33, not u32: bit 6 of the terminal byte is a sign bit.
+            long value = 0;
+            for (int i = 0; i < 5; i++)
+            {
+                byte b = i == 0 ? first : Byte();
+                if (i == 4 && (b & 0x70) != 0 && (b & 0x70) != 0x70)
+                    throw new WasmException("Block type LEB128 integer exceeds 33 bits.");
+                value |= (long)(b & 0x7f) << (7 * i);
+                if ((b & 0x80) == 0)
+                {
+                    if ((b & 0x40) != 0) value |= -1L << (7 * (i + 1));
+                    if (value < 0 || value >= types.Count) throw new WasmException("Invalid block type index.");
+                    return types[(int)value];
+                }
+            }
+            throw new WasmException("Block type LEB128 integer is too long.");
+        }
         private uint Leb(bool signed)
         {
             uint value = 0;

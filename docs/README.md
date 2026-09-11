@@ -7,13 +7,13 @@
 ## 読む順序と現在地
 
 1. [共通設計](self-hosting-design.md) で対象構成、実行境界、検証規則を確認する。
-2. 次の表を上から進める。現在着手できる段階は SH-01 である。
+2. 次の表を上から進める。現在着手できる段階は SH-03 である。
 3. 各段階の合格条件を満たしてコミットし、個別文書とこの表の状態を更新する。
 
 | ID | マイルストーン | 前提 | 状態 |
 |---|---|---|---|
 | [SH-01](milestones/SH-01-runtime-profile.md) | 対象成果物の固定と参照実行 | 既存11段階 | 完了 |
-| [SH-02](milestones/SH-02-typed-ir.md) | 型付き内部表現と検証基盤 | SH-01 | 未着手 |
+| [SH-02](milestones/SH-02-typed-ir.md) | 型付き内部表現と検証基盤 | SH-01 | 完了 |
 | [SH-03](milestones/SH-03-i64.md) | i64 | SH-02 | 未着手 |
 | [SH-04](milestones/SH-04-floating-point.md) | 浮動小数点と数値変換 | SH-03 | 未着手 |
 | [SH-05](milestones/SH-05-memory-data.md) | メモリ・global・data の拡張 | SH-04 | 未着手 |

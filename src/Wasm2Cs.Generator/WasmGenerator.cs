@@ -17,7 +17,8 @@ public sealed class WasmGenerator : IIncrementalGenerator
             .Select((file, cancellationToken) => (file.Path, Text: file.GetText(cancellationToken)?.ToString()));
         context.RegisterSourceOutput(inputs, (output, input) =>
         {
-            string name = Path.GetFileName(input.Path)[..^".wasm.base64".Length];
+            string filename = Path.GetFileName(input.Path);
+            string name = filename.Substring(0, filename.Length - ".wasm.base64".Length);
             try
             {
                 if (input.Text is null) throw new WasmException("Cannot read WASM intermediate input.");

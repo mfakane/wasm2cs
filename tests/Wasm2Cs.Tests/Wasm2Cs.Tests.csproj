@@ -3,8 +3,9 @@
   <ItemGroup>
     <ProjectReference Include="../../src/Wasm2Cs/Wasm2Cs.csproj" />
     <ProjectReference Include="../../src/Wasm2Cs.Generator/Wasm2Cs.Generator.csproj" Aliases="Generator" />
-    <Reference Include="Microsoft.CodeAnalysis" HintPath="$(MSBuildBinPath)/Roslyn/bincore/Microsoft.CodeAnalysis.dll" />
-    <Reference Include="Microsoft.CodeAnalysis.CSharp" HintPath="$(MSBuildBinPath)/Roslyn/bincore/Microsoft.CodeAnalysis.CSharp.dll" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.0" />
+    <PackageReference Include="NETStandard.Library" Version="2.0.3" GeneratePathProperty="true" PrivateAssets="all" />
+    <None Include="$(PkgNETStandard_Library)/build/netstandard2.0/ref/*.dll" Link="ReferenceAssemblies/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../samples/Smoke/Arithmetic.wasm" Link="Arithmetic.wasm" CopyToOutputDirectory="PreserveNewest" />
     <None Include="oracle.mjs" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

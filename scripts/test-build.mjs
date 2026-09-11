@@ -32,7 +32,7 @@ const build = (success = true) => dotnet(['build', '-m:1', '-p:UseSharedCompilat
 const run = () => dotnet(['bin/Debug/net10.0/Consumer.dll']).trim();
 try {
   project('<Wasm Include="Counter.wasm" />');
-  writeFileSync(join(directory, 'Program.cs'), 'System.Console.WriteLine(typeof(Program).Assembly.GetType("Wasm2Cs.Generated.Counter")?.GetMethod("f")?.Invoke(null, null) ?? "missing");');
+  writeFileSync(join(directory, 'Program.cs'), 'var type = typeof(Program).Assembly.GetType("Wasm2Cs.Generated.Counter"); System.Console.WriteLine(type == null ? "missing" : type.GetMethod("f").Invoke(System.Activator.CreateInstance(type), null));');
   const path = join(directory, 'Counter.wasm');
   writeFileSync(path, binary(42));
   build();

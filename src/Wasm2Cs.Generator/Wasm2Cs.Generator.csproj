@@ -1,8 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><IsRoslynComponent>true</IsRoslynComponent></PropertyGroup>
+  <PropertyGroup>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
   <ItemGroup>
-    <!-- Bootstrap without NuGet; this prototype requires the .NET 10 SDK compiler. -->
-    <Reference Include="Microsoft.CodeAnalysis" HintPath="$(MSBuildBinPath)/Roslyn/bincore/Microsoft.CodeAnalysis.dll" Private="false" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.0" PrivateAssets="all" />
     <Compile Include="../Wasm2Cs/*.cs" Link="Core/%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

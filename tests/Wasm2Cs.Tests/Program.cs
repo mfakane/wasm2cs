@@ -11,7 +11,7 @@ using Wasm2Cs;
 var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
     .Select(p => MetadataReference.CreateFromFile(p)).ToArray();
 CSharpCompilation Compilation(string source) => CSharpCompilation.Create("Test_" + Guid.NewGuid().ToString("N"),
-    [CSharpSyntaxTree.ParseText(source)], references,
+    [CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.CSharp9))], references,
     new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, checkOverflow: true));
 Assembly Compile(Microsoft.CodeAnalysis.Compilation compilation)
 {
@@ -26,6 +26,11 @@ var wasmPath = Path.Combine(AppContext.BaseDirectory, "Arithmetic.wasm");
 var bytes = File.ReadAllBytes(wasmPath);
 var assembly = Compile(Compilation(Transpiler.Translate(bytes, "Arithmetic")));
 var module = assembly.GetType("Wasm2Cs.Generated.Arithmetic")!;
+var instance = Activator.CreateInstance(module)!;
+var portableReferences = Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "ReferenceAssemblies"), "*.dll")
+    .Select(p => MetadataReference.CreateFromFile(p));
+Compile(Compilation(Transpiler.Translate(bytes, "Portable")).WithReferences(portableReferences));
+Console.WriteLine("PASS: Generated C# 9 compiles against .NET Standard 2.0 reference assemblies.");
 var calls = new List<Call>();
 int[] boundaries = [0, 1, -1, int.MinValue, int.MaxValue, 65536, -65536];
 foreach (var name in new[] { "add", "sub", "mul" })
@@ -56,7 +61,7 @@ Assert(expected.Length == calls.Count, "Oracle result count differs.");
 for (int i = 0; i < calls.Count; i++)
 {
     var call = calls[i];
-    var actual = (int)module.GetMethod(call.Name)!.Invoke(null, call.Args.Cast<object>().ToArray())!;
+    var actual = (int)module.GetMethod(call.Name)!.Invoke(instance, call.Args.Cast<object>().ToArray())!;
     Assert(actual == expected[i], $"{call.Name}({string.Join(',', call.Args)}): {actual} != {expected[i]}");
 }
 Console.WriteLine($"PASS: {calls.Count} C# results match Node.js WebAssembly (checked C# compilation).");
@@ -88,11 +93,12 @@ foreach (var test in invalid)
 Console.WriteLine($"PASS: {invalid.Length} malformed/unsupported modules rejected.");
 
 var input = new Input("Arithmetic.wasm.base64", Convert.ToBase64String(bytes));
-GeneratorDriver driver = CSharpGeneratorDriver.Create([new WasmGenerator().AsSourceGenerator()], [input]);
+GeneratorDriver driver = CSharpGeneratorDriver.Create([new WasmGenerator().AsSourceGenerator()], [input],
+    parseOptions: new CSharpParseOptions(LanguageVersion.CSharp9));
 driver = driver.RunGeneratorsAndUpdateCompilation(Compilation(""), out var generated, out var diagnostics);
 Assert(diagnostics.Length == 0, string.Join("\n", diagnostics));
 var generatedModule = Compile(generated).GetType("Wasm2Cs.Generated.Arithmetic")!;
-Assert((int)generatedModule.GetMethod("add")!.Invoke(null, [20,22])! == 42, "Generator result differs.");
+Assert((int)generatedModule.GetMethod("add")!.Invoke(Activator.CreateInstance(generatedModule), [20,22])! == 42, "Generator result differs.");
 
 // Same path, different content: exercise the incremental generator's content dependency.
 var updated = new Input(input.Path, Convert.ToBase64String(Module([0x41,42,0x0b])));
@@ -100,7 +106,7 @@ driver = driver.ReplaceAdditionalText(input, updated);
 driver = driver.RunGeneratorsAndUpdateCompilation(Compilation(""), out generated, out diagnostics);
 Assert(diagnostics.Length == 0, "Updated input failed.");
 generatedModule = Compile(generated).GetType("Wasm2Cs.Generated.Arithmetic")!;
-Assert((int)generatedModule.GetMethod("f")!.Invoke(null, null)! == 42, "Generator retained stale binary.");
+Assert((int)generatedModule.GetMethod("f")!.Invoke(Activator.CreateInstance(generatedModule), null)! == 42, "Generator retained stale binary.");
 Assert(generatedModule.GetMethod("add") is null, "Old export retained.");
 var broken = new Input(input.Path, Convert.ToBase64String(Module([0xff,0x0b])));
 driver = driver.ReplaceAdditionalText(updated, broken).RunGenerators(Compilation(""));

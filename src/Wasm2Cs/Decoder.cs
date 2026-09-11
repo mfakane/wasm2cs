@@ -46,7 +46,8 @@ internal static class Decoder
                     {
                         string name = section.Name();
                         if (section.Byte() != 0) throw new WasmException("Only function exports are supported.");
-                        if (!exports.TryAdd(name, section.Count())) throw new WasmException("Duplicate export name.");
+                        if (exports.ContainsKey(name)) throw new WasmException("Duplicate export name.");
+                        exports.Add(name, section.Count());
                     }
                     break;
                 case 10:

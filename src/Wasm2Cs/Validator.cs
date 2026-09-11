@@ -44,6 +44,7 @@ internal static class Validator
         }
     }
     private static bool IsIdentifier(string name) => name.Length > 0 &&
-        (char.IsAsciiLetter(name[0]) || name[0] == '_') &&
-        name.All(c => char.IsAsciiLetterOrDigit(c) || c == '_');
+        (IsLetter(name[0]) || name[0] == '_') &&
+        name.All(c => IsLetter(c) || (c >= '0' && c <= '9') || c == '_');
+    private static bool IsLetter(char c) => (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
 }

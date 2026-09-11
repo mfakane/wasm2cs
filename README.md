@@ -9,11 +9,11 @@ validation, and C# emission. Invalid instructions and operand stacks include
 function indices and byte offsets in diagnostics. See `IMPLEMENTATION.md` for
 the staged Unity/IL2CPP implementation milestones.
 
-Requires the **.NET 10 SDK**; Node.js 22+ is used for the independent WebAssembly
-oracle and build integration tests. There are no NuGet dependencies. This bootstrap
-uses Roslyn assemblies from the installed SDK and targets `net10.0`, including the
-generator. Older compiler hosts and Visual Studio's .NET Framework host are not
-supported. NuGet packaging and wider compiler compatibility are future work.
+Requires the **.NET 10 SDK** to build the tools and tests; Node.js 22+ supplies the
+independent WebAssembly oracle. The core and generator target `netstandard2.0`;
+the generator uses Roslyn 4.3.0 from NuGet. Generated code targets C# 9 and .NET
+Standard 2.0 APIs, verified against reference assemblies. Unity runtime validation
+and package distribution are subsequent milestones.
 
 ## Run the proof
 
@@ -66,7 +66,7 @@ paths. The complete example is `samples/Smoke/Smoke.csproj`.
 <Import Project="../../build/Wasm2Cs.targets" />
 ```
 
-After `dotnet build`, call `Wasm2Cs.Generated.Arithmetic.add(20, 22)`.
+After `dotnet build`, call `new Wasm2Cs.Generated.Arithmetic().add(20, 22)`.
 The file is written to
 `obj/generated/Wasm2Cs.Generator/Wasm2Cs.WasmGenerator/Arithmetic.g.cs`.
 Keep generated files under `obj` to avoid compiling them twice.
@@ -77,7 +77,9 @@ content changes are tracked without reading hidden binary dependencies inside th
 generator. Unchanged inputs retain their timestamps. Run a build after editing WASM;
 automatic IDE file-watching behavior has not been verified.
 
-Each filename becomes a static class; each function export becomes a static method.
+Each filename becomes a sealed class; each function export becomes an instance method.
+Create a module with `new Arithmetic()`. This intentionally replaces the prototype's
+static API so modules can own independent state when memory and globals are added.
 Names must be ASCII C# identifiers, with keywords escaped using `@`. An export cannot
 have the same name as its class, and module filenames must be unique (ignoring case).
 Translation errors fail the build with `WASM001`; duplicate class names use `WASM002`.

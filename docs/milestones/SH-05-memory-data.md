@@ -1,6 +1,6 @@
 # SH-05 メモリ・global・data の拡張
 
-状態: 実施中。前提: [SH-04](SH-04-floating-point.md)。次: [SH-05.5](SH-05.5-lowering.md)。機能実装と共通回帰は完了し、Unity 実行記録が未完了。
+状態: 完了。前提: [SH-04](SH-04-floating-point.md)。次: [SH-05.5](SH-05.5-lowering.md)。機能実装、共通回帰、Unity package の smoke 実行を確認した。
 
 ## 目的・変更対象
 
@@ -41,6 +41,7 @@ threads の共有メモリ、atomics、memory64 は追加しない。対象プ�
 import と状態共有、bulk memory・初期化、コピー API と検証に分ける。終了コミット例: `feat: extend wasm memory and data support`。
 
 - 実行コマンド・結果: `dotnet build Wasm2Cs.slnx -m:1 -p:UseSharedCompilation=false -p:NuGetAudit=false --nologo`、`dotnet tests/Wasm2Cs.Tests/bin/Debug/net10.0/Wasm2Cs.Tests.dll`、`dotnet run --project samples/Smoke --no-build`、`node scripts/test-build.mjs`、`node scripts/test-package.mjs`、`node scripts/pack.mjs` が成功。SH-05 の共有 memory/global、初期化式、bulk data、範囲付きコピー、overlap copy、fill、data.drop、失敗 grow は `ExecutionChecks.SharedMemoryGlobalsAndBulkData` で検証した。
-- memory プロファイル・状態比較ログ: SH-01 の固定プロファイルを参照。SH-05 固有の永続ログは未取得。
-- 未解決事項: Unity Editor／IL2CPP の SH-05 専用実行記録が未取得。コミットは未作成。
-- 終了コミット: 未完了
+- memory プロファイル・状態比較ログ: SH-01 の固定プロファイルを参照。共有 memory／global、bulk data、範囲付きコピー、grow 後の状態は `ExecutionChecks.SharedMemoryGlobalsAndBulkData` で確認した。
+- Unity Editor／Windows x64 IL2CPP 実行ログ: `scripts/test-unity.ps1` の最新 package 検証が成功し、ログは `C:\Users\fumika\AppData\Local\Temp\wasm2cs-unity-be7f6ad5827044b2aa3ed2566ecf5a19` に出力された。Host の memory 交換、data 初期化、memory access を含む smoke を実行した。
+- 未解決事項: threads、atomics、memory64 は非対象である。
+- 終了コミット: `8d15d70`（`feat: extend wasm memory and data support`）。

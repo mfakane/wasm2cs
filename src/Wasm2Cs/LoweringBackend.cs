@@ -97,6 +97,28 @@ internal sealed class DotNetVectorLoweringBackend(WasmTargetProfile profile) : D
 {
     public override string VectorTypeName => "global::System.Runtime.Intrinsics.Vector128<float>";
 
+    public override string I32Expression(byte opcode, string left, string right)
+    {
+        return opcode switch
+        {
+            0x67 => $"global::System.Numerics.BitOperations.LeadingZeroCount(unchecked((uint){left}))",
+            0x68 => $"global::System.Numerics.BitOperations.TrailingZeroCount(unchecked((uint){left}))",
+            0x69 => $"global::System.Numerics.BitOperations.PopCount(unchecked((uint){left}))",
+            _ => base.I32Expression(opcode, left, right)
+        };
+    }
+
+    public override string I64Expression(byte opcode, string left, string right)
+    {
+        return opcode switch
+        {
+            0x79 => $"(long)global::System.Numerics.BitOperations.LeadingZeroCount(unchecked((ulong){left}))",
+            0x7a => $"(long)global::System.Numerics.BitOperations.TrailingZeroCount(unchecked((ulong){left}))",
+            0x7b => $"(long)global::System.Numerics.BitOperations.PopCount(unchecked((ulong){left}))",
+            _ => base.I64Expression(opcode, left, right)
+        };
+    }
+
     public override bool TryLowerVectorConstant(byte[] bytes, out VectorLowering? lowering)
     {
         if (bytes.Length != 16)

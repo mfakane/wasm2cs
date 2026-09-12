@@ -50,6 +50,13 @@ internal static class ExecutionChecks
             ..Section(1, [1,0x60,..U32(parameters),..Enumerable.Repeat((byte)0x7f,parameters), (byte)results,..(results == 1 ? new byte[] { 0x7f } : Array.Empty<byte>())]),
             ..Section(3, [1,0]), ..Section(7, [1,1,(byte)'f',0,0]), ..Section(10, [1,..U32(body.Length),..body])];
     }
+    internal static byte[] I64Unary(byte opcode)
+    {
+        byte[] body = [0,0x20,0,opcode,0x0b];
+        return [0,97,115,109,1,0,0,0,
+            ..Section(1,[1,0x60,1,0x7e,1,0x7e]), ..Section(3,[1,0]),
+            ..Section(7,[1,1,(byte)'f',0,0]), ..Section(10,[1,..U32(body.Length),..body])];
+    }
     internal static byte[] VectorModule()
     {
         byte[] body = [0,
@@ -394,6 +401,28 @@ internal static class ExecutionChecks
             canonicalTruncation.Kind != CanonicalOperationKind.Conversion || canonicalTruncation.Inputs.Single() != Wasm2Cs.ValueType.F32 ||
             canonicalTruncation.Result != Wasm2Cs.ValueType.I64)
             throw new Exception("Conversion did not enter canonical lowering.");
+
+        foreach (var (opcode, api) in new (byte,string)[] {
+            (0x67,"LeadingZeroCount"), (0x68,"TrailingZeroCount"), (0x69,"PopCount") })
+        {
+            byte[] i32BitModule = Module(1,[0x20,0,opcode,0x0b]);
+            string vectorBitSource = Transpiler.Translate(i32BitModule,"VectorBits",WasmTargetProfile.DotNetVector);
+            if (!vectorBitSource.Contains($"System.Numerics.BitOperations.{api}"))
+                throw new Exception(".NET vector profile did not select the i32 BCL bit operation: " + api);
+            var vectorBitType = Compile(i32BitModule,"VectorBits",false,WasmTargetProfile.DotNetVector)
+                .GetType("Wasm2Cs.Generated.VectorBits")!;
+            int expected = opcode == 0x69 ? 0 : 32;
+            if ((int)vectorBitType.GetMethod("f")!.Invoke(Activator.CreateInstance(vectorBitType),[0])! != expected)
+                throw new Exception(".NET BCL bit operation changed the i32 result: " + api);
+        }
+        byte[] i64BitModule = I64Unary(0x7b);
+        string vectorBit64Source = Transpiler.Translate(i64BitModule,"VectorBits64",WasmTargetProfile.DotNetVector);
+        if (!vectorBit64Source.Contains("System.Numerics.BitOperations.PopCount"))
+            throw new Exception(".NET vector profile did not select the i64 BCL bit operation.");
+        var vectorBit64Type = Compile(i64BitModule,"VectorBits64",false,WasmTargetProfile.DotNetVector)
+            .GetType("Wasm2Cs.Generated.VectorBits64")!;
+        if ((long)vectorBit64Type.GetMethod("f")!.Invoke(Activator.CreateInstance(vectorBit64Type),[-1L])! != 64)
+            throw new Exception(".NET BCL population count changed the i64 result.");
 
         byte[] vectorBytes = VectorModule();
         var decodedVector = Decoder.Decode(vectorBytes);

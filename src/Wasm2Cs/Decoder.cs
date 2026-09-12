@@ -198,6 +198,7 @@ internal static class Decoder
             int[]? targets = null;
             uint immediate = 0;
             uint secondary = 0;
+            byte[]? vectorConstant = null;
             Signature? blockType = null;
             ValueType? selectType = null;
             ConstantValue? constant = null;
@@ -242,11 +243,25 @@ internal static class Decoder
                         default: throw new WasmException($"Offset 0x{offset:x}: Unsupported WASM opcode 0xfc/{operand}.");
                     }
                     break;
+                case 0xfd:
+                    operand = body.Count();
+                    switch (operand)
+                    {
+                        case 12:
+                            vectorConstant = body.Bytes(16);
+                            break;
+                        case 228: // f32x4.add
+                        case 230: // f32x4.mul
+                            break;
+                        default:
+                            throw new WasmException($"Offset 0x{offset:x}: Unsupported WASM opcode 0xfd/{operand}.");
+                    }
+                    break;
                 default:
                     if (I32Operations.Arity(opcode) != 0 || I64Operations.Arity(opcode) != 0 || FloatOperations.Arity(opcode) != 0 || ConversionOperations.Supports(opcode)) { operand = 0; break; }
                     throw new WasmException($"Offset 0x{offset:x}: Unsupported WASM opcode 0x{opcode:x2}.");
             }
-            instructions.Add(new Instruction(opcode, operand, offset, targets, immediate, blockType, selectType, constant, secondary));
+            instructions.Add(new Instruction(opcode, operand, offset, targets, immediate, blockType, selectType, constant, secondary, vectorConstant));
             if (opcode == 0x0b)
             {
                 if (depth != 0) { depth--; continue; }

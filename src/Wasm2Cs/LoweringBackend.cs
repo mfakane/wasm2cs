@@ -39,6 +39,15 @@ internal class LoweringBackend(WasmTargetProfile profile)
         lowering = null;
         return false;
     }
+
+    public virtual string VectorTypeName => throw new WasmException(
+        $"Target profile '{WasmTargetProfiles.Name(Profile)}' does not support v128 lowering.");
+
+    public virtual bool TryLowerVectorConstant(byte[] bytes, out VectorLowering? lowering)
+    {
+        lowering = null;
+        return false;
+    }
 }
 
 internal class PortableLoweringBackend(WasmTargetProfile profile) : LoweringBackend(profile);
@@ -77,6 +86,21 @@ internal class DotNetNetStandard21LoweringBackend(WasmTargetProfile profile) : P
 // implementation yet.
 internal sealed class DotNetVectorLoweringBackend(WasmTargetProfile profile) : DotNetNetStandard21LoweringBackend(profile)
 {
+    public override string VectorTypeName => "global::System.Runtime.Intrinsics.Vector128<float>";
+
+    public override bool TryLowerVectorConstant(byte[] bytes, out VectorLowering? lowering)
+    {
+        if (bytes.Length != 16)
+        {
+            lowering = null;
+            return false;
+        }
+        string lanes = string.Join(", ", Enumerable.Range(0, 4).Select(i =>
+            $"global::System.BitConverter.Int32BitsToSingle(unchecked((int)0x{Bits(bytes, i * 4):x8}U))"));
+        lowering = new VectorLowering(VectorTypeName, $"global::System.Runtime.Intrinsics.Vector128.Create({lanes})");
+        return true;
+    }
+
     public override bool TryLowerVector(CanonicalVectorOperation operation, string left, string right,
         out VectorLowering? lowering)
     {
@@ -94,14 +118,32 @@ internal sealed class DotNetVectorLoweringBackend(WasmTargetProfile profile) : D
         string lanes = string.Join(", ", Enumerable.Range(0, 4).Select(i =>
             $"global::System.Runtime.Intrinsics.Vector128.GetElement({left}, {i}) {laneOperation} " +
             $"global::System.Runtime.Intrinsics.Vector128.GetElement({right}, {i})"));
-        lowering = new VectorLowering("global::System.Runtime.Intrinsics.Vector128<float>",
+        lowering = new VectorLowering(VectorTypeName,
             $"global::System.Runtime.Intrinsics.Vector128.Create({lanes})");
         return true;
     }
+
+    private static uint Bits(byte[] bytes, int offset) => (uint)(bytes[offset] | (bytes[offset + 1] << 8) |
+        (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24));
 }
 
 internal sealed class UnityMathematicsLoweringBackend(WasmTargetProfile profile) : PortableLoweringBackend(profile)
 {
+    public override string VectorTypeName => "global::Unity.Mathematics.float4";
+
+    public override bool TryLowerVectorConstant(byte[] bytes, out VectorLowering? lowering)
+    {
+        if (bytes.Length != 16)
+        {
+            lowering = null;
+            return false;
+        }
+        string lanes = string.Join(", ", Enumerable.Range(0, 4).Select(i =>
+            $"global::Unity.Mathematics.math.asfloat(0x{Bits(bytes, i * 4):x8}u)"));
+        lowering = new VectorLowering(VectorTypeName, $"new {VectorTypeName}({lanes})");
+        return true;
+    }
+
     public override bool TryLowerVector(CanonicalVectorOperation operation, string left, string right,
         out VectorLowering? lowering)
     {
@@ -114,4 +156,7 @@ internal sealed class UnityMathematicsLoweringBackend(WasmTargetProfile profile)
         lowering = expression is null ? null : new VectorLowering("global::Unity.Mathematics.float4", expression);
         return lowering is not null;
     }
+
+    private static uint Bits(byte[] bytes, int offset) => (uint)(bytes[offset] | (bytes[offset + 1] << 8) |
+        (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24));
 }

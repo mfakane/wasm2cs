@@ -190,9 +190,11 @@ Translation errors fail the build with `WASM001`; duplicate class names use `WAS
 ## Supported subset
 
 - WASM version 1; typed parameters, locals, and results (`i32`, `i64`, `f32`,
-  `f64`, `funcref`, `externref`). Multiple results use statically typed C# tuples.
+  `f64`, `v128`, `funcref`, `externref`). Multiple results use statically typed C# tuples.
   Numeric constants and operations support i32/i64/f32/f64. The numeric host API
   uses C# `int`, `long`, `float`, and `double`; internal float values retain raw bits.
+  The `dotnet-vector` and `unity-mathematics` profiles additionally support the
+  initial `v128.const`, `f32x4.add`, and `f32x4.mul` subset.
 - Type, function import, function, memory, global, export, start, code, and active
   data sections; custom sections are skipped.
 - `local.get`, `local.set`, `local.tee`, i32/i64 constants and MVP integer arithmetic,
@@ -253,8 +255,8 @@ and verifies callback order, memory exchange, reentry, and exception identity in
 both .NET and Unity. Run `node scripts/create-host-fixture.mjs` to reproduce its
 binary and verify the same callback scenario with WebAssembly.
 
-Imported memories/globals, indirect calls, SIMD, reference instructions, and other unsupported
-instructions are rejected. This is not yet a general-purpose WASM compiler;
+Imported memories/globals, indirect calls, unsupported SIMD instructions, reference instructions,
+and other unsupported instructions are rejected. v128 globals are not yet supported. This is not yet a general-purpose WASM compiler;
 ordinary Rust/C/C++ outputs will typically need more instructions and sections.
 All function bodies, including unexported ones, are checked. Parsing validates section
 boundaries/order, LEB128 encodings, indices, and operand/result stack types and heights within

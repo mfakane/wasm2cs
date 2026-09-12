@@ -9,7 +9,7 @@ internal sealed class Reader(byte[] bytes, int start = 0, int? end = null)
         public bool End => position == limit;
         public byte Byte() => position < limit ? bytes[position++] : throw new WasmException("Unexpected end of WASM binary.");
         public void RequireEnd() { if (!End) throw new WasmException("Trailing bytes in section or function."); }
-        private static bool IsValueType(byte value) => value == 0x7f || value == 0x7e || value == 0x7d ||
+        private static bool IsValueType(byte value) => value == 0x7b || value == 0x7f || value == 0x7e || value == 0x7d ||
             value == 0x7c || value == 0x70 || value == 0x6f;
         public ValueType ValueType()
         {

@@ -7,6 +7,7 @@ namespace Wasm2Cs;
 // can replace it without leaving callers with a stale array.
 public enum WasmValueType : byte
 {
+    V128 = 0x7b,
     I32 = 0x7f,
     I64 = 0x7e,
     F32 = 0x7d,

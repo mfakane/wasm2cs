@@ -22,24 +22,24 @@ internal static class CSharpEmitter
             if (module.Globals[g].Imported)
                 source.Append($"    private readonly global::Wasm2Cs.WasmGlobal __wasm_import_global{g};\n");
             else
-                source.Append($"    private {TypeName(module.Globals[g].Type)} __wasm_G{g};\n");
+                source.Append($"    private {TypeName(module.Globals[g].Type, lowering)} __wasm_G{g};\n");
         }
         for (int g=0;g<module.Globals.Count;g++)
-            if (module.Globals[g].Imported) source.Append(GlobalAccessor(module, g));
+            if (module.Globals[g].Imported) source.Append(GlobalAccessor(module, g, lowering));
         for (int d=0;d<module.Data.Count;d++)
             if (module.Data[d].Passive) source.Append($"    private byte[] __wasm_D{d};\n");
         bool floatImports = module.Imports.Select((_, i) => module.FunctionSignature(i)).Any(t => t.Parameters.Any(IsFloat) || t.Results.Any(IsFloat));
         for (int i=0;i<module.Imports.Count;i++)
         {
             var signature = module.FunctionSignature(i);
-            string parameters = string.Join(", ", signature.Parameters.Select((type, p) => $"{TypeName(type)} v{p}"));
+            string parameters = string.Join(", ", signature.Parameters.Select((type, p) => $"{TypeName(type, lowering)} v{p}"));
             // Base64 keeps arbitrary UTF-8 import names out of C# syntax and comments.
             source.Append($"    // Import {i}: module/name UTF-8 base64 {Convert.ToBase64String(Encoding.UTF8.GetBytes(module.Imports[i].ModuleName))}/{Convert.ToBase64String(Encoding.UTF8.GetBytes(module.Imports[i].Name))}\n");
-            source.Append($"    public delegate {BoundaryResultType(signature.Results, false)} __wasm_Import{i}({BoundaryParameters(signature.Parameters, false)});\n");
-            if (floatImports) source.Append($"    public delegate {BoundaryResultType(signature.Results, true)} __wasm_BitsImport{i}({BoundaryParameters(signature.Parameters, true)});\n");
+            source.Append($"    public delegate {BoundaryResultType(signature.Results, false, lowering)} __wasm_Import{i}({BoundaryParameters(signature.Parameters, false, lowering)});\n");
+            if (floatImports) source.Append($"    public delegate {BoundaryResultType(signature.Results, true, lowering)} __wasm_BitsImport{i}({BoundaryParameters(signature.Parameters, true, lowering)});\n");
             source.Append($"    private readonly __wasm_{(floatImports ? "BitsImport" : "Import")}{i} __wasm_host{i};\n");
             string call = $"__wasm_host{i}({string.Join(", ",signature.Parameters.Select((t,p) => ToBoundary($"v{p}", t, floatImports)))})";
-            source.Append($"    private {ResultType(signature.Results)} __wasm_F{i}({parameters}) {{ {ReturnBoundary(call, signature.Results, true, floatImports)} }}\n");
+            source.Append($"    private {ResultType(signature.Results, lowering)} __wasm_F{i}({parameters}) {{ {ReturnBoundary(call, signature.Results, true, floatImports)} }}\n");
         }
         source.Append($"    public @{className}({ConstructorParameters(module, false)})\n    {{\n");
         for (int i=0;i<module.Imports.Count;i++)
@@ -120,9 +120,9 @@ internal static class CSharpEmitter
         for (int i=0;i<module.Bodies.Count;i++)
         {
             var function = module.Bodies[i];
-            source.Append("    private ").Append(ResultType(function.Signature.Results))
+            source.Append("    private ").Append(ResultType(function.Signature.Results, lowering))
                 .Append(" __wasm_F").Append(i + module.Imports.Count).Append('(')
-                .Append(string.Join(", ", function.Signature.Parameters.Select((type, p) => $"{TypeName(type)} v{p}")))
+                .Append(string.Join(", ", function.Signature.Parameters.Select((type, p) => $"{TypeName(type, lowering)} v{p}")))
                 .Append(")\n    {\n").Append(EmitBody(module, function, lowering)).Append("    }\n");
         }
         foreach (var export in module.Exports)
@@ -141,7 +141,7 @@ internal static class CSharpEmitter
                 if (kind == 3)
                 {
                     var global = module.Globals[export.Value];
-                    source.Append($"    public {BoundaryTypeName(global.Type,bits)} @{name} {{ get {{ return {ToBoundary(GlobalExpression(module, export.Value),global.Type,bits)}; }}");
+                    source.Append($"    public {BoundaryTypeName(global.Type,bits,lowering)} @{name} {{ get {{ return {ToBoundary(GlobalExpression(module, export.Value),global.Type,bits)}; }}");
                     if (global.Mutable)
                     {
                         string value = FromBoundary("value", global.Type, bits);
@@ -152,7 +152,7 @@ internal static class CSharpEmitter
                 }
                 var signature = module.FunctionSignature(export.Value);
                 string call = $"__wasm_F{export.Value}({string.Join(", ",signature.Parameters.Select((t,p)=>FromBoundary($"v{p}",t,bits)))})";
-                source.Append($"    public {BoundaryResultType(signature.Results,bits)} @{name}({BoundaryParameters(signature.Parameters,bits)})\n    {{\n        {ReturnBoundary(call,signature.Results,false,bits)}\n    }}\n");
+                source.Append($"    public {BoundaryResultType(signature.Results,bits,lowering)} @{name}({BoundaryParameters(signature.Parameters,bits,lowering)})\n    {{\n        {ReturnBoundary(call,signature.Results,false,bits)}\n    }}\n");
             }
         }
         return source.Append("}\n}\n").ToString();
@@ -174,7 +174,7 @@ internal static class CSharpEmitter
     private static string NullableInt(int? value) => value.HasValue ? value.Value.ToString(CultureInfo.InvariantCulture) : "null";
     private static string WasmTypeName(ValueType type) => $"global::Wasm2Cs.WasmValueType.{type switch
     {
-        ValueType.I32 => "I32", ValueType.I64 => "I64", ValueType.F32 => "F32", ValueType.F64 => "F64",
+        ValueType.V128 => "V128", ValueType.I32 => "I32", ValueType.I64 => "I64", ValueType.F32 => "F32", ValueType.F64 => "F64",
         ValueType.FuncRef => "FuncRef", ValueType.ExternRef => "ExternRef",
         _ => throw new WasmException($"Unsupported global type {type}.")
     }}";
@@ -182,7 +182,7 @@ internal static class CSharpEmitter
         $"__wasm_GetG{index}()" : $"__wasm_G{index}";
     private static string GlobalSet(Module module, int index, string value) => module.Globals[index].Imported ?
         $"__wasm_SetG{index}({value});" : $"__wasm_G{index} = {value};";
-    private static string GlobalAccessor(Module module, int index)
+    private static string GlobalAccessor(Module module, int index, LoweringPlan lowering)
     {
         var type = module.Globals[index].Type;
         string getter, setter;
@@ -209,18 +209,18 @@ internal static class CSharpEmitter
         else
         {
             getter = type == ValueType.FuncRef
-                ? $"({TypeName(type)})__wasm_import_global{index}.ReferenceValue"
+                ? $"({TypeName(type, lowering)})__wasm_import_global{index}.ReferenceValue"
                 : $"__wasm_import_global{index}.ReferenceValue";
             setter = $"__wasm_import_global{index}.ReferenceValue = value;";
         }
-        return $"    private {TypeName(type)} __wasm_GetG{index}() => {getter};\n" +
-            $"    private void __wasm_SetG{index}({TypeName(type)} value) {{ {setter} }}\n";
+        return $"    private {TypeName(type, lowering)} __wasm_GetG{index}() => {getter};\n" +
+            $"    private void __wasm_SetG{index}({TypeName(type, lowering)} value) {{ {setter} }}\n";
     }
-    private static string BoundaryTypeName(ValueType type, bool bits) => type == ValueType.F32 ? (bits ? "int" : "float") :
-        type == ValueType.F64 ? (bits ? "long" : "double") : TypeName(type);
-    private static string BoundaryResultType(ValueType[] types, bool bits) => types.Length == 0 ? "void" :
-        types.Length == 1 ? BoundaryTypeName(types[0],bits) : "("+string.Join(", ",types.Select(t=>BoundaryTypeName(t,bits)))+")";
-    private static string BoundaryParameters(ValueType[] types, bool bits) => string.Join(", ",types.Select((t,p)=>$"{BoundaryTypeName(t,bits)} v{p}"));
+    private static string BoundaryTypeName(ValueType type, bool bits, LoweringPlan lowering) => type == ValueType.F32 ? (bits ? "int" : "float") :
+        type == ValueType.F64 ? (bits ? "long" : "double") : TypeName(type, lowering);
+    private static string BoundaryResultType(ValueType[] types, bool bits, LoweringPlan lowering) => types.Length == 0 ? "void" :
+        types.Length == 1 ? BoundaryTypeName(types[0],bits,lowering) : "("+string.Join(", ",types.Select(t=>BoundaryTypeName(t,bits,lowering)))+")";
+    private static string BoundaryParameters(ValueType[] types, bool bits, LoweringPlan lowering) => string.Join(", ",types.Select((t,p)=>$"{BoundaryTypeName(t,bits,lowering)} v{p}"));
     private static string FromBoundary(string value, ValueType type, bool bits) => type == ValueType.F32 ?
         (bits ? $"__wasm_F32({value})" : $"__wasm_FromF32({value})") : type == ValueType.F64 ?
         (bits ? $"__wasm_F64({value})" : $"__wasm_FromF64({value})") : value;
@@ -251,14 +251,15 @@ internal static class CSharpEmitter
             _ => throw new WasmException($"Unsupported constant type {value.Type}.")
         };
     }
-    private static string TypeName(ValueType type) => type switch
+    private static string TypeName(ValueType type, LoweringPlan? lowering = null) => type switch
     {
+        ValueType.V128 when lowering != null => lowering.VectorTypeName,
         ValueType.I32 => "int", ValueType.I64 => "long", ValueType.F32 => "__wasm_Float32", ValueType.F64 => "__wasm_Float64",
         ValueType.FuncRef => "global::System.Delegate", ValueType.ExternRef => "object",
         _ => throw new WasmException($"Unsupported generated value type {type}.")
     };
-    private static string ResultType(ValueType[] types) => types.Length == 0 ? "void" :
-        types.Length == 1 ? TypeName(types[0]) : "(" + string.Join(", ", types.Select(TypeName)) + ")";
+    private static string ResultType(ValueType[] types, LoweringPlan lowering) => types.Length == 0 ? "void" :
+        types.Length == 1 ? TypeName(types[0], lowering) : "(" + string.Join(", ", types.Select(type => TypeName(type, lowering))) + ")";
     private static string ResultExpression(Value[] values) => values.Length == 0 ? "" :
         values.Length == 1 ? values[0].Name : "(" + string.Join(", ", values.Select(v => v.Name)) + ")";
     private sealed record Value(string Name, ValueType? Type);
@@ -277,7 +278,7 @@ internal static class CSharpEmitter
         var code = new StringBuilder();
         var declarations = new StringBuilder();
         for (int i = function.Signature.Parameters.Length; i < function.Locals.Length; i++)
-            declarations.Append($"        {TypeName(function.Locals[i])} v{i} = default({TypeName(function.Locals[i])});\n");
+            declarations.Append($"        {TypeName(function.Locals[i], lowering)} v{i} = default({TypeName(function.Locals[i], lowering)});\n");
         var stack = new List<Value>();
         int temporary = 0, label = 0;
         string Temp(string type)
@@ -286,7 +287,7 @@ internal static class CSharpEmitter
             declarations.Append($"        {type} {name} = default({type});\n");
             return name;
         }
-        Value[] Temps(ValueType[] types) => types.Select(t => new Value(Temp(TypeName(t)), t)).ToArray();
+        Value[] Temps(ValueType[] types) => types.Select(t => new Value(Temp(TypeName(t, lowering)), t)).ToArray();
         var controls = new List<Control> { new Control(0xff, new List<Value>(), Array.Empty<Value>(), Temps(function.Signature.Results), label++) };
         void Line(string text) => code.Append("        ").Append(text).Append('\n');
         Value Pop(ValueType? expected = null)
@@ -297,7 +298,7 @@ internal static class CSharpEmitter
             {
                 value = stack[stack.Count-1]; stack.RemoveAt(stack.Count-1);
             }
-            return value.Type.HasValue ? value : new Value($"default({TypeName(expected ?? ValueType.I32)})", expected);
+            return value.Type.HasValue ? value : new Value($"default({TypeName(expected ?? ValueType.I32, lowering)})", expected);
         }
         Value[] PopTypes(ValueType[] types)
         {
@@ -308,7 +309,7 @@ internal static class CSharpEmitter
         Value[] PopValues(Value[] destinations) => PopTypes(destinations.Select(v => v.Type!.Value).ToArray());
         void Push(string expression, ValueType type = ValueType.I32)
         {
-            var value = new Value(Temp(TypeName(type)), type);
+            var value = new Value(Temp(TypeName(type, lowering)), type);
             Line($"{value.Name} = {expression};"); stack.Add(value);
         }
         void Restore(Control frame) { stack = new List<Value>(frame.Values); }
@@ -316,7 +317,7 @@ internal static class CSharpEmitter
         {
             // Snapshot all sources before assigning destinations: loop backedges can permute parameters.
             var snapshots = Temps(destinations.Select(v => v.Type!.Value).ToArray());
-            for (int i = 0; i < values.Length; i++) Line($"{snapshots[i].Name} = {(values[i].Type.HasValue ? values[i].Name : $"default({TypeName(destinations[i].Type!.Value)})")};");
+            for (int i = 0; i < values.Length; i++) Line($"{snapshots[i].Name} = {(values[i].Type.HasValue ? values[i].Name : $"default({TypeName(destinations[i].Type!.Value, lowering)})")};");
             for (int i = 0; i < values.Length; i++) Line($"{destinations[i].Name} = {snapshots[i].Name};");
         }
         void Branch(Control target, Value[] values)
@@ -397,7 +398,7 @@ internal static class CSharpEmitter
                     else if (signature.Results.Length == 1) Push(call, signature.Results[0]);
                     else
                     {
-                        string tuple = Temp(ResultType(signature.Results));
+                        string tuple = Temp(ResultType(signature.Results, lowering));
                         Line($"{tuple} = {call};");
                         for (int i = 0; i < signature.Results.Length; i++)
                             stack.Add(new Value($"{tuple}.Item{i+1}", signature.Results[i]));
@@ -463,6 +464,20 @@ internal static class CSharpEmitter
                     string fillValue = PopI32();
                     string fillDestination = PopI32();
                     Line($"__wasm_Fill({fillDestination}, {fillValue}, {fillLength});");
+                    break;
+                case 0xfd when instruction.Operand == 12:
+                    if (!lowering.TryLowerVectorConstant(instruction.VectorConstant ?? Array.Empty<byte>(), out var vectorConstant) ||
+                        vectorConstant is null)
+                        throw new WasmException($"Target profile '{WasmTargetProfiles.Name(lowering.Profile)}' cannot lower v128.const.");
+                    Push(vectorConstant.Expression, ValueType.V128);
+                    break;
+                case 0xfd when instruction.Operand is 228 or 230:
+                    string vectorRight = Pop(ValueType.V128).Name;
+                    string vectorLeft = Pop(ValueType.V128).Name;
+                    var vectorOperation = instruction.Operand == 228 ? CanonicalVectorOperation.AddF32x4 : CanonicalVectorOperation.MultiplyF32x4;
+                    if (!lowering.TryLowerVector(vectorOperation, vectorLeft, vectorRight, out var vectorResult) || vectorResult is null)
+                        throw new WasmException($"Target profile '{WasmTargetProfiles.Name(lowering.Profile)}' cannot lower f32x4 operation {instruction.Operand}.");
+                    Push(vectorResult.Expression, ValueType.V128);
                     break;
                 default:
                     if (ConversionOperations.Supports(instruction.Opcode))

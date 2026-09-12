@@ -39,13 +39,15 @@ internal static class TypedIrChecks
         if (!Equals(Invoke(TypedModule([], [0x7f], [0x02,0x80,0x80,0x80,0x80,0,0x41,42,0x0b,0x0b])), 42))
             throw new Exception("Padded s33 index failed.");
         foreach (var (encoding, diagnostic) in new (byte[], string)[] {
-            ([1], "block type index"), ([0x7b], "block type index"), ([0xff,0x7f], "block type index"),
+            ([1], "block type index"), ([0x7a], "block type index"), ([0xff,0x7f], "block type index"),
             ([0xff,0xff,0xff,0xff,0x0f], "block type index"),
             ([0x80,0x80,0x80,0x80,0x10], "33 bits"), ([0x80,0x80,0x80,0x80,0x80,0], "too long") })
             Reject(TypedModule([], [0x7f], [0x02,..encoding,0x41,0,0x0b,0x0b]), diagnostic);
         foreach (byte opcode in new byte[] { 0xd0, 0xd1 })
             Reject(TypedModule([], [], [0x00,opcode,0x0b]), $"opcode 0x{opcode:x2}");
-        Reject(TypedModule([0x7b], [], [0x0b]), "value type");
+        Reject(TypedModule([], [], [0xfd,0x00,0x0b]), "opcode 0xfd/0");
+        Reject(TypedModule([], [], [0x41,0,0x41,1,0xfd,0xe4,0x01,0x0b]), "expected V128");
+        Reject(TypedModule([0x7b], [], [0x0b]), "does not support v128");
         Reject(TypedModule([], [], [0x1c,0,0x0b]), "exactly one");
         Reject(TypedModule([], [], [0x00,0x02,0x40,0x1a,0x0b,0x0b]), "underflow");
         Reject(TypedModule([], [], [0x02,0x40,0x02,0x7f,0x00,0x0e,1,0,1,0x0b,0x1a,0x0b,0x0b]), "arities");

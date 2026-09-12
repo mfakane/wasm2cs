@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.Intrinsics;
 using System.Text.Json;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -49,6 +50,22 @@ internal static class ExecutionChecks
             ..Section(1, [1,0x60,..U32(parameters),..Enumerable.Repeat((byte)0x7f,parameters), (byte)results,..(results == 1 ? new byte[] { 0x7f } : Array.Empty<byte>())]),
             ..Section(3, [1,0]), ..Section(7, [1,1,(byte)'f',0,0]), ..Section(10, [1,..U32(body.Length),..body])];
     }
+    internal static byte[] VectorModule()
+    {
+        byte[] body = [0,
+            0xfd,0x0c,..VectorBytes(0x3f800000,0x40000000,0x40400000,0x40800000),
+            0xfd,0x0c,..VectorBytes(0x41200000,0x41a00000,0x41f00000,0x42200000),
+            0xfd,0xe4,0x01,
+            0xfd,0x0c,..VectorBytes(0x40000000,0x40000000,0x40000000,0x40000000),
+            0xfd,0xe6,0x01,0x0b];
+        return [0,97,115,109,1,0,0,0,
+            ..Section(1,[1,0x60,0,1,0x7b]), ..Section(3,[1,0]),
+            ..Section(7,[1,1,(byte)'f',0,0]), ..Section(10,[1,..U32(body.Length),..body])];
+    }
+    private static byte[] VectorBytes(params uint[] bits) => bits.SelectMany(value => new[]
+    {
+        unchecked((byte)value), unchecked((byte)(value >> 8)), unchecked((byte)(value >> 16)), unchecked((byte)(value >> 24))
+    }).ToArray();
     internal static Assembly Compile(byte[] bytes, string name = "Subject", bool portable = false,
         WasmTargetProfile profile = WasmTargetProfile.PortableNetStandard20)
     {
@@ -369,6 +386,22 @@ internal static class ExecutionChecks
         var scalarPlan = Lowering.Create(Decoder.Decode(bytes), WasmTargetProfile.PortableNetStandard20);
         if (scalarPlan.TryLowerVector(CanonicalVectorOperation.AddF32x4, "left", "right", out _))
             throw new Exception("Portable backend unexpectedly accepted a vector lowering.");
+
+        byte[] vectorBytes = VectorModule();
+        string vectorSource = Transpiler.Translate(vectorBytes,"Vector",WasmTargetProfile.DotNetVector);
+        if (!vectorSource.Contains("Vector128<float>") || !vectorSource.Contains("BitConverter.Int32BitsToSingle"))
+            throw new Exception(".NET vector backend did not emit a v128 function.");
+        var vectorType = Compile(vectorBytes,"Vector",false,WasmTargetProfile.DotNetVector)
+            .GetType("Wasm2Cs.Generated.Vector")!;
+        var vectorResult = (Vector128<float>)vectorType.GetMethod("f")!.Invoke(Activator.CreateInstance(vectorType),null)!;
+        if (Vector128.GetElement(vectorResult,0) != 22f || Vector128.GetElement(vectorResult,1) != 44f ||
+            Vector128.GetElement(vectorResult,2) != 66f || Vector128.GetElement(vectorResult,3) != 88f)
+            throw new Exception(".NET vector backend changed f32x4 results.");
+        string unityVectorSource = Transpiler.Translate(vectorBytes,"UnityVector",WasmTargetProfile.UnityMathematics);
+        if (!unityVectorSource.Contains("Unity.Mathematics.float4") || !unityVectorSource.Contains("math.asfloat"))
+            throw new Exception("Unity backend did not emit the canonical v128 fixture.");
+        try { Transpiler.Translate(vectorBytes,"PortableVector",WasmTargetProfile.PortableNetStandard20); throw new Exception("Portable profile accepted v128."); }
+        catch (WasmException) { }
 
         var type = Compile(bytes,"Net21",false,WasmTargetProfile.DotNetNetStandard21)
             .GetType("Wasm2Cs.Generated.Net21")!;

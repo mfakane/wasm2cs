@@ -50,6 +50,9 @@ internal sealed class LoweringPlan(WasmTargetProfile profile, LoweringBackend ba
     public string ExtraHelpers(Module module) => Backend.ExtraHelpers(module);
     public bool TryLowerVector(CanonicalVectorOperation operation, string left, string right, out VectorLowering? lowering) =>
         Backend.TryLowerVector(operation, left, right, out lowering);
+    public string VectorTypeName => Backend.VectorTypeName;
+    public bool TryLowerVectorConstant(byte[] bytes, out VectorLowering? lowering) =>
+        Backend.TryLowerVectorConstant(bytes, out lowering);
 }
 
 internal static class Lowering

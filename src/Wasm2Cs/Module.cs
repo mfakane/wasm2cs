@@ -1,13 +1,13 @@
 namespace Wasm2Cs;
 // Representable value types are independent of the decoder's supported opcodes.
-internal enum ValueType : byte { I32 = 0x7f, I64 = 0x7e, F32 = 0x7d, F64 = 0x7c, FuncRef = 0x70, ExternRef = 0x6f }
+internal enum ValueType : byte { V128 = 0x7b, I32 = 0x7f, I64 = 0x7e, F32 = 0x7d, F64 = 0x7c, FuncRef = 0x70, ExternRef = 0x6f }
 internal sealed record Signature(ValueType[] Parameters, ValueType[] Results)
 {
     public static readonly Signature Empty = new Signature(Array.Empty<ValueType>(), Array.Empty<ValueType>());
 }
 internal sealed record Instruction(byte Opcode, int Operand, int Offset, int[]? Targets = null,
     uint Immediate = 0, Signature? BlockType = null, ValueType? SelectType = null, ConstantValue? Constant = null,
-    uint Secondary = 0)
+    uint Secondary = 0, byte[]? VectorConstant = null)
 {
     // Filled by validation. null is the polymorphic bottom, never an executable value type.
     public ValueType?[] ResultTypes { get; set; } = Array.Empty<ValueType?>();

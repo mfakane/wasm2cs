@@ -22,6 +22,8 @@ internal static class Validator
             (module.FunctionSignature(module.Start.Value).Parameters.Length != 0 || module.FunctionSignature(module.Start.Value).Results.Length != 0))) throw new WasmException("Invalid start function.");
         foreach (var global in module.Globals)
         {
+            if (global.Type == ValueType.V128)
+                throw new WasmException("v128 globals are not supported by the current host boundary.");
             if (global.Imported)
             {
                 if (global.InitialValue != null) throw new WasmException("Imported global cannot have an initializer.");
@@ -201,6 +203,14 @@ internal static class Validator
                             break;
                         default: Fail("Unsupported bulk memory instruction."); break;
                     }
+                    break;
+                case 0xfd when instruction.Operand == 12:
+                    if (instruction.VectorConstant is null || instruction.VectorConstant.Length != 16)
+                        Fail("Invalid v128.const immediate.");
+                    Push(ValueType.V128);
+                    break;
+                case 0xfd when instruction.Operand is 228 or 230:
+                    Pop(ValueType.V128); Pop(ValueType.V128); Push(ValueType.V128);
                     break;
                 default:
                     if (ConversionOperations.Supports(instruction.Opcode))

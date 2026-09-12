@@ -1,4 +1,8 @@
 <Project>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="Wasm2CsTargetProfile" />
+  </ItemGroup>
+
   <!-- Binary AdditionalFiles cannot be consumed as SourceText. Encode before compilation,
        and preserve timestamps when the bytes are unchanged. -->
   <UsingTask TaskName="Wasm2CsEncode" TaskFactory="RoslynCodeTaskFactory"

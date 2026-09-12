@@ -75,6 +75,60 @@ public sealed class WasmMemory
         bytes[(int)offset] = value;
     }
 
+#if NETSTANDARD2_1_OR_GREATER
+    // These methods keep Span and MemoryMarshal inside one operation. A caller
+    // cannot retain a view while Grow replaces the private backing array.
+    public ushort ReadUInt16(uint offset)
+    {
+        ValidateRange(offset, 2);
+        ushort value = MemoryMarshal.Read<ushort>(bytes.AsSpan(checked((int)offset), 2));
+        return BitConverter.IsLittleEndian ? value : Reverse(value);
+    }
+
+    public uint ReadUInt32(uint offset)
+    {
+        ValidateRange(offset, 4);
+        uint value = MemoryMarshal.Read<uint>(bytes.AsSpan(checked((int)offset), 4));
+        return BitConverter.IsLittleEndian ? value : Reverse(value);
+    }
+
+    public ulong ReadUInt64(uint offset)
+    {
+        ValidateRange(offset, 8);
+        ulong value = MemoryMarshal.Read<ulong>(bytes.AsSpan(checked((int)offset), 8));
+        return BitConverter.IsLittleEndian ? value : Reverse(value);
+    }
+
+    public void WriteUInt16(uint offset, ushort value)
+    {
+        ValidateRange(offset, 2);
+        if (!BitConverter.IsLittleEndian) value = Reverse(value);
+        MemoryMarshal.Write(bytes.AsSpan(checked((int)offset), 2), ref value);
+    }
+
+    public void WriteUInt32(uint offset, uint value)
+    {
+        ValidateRange(offset, 4);
+        if (!BitConverter.IsLittleEndian) value = Reverse(value);
+        MemoryMarshal.Write(bytes.AsSpan(checked((int)offset), 4), ref value);
+    }
+
+    public void WriteUInt64(uint offset, ulong value)
+    {
+        ValidateRange(offset, 8);
+        if (!BitConverter.IsLittleEndian) value = Reverse(value);
+        MemoryMarshal.Write(bytes.AsSpan(checked((int)offset), 8), ref value);
+    }
+
+    private static ushort Reverse(ushort value) => (ushort)((value >> 8) | (value << 8));
+    private static uint Reverse(uint value) => (value >> 24) | ((value >> 8) & 0xff00) |
+        ((value << 8) & 0xff0000) | (value << 24);
+    private static ulong Reverse(ulong value) => (value >> 56) | ((value >> 40) & 0xff00UL) |
+        ((value >> 24) & 0xff0000UL) | ((value >> 8) & 0xff000000UL) |
+        ((value << 8) & 0xff00000000UL) | ((value << 24) & 0xff0000000000UL) |
+        ((value << 40) & 0xff000000000000UL) | (value << 56);
+#endif
+
     public byte[] ReadMemory(uint offset, int count)
     {
         if (count < 0) throw new ArgumentOutOfRangeException(nameof(count));
@@ -111,18 +165,18 @@ public sealed class WasmMemory
         ValidateRange(destination, count);
         ValidateRange(source, count);
         int length = checked((int)count);
-        int dst = checked((int)destination), src = checked((int)source);
-        if (dst > src && (ulong)dst < (ulong)src + count)
-            for (int i = length - 1; i >= 0; i--) bytes[dst + i] = bytes[src + i];
-        else
-            for (int i = 0; i < length; i++) bytes[dst + i] = bytes[src + i];
+        Array.Copy(bytes, checked((int)source), bytes, checked((int)destination), length);
     }
 
     public void Fill(uint destination, byte value, uint count)
     {
         ValidateRange(destination, count);
         int start = checked((int)destination), length = checked((int)count);
+#if NETSTANDARD2_1_OR_GREATER
+        bytes.AsSpan(start, length).Fill(value);
+#else
         for (int i = 0; i < length; i++) bytes[start + i] = value;
+#endif
     }
 
     private void ValidateRange(uint offset, uint count)

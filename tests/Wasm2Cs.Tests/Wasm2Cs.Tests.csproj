@@ -4,6 +4,8 @@
     <ProjectReference Include="../../src/Wasm2Cs/Wasm2Cs.csproj" />
     <ProjectReference Include="../../src/Wasm2Cs.Runtime/Wasm2Cs.Runtime.csproj" />
     <ProjectReference Include="../../src/Wasm2Cs.Generator/Wasm2Cs.Generator.csproj" Aliases="Generator" />
+    <None Include="../../src/Wasm2Cs.Runtime/bin/$(Configuration)/netstandard2.0/Wasm2Cs.Runtime.dll"
+          Link="Runtime20/Wasm2Cs.Runtime.dll" CopyToOutputDirectory="PreserveNewest" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.0" />
     <PackageReference Include="NETStandard.Library" Version="2.0.3" GeneratePathProperty="true" PrivateAssets="all" />
     <None Include="$(PkgNETStandard_Library)/build/netstandard2.0/ref/*.dll" Link="ReferenceAssemblies/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />

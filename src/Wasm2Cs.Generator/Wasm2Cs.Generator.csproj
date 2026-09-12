@@ -17,8 +17,15 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.0" PrivateAssets="all" />
     <Compile Include="../Wasm2Cs/*.cs" Exclude="../Wasm2Cs/HostObjects.cs" Link="Core/%(Filename)%(Extension)" />
     <None Include="../Wasm2Cs.Runtime/bin/$(Configuration)/netstandard2.0/Wasm2Cs.Runtime.dll" Pack="true" PackagePath="lib/netstandard2.0/Wasm2Cs.Runtime.dll" Visible="false" />
+    <None Include="../Wasm2Cs.Runtime/bin/$(Configuration)/netstandard2.1/Wasm2Cs.Runtime.dll" Pack="true" PackagePath="lib/netstandard2.1/Wasm2Cs.Runtime.dll" Visible="false" />
     <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="../../build/Wasm2Cs.targets" Pack="true" PackagePath="build/Wasm2Cs.Generator.targets" />
     <None Include="../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
+  <Target Name="BuildRuntimeNetStandard21" BeforeTargets="_GetPackageFiles">
+    <MSBuild
+      Projects="../Wasm2Cs.Runtime/Wasm2Cs.Runtime.csproj"
+      Targets="Build"
+      Properties="Configuration=$(Configuration);TargetFramework=netstandard2.1" />
+  </Target>
 </Project>

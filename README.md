@@ -92,8 +92,11 @@ Clang CRC32(123456789) = cbf43926
 To inspect standalone translation:
 
 ```sh
-dotnet run --project src/Wasm2Cs.Cli -- samples/Smoke/Arithmetic.wasm
+dotnet run --project src/Wasm2Cs.Cli -- samples/Smoke/Arithmetic.wasm --target-profile dotnet-netstandard2.1
 ```
+
+The CLI defaults to `portable-netstandard2.0`; use `--target-profile` (or `-p`)
+to select another lowering profile.
 
 `samples/CAlgorithms/Algorithms.wasm` is a real Clang-produced freestanding C
 fixture (array sums and CRC32). The tests compare outputs and memory against
@@ -147,6 +150,8 @@ paths. The complete example is `samples/Smoke/Smoke.csproj`.
 <PropertyGroup>
   <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
+  <!-- Optional: portable-netstandard2.0, dotnet-netstandard2.1, dotnet-vector, or unity-mathematics. -->
+  <Wasm2CsTargetProfile>portable-netstandard2.0</Wasm2CsTargetProfile>
 </PropertyGroup>
 <ItemGroup>
   <ProjectReference Include="../../src/Wasm2Cs.Runtime/Wasm2Cs.Runtime.csproj" />
@@ -161,6 +166,13 @@ After `dotnet build`, call `new Wasm2Cs.Generated.Arithmetic().add(20, 22)`.
 The file is written to
 `obj/generated/Wasm2Cs.Generator/Wasm2Cs.WasmGenerator/Arithmetic.g.cs`.
 Keep generated files under `obj` to avoid compiling them twice.
+
+The target profile is passed to the generator through `Wasm2CsTargetProfile`. The
+`portable-netstandard2.0` profile remains the default. `dotnet-netstandard2.1`
+uses the multi-target runtime's operation-scoped `Span`/`MemoryMarshal` helpers;
+`dotnet-vector` and `unity-mathematics` select their backend when vector lowering
+is available. A profile never changes WASM semantics, and selecting a profile does
+not make unsupported SIMD instructions valid.
 
 MSBuild encodes each binary into `obj/<configuration>/<framework>/wasm2cs/*.wasm.base64`
 before compilation. The generator consumes these as text `AdditionalFiles`, so

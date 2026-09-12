@@ -49,19 +49,26 @@ internal static class ExecutionChecks
             ..Section(1, [1,0x60,..U32(parameters),..Enumerable.Repeat((byte)0x7f,parameters), (byte)results,..(results == 1 ? new byte[] { 0x7f } : Array.Empty<byte>())]),
             ..Section(3, [1,0]), ..Section(7, [1,1,(byte)'f',0,0]), ..Section(10, [1,..U32(body.Length),..body])];
     }
-    internal static Assembly Compile(byte[] bytes, string name = "Subject", bool portable = false)
+    internal static Assembly Compile(byte[] bytes, string name = "Subject", bool portable = false,
+        WasmTargetProfile profile = WasmTargetProfile.PortableNetStandard20)
     {
         var paths = portable ? Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "ReferenceAssemblies"), "*.dll") :
             ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator);
         var references = paths.Select(p => MetadataReference.CreateFromFile(p))
-            .Append(MetadataReference.CreateFromFile(typeof(WasmMemory).Assembly.Location));
+            .Append(MetadataReference.CreateFromFile(RuntimeAssembly(portable)));
         var compilation = CSharpCompilation.Create("Execution_" + Guid.NewGuid().ToString("N"),
-            [CSharpSyntaxTree.ParseText(Transpiler.Translate(bytes,name),new CSharpParseOptions(LanguageVersion.CSharp9))], references,
+            [CSharpSyntaxTree.ParseText(Transpiler.Translate(bytes,name,profile),new CSharpParseOptions(LanguageVersion.CSharp9))], references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, checkOverflow:true));
         using var stream = new MemoryStream();
         var emitted = compilation.Emit(stream);
         if (!emitted.Success) throw new Exception(string.Join("\n",emitted.Diagnostics));
         return Assembly.Load(stream.ToArray());
+    }
+    private static string RuntimeAssembly(bool portable)
+    {
+        string location = typeof(WasmMemory).Assembly.Location;
+        if (!portable) return location;
+        return Path.Combine(AppContext.BaseDirectory, "Runtime20", "Wasm2Cs.Runtime.dll");
     }
     internal static async Task Compare(byte[] bytes, int[][] calls)
     {
@@ -322,6 +329,35 @@ internal static class ExecutionChecks
             (int)copyFillType.GetMethod("f")!.Invoke(copyFill,null)! != 255)
             throw new Exception("memory.copy or memory.fill failed.");
         Console.WriteLine("PASS: imported/shared memory and globals, dynamic initialization, bulk data, overlap copy, fill, and data.drop.");
+    }
+    public static void TargetProfiles()
+    {
+        byte[] bytes = WithMemory(2,[0x20,0,0x20,1,0x36,2,0,0x20,0,0x28,2,0,0x0b]);
+        string portable = Transpiler.Translate(bytes,"Portable",WasmTargetProfile.PortableNetStandard20);
+        string net21 = Transpiler.Translate(bytes,"Net21",WasmTargetProfile.DotNetNetStandard21);
+        string vector = Transpiler.Translate(bytes,"Vector",WasmTargetProfile.DotNetVector);
+        string unity = Transpiler.Translate(bytes,"Unity",WasmTargetProfile.UnityMathematics);
+        if (!portable.Contains("portable-netstandard2.0") || portable.Contains("ReadUInt32"))
+            throw new Exception("Portable profile emitted target-specific memory code.");
+        if (!net21.Contains("dotnet-netstandard2.1") || !net21.Contains("ReadUInt32") ||
+            !vector.Contains("dotnet-vector") || !vector.Contains("ReadUInt32") ||
+            !unity.Contains("unity-mathematics") || unity.Contains("ReadUInt32"))
+            throw new Exception("Target profile did not select its memory backend.");
+
+        var type = Compile(bytes,"Net21",false,WasmTargetProfile.DotNetNetStandard21)
+            .GetType("Wasm2Cs.Generated.Net21")!;
+        var instance = Activator.CreateInstance(type)!;
+        if ((int)type.GetMethod("f")!.Invoke(instance,[0,0x11223344])! != 0x11223344)
+            throw new Exception("netstandard2.1 memory lowering changed the result.");
+
+        var memory = new WasmMemory(1);
+        memory.WriteUInt16(0,0x1234);
+        memory.WriteUInt32(2,0x89abcdef);
+        memory.WriteUInt64(6,0x0123456789abcdefUL);
+        if (memory.ReadUInt16(0) != 0x1234 || memory.ReadUInt32(2) != 0x89abcdef ||
+            memory.ReadUInt64(6) != 0x0123456789abcdefUL)
+            throw new Exception("Span/MemoryMarshal memory access did not preserve little-endian bits.");
+        Console.WriteLine("PASS: explicit target profiles, netstandard2.1 Span/MemoryMarshal memory lowering, and bit-preserving typed access.");
     }
     public static async Task CAlgorithms()
     {

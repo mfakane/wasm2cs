@@ -54,7 +54,13 @@ try {
   assert.match(readFileSync(join(directory,'obj/generated/Wasm2Cs.Generator/Wasm2Cs.WasmGenerator/Host.g.cs'),'utf8'),/delegate int __wasm_Import0/);
   assert.equal(existsSync(join(directory,'bin/Debug/net10.0/Wasm2Cs.Generator.dll')),false,'Generator leaked into runtime output');
   assert.equal(existsSync(join(directory,'bin/Debug/net10.0/Wasm2Cs.dll')),false,'Translator leaked into runtime output');
-  console.log(`PASS: fresh NuGet-only C# 9 consumer, isolated package cache, arithmetic/CRC32/host imports/typed multi-results/i64/floating-point.\n${output}Artifacts: ${directory}`);
+  run(['build','--no-restore','-m:1','-p:UseSharedCompilation=false','-p:Wasm2CsTargetProfile=dotnet-netstandard2.1','--nologo']);
+  const optimizedOutput = run(['bin/Debug/net10.0/Consumer.dll']);
+  const optimizedGenerated = readFileSync(join(directory,'obj/generated/Wasm2Cs.Generator/Wasm2Cs.WasmGenerator/Algorithms.g.cs'),'utf8');
+  assert.match(optimizedGenerated,/wasm2cs target profile: dotnet-netstandard2.1/);
+  assert.match(optimizedGenerated,/ReadUInt32/);
+  assert.match(optimizedOutput,/Clang CRC32\(123456789\) = cbf43926/);
+  console.log(`PASS: fresh NuGet-only C# 9 consumer, isolated package cache, portable and netstandard2.1 profiles, arithmetic/CRC32/host imports/typed multi-results/i64/floating-point.\n${output}Artifacts: ${directory}`);
 } catch (error) {
   console.error(error.stdout?.toString(),error.stderr?.toString(),`Consumer: ${directory}`);
   throw error;

@@ -137,6 +137,7 @@ await ExecutionChecks.ControlFlow();
 await ExecutionChecks.Calls();
 await ExecutionChecks.Memory();
 ExecutionChecks.SharedMemoryGlobalsAndBulkData();
+ExecutionChecks.TargetProfiles();
 await ExecutionChecks.CAlgorithms();
 ExecutionChecks.Imports();
 ConformanceChecks.Verify();

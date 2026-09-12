@@ -15,7 +15,13 @@ internal static class MemoryOperations
     public static ValueType Type(byte op) => op == 0x2a || op == 0x38 ? ValueType.F32 :
         op == 0x2b || op == 0x39 ? ValueType.F64 : op == 0x29 || op == 0x37 || (op >= 0x30 && op <= 0x35) ||
         (op >= 0x3c && op <= 0x3e) ? ValueType.I64 : ValueType.I32;
-    public const string Helpers = """
+    public static string Helpers(WasmTargetProfile profile, int maximumPages)
+    {
+        string helpers = CommonHelpers.Replace("__WASM_MAX_PAGES__", maximumPages.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        return helpers + (profile is WasmTargetProfile.DotNetNetStandard21 or WasmTargetProfile.DotNetVector ? FastHelpers : PortableHelpers);
+    }
+
+    private const string CommonHelpers = """
     private global::Wasm2Cs.WasmMemory __wasm_memory;
     public int MemorySize { get { return __wasm_memory.Size; } }
     private int __wasm_Address(int address, uint offset, int width)
@@ -63,8 +69,7 @@ internal static class MemoryOperations
         unchecked
         {
             int index = __wasm_Address(address,offset,width);
-            uint value = 0;
-            for(int i=0;i<width;i++) value |= (uint)__wasm_memory.ReadByte(unchecked((uint)(index+i))) << (i*8);
+            uint value = __wasm_Read32(unchecked((uint)index), width);
             if (signed && width == 1) return (sbyte)value;
             if (signed && width == 2) return (short)value;
             return (int)value;
@@ -75,7 +80,7 @@ internal static class MemoryOperations
         unchecked
         {
             int index = __wasm_Address(address,offset,width);
-            for(int i=0;i<width;i++) __wasm_memory.WriteByte(unchecked((uint)(index+i)),(byte)((uint)value >> (i*8)));
+            __wasm_Write32(unchecked((uint)index), value, width);
         }
     }
     private long __wasm_Load64(int address, uint offset, int width, bool signed)
@@ -83,8 +88,7 @@ internal static class MemoryOperations
         unchecked
         {
             int index = __wasm_Address(address,offset,width);
-            ulong value = 0;
-            for (int i=0;i<width;i++) value |= (ulong)__wasm_memory.ReadByte(unchecked((uint)(index+i))) << (i*8);
+            ulong value = __wasm_Read64(unchecked((uint)index), width);
             if (signed && width == 1) return (sbyte)value;
             if (signed && width == 2) return (short)value;
             if (signed && width == 4) return (int)value;
@@ -96,7 +100,7 @@ internal static class MemoryOperations
         unchecked
         {
             int index = __wasm_Address(address,offset,width);
-            for (int i=0;i<width;i++) __wasm_memory.WriteByte(unchecked((uint)(index+i)),(byte)((ulong)value >> (i*8)));
+            __wasm_Write64(unchecked((uint)index), value, width);
         }
     }
     private int __wasm_Grow(int delta)
@@ -124,6 +128,88 @@ internal static class MemoryOperations
         if (start + count > (ulong)data.Length) throw new TrapException(TrapKind.DataSegmentOutOfBounds);
         __wasm_BulkAddress(destination,length);
         __wasm_memory.WriteMemory(unchecked((uint)destination),data,checked((int)start),checked((int)count));
+    }
+
+""";
+
+    private const string PortableHelpers = """
+    private uint __wasm_Read32(uint address, int width)
+    {
+        unchecked
+        {
+            uint value = 0;
+            for (int i = 0; i < width; i++) value |= (uint)__wasm_memory.ReadByte(address + (uint)i) << (i * 8);
+            return value;
+        }
+    }
+    private void __wasm_Write32(uint address, int value, int width)
+    {
+        unchecked
+        {
+            for (int i = 0; i < width; i++) __wasm_memory.WriteByte(address + (uint)i, (byte)((uint)value >> (i * 8)));
+        }
+    }
+    private ulong __wasm_Read64(uint address, int width)
+    {
+        unchecked
+        {
+            ulong value = 0;
+            for (int i = 0; i < width; i++) value |= (ulong)__wasm_memory.ReadByte(address + (uint)i) << (i * 8);
+            return value;
+        }
+    }
+    private void __wasm_Write64(uint address, long value, int width)
+    {
+        unchecked
+        {
+            for (int i = 0; i < width; i++) __wasm_memory.WriteByte(address + (uint)i, (byte)((ulong)value >> (i * 8)));
+        }
+    }
+
+""";
+
+    private const string FastHelpers = """
+    private uint __wasm_Read32(uint address, int width)
+    {
+        return width switch
+        {
+            1 => __wasm_memory.ReadByte(address),
+            2 => __wasm_memory.ReadUInt16(address),
+            4 => __wasm_memory.ReadUInt32(address),
+            _ => throw new global::System.InvalidOperationException("Invalid 32-bit memory width.")
+        };
+    }
+    private void __wasm_Write32(uint address, int value, int width)
+    {
+        switch (width)
+        {
+            case 1: __wasm_memory.WriteByte(address, (byte)value); break;
+            case 2: __wasm_memory.WriteUInt16(address, (ushort)value); break;
+            case 4: __wasm_memory.WriteUInt32(address, unchecked((uint)value)); break;
+            default: throw new global::System.InvalidOperationException("Invalid 32-bit memory width.");
+        }
+    }
+    private ulong __wasm_Read64(uint address, int width)
+    {
+        return width switch
+        {
+            1 => __wasm_memory.ReadByte(address),
+            2 => __wasm_memory.ReadUInt16(address),
+            4 => __wasm_memory.ReadUInt32(address),
+            8 => __wasm_memory.ReadUInt64(address),
+            _ => throw new global::System.InvalidOperationException("Invalid 64-bit memory width.")
+        };
+    }
+    private void __wasm_Write64(uint address, long value, int width)
+    {
+        switch (width)
+        {
+            case 1: __wasm_memory.WriteByte(address, (byte)value); break;
+            case 2: __wasm_memory.WriteUInt16(address, (ushort)value); break;
+            case 4: __wasm_memory.WriteUInt32(address, (uint)value); break;
+            case 8: __wasm_memory.WriteUInt64(address, unchecked((ulong)value)); break;
+            default: throw new global::System.InvalidOperationException("Invalid 64-bit memory width.");
+        }
     }
 
 """;

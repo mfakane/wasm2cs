@@ -333,7 +333,7 @@ internal static class CSharpEmitter
             Control Target(int depth) => controls[controls.Count-1-depth];
             string PopI32() => Pop(ValueType.I32).Name;
 
-            if (canonicalInstruction.VectorConstant is not null)
+            if (canonicalInstruction.Kind == CanonicalInstructionKind.VectorConstant && canonicalInstruction.VectorConstant is not null)
             {
                 if (!lowering.TryLowerVectorConstant(canonicalInstruction.VectorConstant.Bytes, out var vectorConstantLowering) ||
                     vectorConstantLowering is null)
@@ -341,7 +341,7 @@ internal static class CSharpEmitter
                 Push(vectorConstantLowering.Expression, ValueType.V128);
                 continue;
             }
-            if (canonicalInstruction.VectorOperation.HasValue)
+            if (canonicalInstruction.Kind == CanonicalInstructionKind.VectorOperation && canonicalInstruction.VectorOperation.HasValue)
             {
                 string vectorRight = Pop(ValueType.V128).Name;
                 string vectorLeft = Pop(ValueType.V128).Name;
@@ -351,7 +351,7 @@ internal static class CSharpEmitter
                 Push(vectorResult.Expression, ValueType.V128);
                 continue;
             }
-            if (canonicalInstruction.Operation is not null)
+            if (canonicalInstruction.Kind == CanonicalInstructionKind.ScalarOperation && canonicalInstruction.Operation is not null)
             {
                 var operation = canonicalInstruction.Operation;
                 string right = operation.Inputs.Length == 2 ? Pop(operation.Inputs[1]).Name : "";

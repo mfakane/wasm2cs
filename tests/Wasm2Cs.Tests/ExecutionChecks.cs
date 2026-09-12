@@ -442,6 +442,11 @@ internal static class ExecutionChecks
         if (scalarAdd is null || scalarAdd.Kind != CanonicalOperationKind.I32 || scalarAdd.Inputs.Length != 2 ||
             scalarAdd.Result != Wasm2Cs.ValueType.I32)
             throw new Exception("Canonical scalar lowering lost operation type metadata.");
+        var decodedMemory = Decoder.Decode(bytes);
+        Validator.Validate(decodedMemory, "CanonicalMemory");
+        var canonicalMemory = CanonicalLowering.Lower(decodedMemory);
+        if (!canonicalMemory.Bodies[0].Instructions.Any(i => i.Kind == CanonicalInstructionKind.Memory))
+            throw new Exception("Canonical lowering did not classify memory instructions.");
         string vectorSource = Transpiler.Translate(vectorBytes,"Vector",WasmTargetProfile.DotNetVector);
         if (!vectorSource.Contains("Vector128<float>") || !vectorSource.Contains("BitConverter.Int32BitsToSingle"))
             throw new Exception(".NET vector backend did not emit a v128 function.");

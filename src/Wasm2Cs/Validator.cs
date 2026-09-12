@@ -213,29 +213,10 @@ internal static class Validator
                     Pop(ValueType.V128); Pop(ValueType.V128); Push(ValueType.V128);
                     break;
                 default:
-                    if (ConversionOperations.Supports(instruction.Opcode))
+                    if (CanonicalOperations.TryCreate(instruction.Opcode, instruction.Operand, out var operation) && operation is not null)
                     {
-                        Pop(ConversionOperations.InputType(instruction.Opcode, instruction.Operand));
-                        Push(ConversionOperations.ResultType(instruction.Opcode, instruction.Operand));
-                        break;
-                    }
-                    if (FloatOperations.Arity(instruction.Opcode) != 0)
-                    {
-                        for (int p = 0; p < FloatOperations.Arity(instruction.Opcode); p++) Pop(FloatOperations.InputType(instruction.Opcode));
-                        Push(FloatOperations.ResultType(instruction.Opcode));
-                        break;
-                    }
-                    int operands = I64Operations.Arity(instruction.Opcode);
-                    if (operands != 0)
-                    {
-                        for (int p = 0; p < operands; p++) Pop(I64Operations.InputType(instruction.Opcode));
-                        Push(I64Operations.ResultType(instruction.Opcode));
-                    }
-                    else
-                    {
-                        operands = I32Operations.Arity(instruction.Opcode);
-                        for (int p = 0; p < operands; p++) Pop(ValueType.I32);
-                        if (operands != 0) Push(ValueType.I32);
+                        for (int p = operation.Inputs.Length - 1; p >= 0; p--) Pop(operation.Inputs[p]);
+                        Push(operation.Result);
                     }
                     break;
             }

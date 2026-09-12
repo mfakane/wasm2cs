@@ -386,6 +386,14 @@ internal static class ExecutionChecks
         var scalarPlan = Lowering.Create(Decoder.Decode(bytes), WasmTargetProfile.PortableNetStandard20);
         if (scalarPlan.TryLowerVector(CanonicalVectorOperation.AddF32x4, "left", "right", out _))
             throw new Exception("Portable backend unexpectedly accepted a vector lowering.");
+        if (!CanonicalOperations.TryCreate(0x6c, 0, out var canonicalMultiply) || canonicalMultiply is null ||
+            canonicalMultiply.Kind != CanonicalOperationKind.I32 || canonicalMultiply.Inputs.Length != 2 ||
+            canonicalMultiply.Result != Wasm2Cs.ValueType.I32)
+            throw new Exception("Scalar multiplication did not enter canonical lowering.");
+        if (!CanonicalOperations.TryCreate(0xfc, 4, out var canonicalTruncation) || canonicalTruncation is null ||
+            canonicalTruncation.Kind != CanonicalOperationKind.Conversion || canonicalTruncation.Inputs.Single() != Wasm2Cs.ValueType.F32 ||
+            canonicalTruncation.Result != Wasm2Cs.ValueType.I64)
+            throw new Exception("Conversion did not enter canonical lowering.");
 
         byte[] vectorBytes = VectorModule();
         string vectorSource = Transpiler.Translate(vectorBytes,"Vector",WasmTargetProfile.DotNetVector);

@@ -480,31 +480,12 @@ internal static class CSharpEmitter
                     Push(vectorResult.Expression, ValueType.V128);
                     break;
                 default:
-                    if (ConversionOperations.Supports(instruction.Opcode))
+                    if (CanonicalOperations.TryCreate(instruction.Opcode, instruction.Operand, out var operation) && operation is not null)
                     {
-                        string converted = Pop(ConversionOperations.InputType(instruction.Opcode, instruction.Operand)).Name;
-                        Push(lowering.ConversionExpression(instruction.Opcode, instruction.Operand, converted), ConversionOperations.ResultType(instruction.Opcode, instruction.Operand));
-                        break;
+                        string right = operation.Inputs.Length == 2 ? Pop(operation.Inputs[1]).Name : "";
+                        string left = Pop(operation.Inputs[0]).Name;
+                        Push(lowering.Expression(operation, left, right), operation.Result);
                     }
-                    if (FloatOperations.Arity(instruction.Opcode) != 0)
-                    {
-                        var floatType = FloatOperations.InputType(instruction.Opcode);
-                        string rightFloat = FloatOperations.Arity(instruction.Opcode) == 2 ? Pop(floatType).Name : "";
-                        Push(lowering.FloatExpression(instruction.Opcode, Pop(floatType).Name, rightFloat), FloatOperations.ResultType(instruction.Opcode));
-                        break;
-                    }
-                    int arity = I64Operations.Arity(instruction.Opcode);
-                    if (arity != 0)
-                    {
-                        var inputType = I64Operations.InputType(instruction.Opcode);
-                        string right64 = arity == 2 ? Pop(inputType).Name : "";
-                        Push(lowering.I64Expression(instruction.Opcode, Pop(inputType).Name, right64), I64Operations.ResultType(instruction.Opcode));
-                        break;
-                    }
-                    arity = I32Operations.Arity(instruction.Opcode);
-                    if (arity == 0) break;
-                    string right = arity == 2 ? PopI32() : "";
-                    Push(lowering.I32Expression(instruction.Opcode, PopI32(), right));
                     break;
             }
         }

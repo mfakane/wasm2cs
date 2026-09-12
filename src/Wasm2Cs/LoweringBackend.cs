@@ -31,6 +31,15 @@ internal class LoweringBackend(WasmTargetProfile profile)
     public virtual string ConversionExpression(byte opcode, int subopcode, string value) =>
         ConversionOperations.Expression(opcode, subopcode, value);
 
+    public virtual string Expression(CanonicalOperation operation, string left, string right) => operation.Kind switch
+    {
+        CanonicalOperationKind.I32 => I32Expression(operation.Opcode, left, right),
+        CanonicalOperationKind.I64 => I64Expression(operation.Opcode, left, right),
+        CanonicalOperationKind.Float => FloatExpression(operation.Opcode, left, right),
+        CanonicalOperationKind.Conversion => ConversionExpression(operation.Opcode, operation.Operand, left),
+        _ => throw new WasmException("Unknown canonical operation.")
+    };
+
     public virtual string ExtraHelpers(Module module) => string.Empty;
 
     public virtual bool TryLowerVector(CanonicalVectorOperation operation, string left, string right,

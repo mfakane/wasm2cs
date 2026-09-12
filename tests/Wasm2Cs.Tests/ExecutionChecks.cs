@@ -355,6 +355,21 @@ internal static class ExecutionChecks
         if (floatPortable.Contains("MathF") || floatUnity.Contains("MathF"))
             throw new Exception("Target-specific MathF helpers leaked into a portable backend.");
 
+        var vectorPlan = Lowering.Create(Decoder.Decode(bytes), WasmTargetProfile.DotNetVector);
+        if (!vectorPlan.TryLowerVector(CanonicalVectorOperation.AddF32x4, "left", "right", out var dotnetVector) ||
+            dotnetVector is null || !dotnetVector.TypeName.Contains("Vector128<float>") ||
+            !dotnetVector.Expression.Contains("Vector128.Create") || !dotnetVector.Expression.Contains("GetElement(left, 3)"))
+            throw new Exception(".NET vector backend did not lower the canonical f32x4 add operation.");
+        CompileVectorExpression(dotnetVector);
+        var unityPlan = Lowering.Create(Decoder.Decode(bytes), WasmTargetProfile.UnityMathematics);
+        if (!unityPlan.TryLowerVector(CanonicalVectorOperation.MultiplyF32x4, "left", "right", out var unityVector) ||
+            unityVector is null || unityVector.TypeName != "global::Unity.Mathematics.float4" ||
+            unityVector.Expression != "left * right")
+            throw new Exception("Unity backend did not lower the canonical f32x4 multiply operation.");
+        var scalarPlan = Lowering.Create(Decoder.Decode(bytes), WasmTargetProfile.PortableNetStandard20);
+        if (scalarPlan.TryLowerVector(CanonicalVectorOperation.AddF32x4, "left", "right", out _))
+            throw new Exception("Portable backend unexpectedly accepted a vector lowering.");
+
         var type = Compile(bytes,"Net21",false,WasmTargetProfile.DotNetNetStandard21)
             .GetType("Wasm2Cs.Generated.Net21")!;
         var instance = Activator.CreateInstance(type)!;
@@ -369,6 +384,17 @@ internal static class ExecutionChecks
             memory.ReadUInt64(6) != 0x0123456789abcdefUL)
             throw new Exception("Span/MemoryMarshal memory access did not preserve little-endian bits.");
         Console.WriteLine("PASS: explicit target profiles, netstandard2.1 Span/MemoryMarshal memory lowering, and bit-preserving typed access.");
+    }
+    private static void CompileVectorExpression(VectorLowering lowering)
+    {
+        string source = $"public static class VectorFixture {{ public static {lowering.TypeName} Add({lowering.TypeName} left, {lowering.TypeName} right) => {lowering.Expression}; }}";
+        var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
+            .Select(path => MetadataReference.CreateFromFile(path));
+        var compilation = CSharpCompilation.Create("VectorFixture_" + Guid.NewGuid().ToString("N"),
+            [CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.CSharp9))], references,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        var errors = compilation.GetDiagnostics().Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).ToArray();
+        if (errors.Length != 0) throw new Exception("Vector128 lowering did not compile: " + string.Join("\n", errors));
     }
     public static async Task CAlgorithms()
     {

@@ -1,5 +1,13 @@
 namespace Wasm2Cs;
 
+internal enum CanonicalVectorOperation
+{
+    AddF32x4,
+    MultiplyF32x4
+}
+
+internal sealed record VectorLowering(string TypeName, string Expression);
+
 // Backends select target APIs after validation has established the WASM
 // operation and its type. The default implementation deliberately delegates
 // to the existing scalar helpers until a replacement has an explicit semantic
@@ -24,6 +32,13 @@ internal class LoweringBackend(WasmTargetProfile profile)
         ConversionOperations.Expression(opcode, subopcode, value);
 
     public virtual string ExtraHelpers(Module module) => string.Empty;
+
+    public virtual bool TryLowerVector(CanonicalVectorOperation operation, string left, string right,
+        out VectorLowering? lowering)
+    {
+        lowering = null;
+        return false;
+    }
 }
 
 internal class PortableLoweringBackend(WasmTargetProfile profile) : LoweringBackend(profile);
@@ -60,6 +75,43 @@ internal class DotNetNetStandard21LoweringBackend(WasmTargetProfile profile) : P
 // This derives from the .NET Standard 2.1 backend so future Vector128
 // lowering inherits the safe scalar fallback for operations without a vector
 // implementation yet.
-internal sealed class DotNetVectorLoweringBackend(WasmTargetProfile profile) : DotNetNetStandard21LoweringBackend(profile);
+internal sealed class DotNetVectorLoweringBackend(WasmTargetProfile profile) : DotNetNetStandard21LoweringBackend(profile)
+{
+    public override bool TryLowerVector(CanonicalVectorOperation operation, string left, string right,
+        out VectorLowering? lowering)
+    {
+        string? laneOperation = operation switch
+        {
+            CanonicalVectorOperation.AddF32x4 => "+",
+            CanonicalVectorOperation.MultiplyF32x4 => "*",
+            _ => null
+        };
+        if (laneOperation is null)
+        {
+            lowering = null;
+            return false;
+        }
+        string lanes = string.Join(", ", Enumerable.Range(0, 4).Select(i =>
+            $"global::System.Runtime.Intrinsics.Vector128.GetElement({left}, {i}) {laneOperation} " +
+            $"global::System.Runtime.Intrinsics.Vector128.GetElement({right}, {i})"));
+        lowering = new VectorLowering("global::System.Runtime.Intrinsics.Vector128<float>",
+            $"global::System.Runtime.Intrinsics.Vector128.Create({lanes})");
+        return true;
+    }
+}
 
-internal sealed class UnityMathematicsLoweringBackend(WasmTargetProfile profile) : PortableLoweringBackend(profile);
+internal sealed class UnityMathematicsLoweringBackend(WasmTargetProfile profile) : PortableLoweringBackend(profile)
+{
+    public override bool TryLowerVector(CanonicalVectorOperation operation, string left, string right,
+        out VectorLowering? lowering)
+    {
+        string? expression = operation switch
+        {
+            CanonicalVectorOperation.AddF32x4 => $"{left} + {right}",
+            CanonicalVectorOperation.MultiplyF32x4 => $"{left} * {right}",
+            _ => null
+        };
+        lowering = expression is null ? null : new VectorLowering("global::Unity.Mathematics.float4", expression);
+        return lowering is not null;
+    }
+}

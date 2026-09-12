@@ -94,6 +94,8 @@ try {
   const vectorGenerated = readFileSync(join(directory,'obj/generated/Wasm2Cs.Generator/Wasm2Cs.WasmGenerator/Vector.g.cs'),'utf8');
   assert.match(vectorGenerated,/System\.Runtime\.Intrinsics\.Vector128<float>/);
   assert.match(vectorOutput,/Vector128 lowering passed/);
+  assert.equal(vectorOutput.replace('Vector128 lowering passed.\n',''), output,
+    'dotnet-vector profile changed scalar packaged consumer results');
   console.log(`PASS: fresh NuGet-only C# 9 consumer, isolated package cache, portable/netstandard2.1/Vector128 profiles, arithmetic/CRC32/host imports/typed multi-results/i64/floating-point/vector.\n${output}Artifacts: ${directory}`);
 } catch (error) {
   console.error(error.stdout?.toString(),error.stderr?.toString(),`Consumer: ${directory}`);

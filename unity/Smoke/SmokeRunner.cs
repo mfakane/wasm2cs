@@ -8,6 +8,7 @@ public static class SmokeRunner
     {
         HostChecks.Verify();
         FloatingChecks.Verify();
+        VectorChecks.Verify();
         Debug.Log("WASM2CS_FLOATING_PASS");
         var module = new Arithmetic();
         if (module.add(20, 22) != 42 || module.square(7) != 49 || module.add(int.MaxValue, 1) != int.MinValue)

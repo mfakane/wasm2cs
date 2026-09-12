@@ -1,5 +1,13 @@
 {
   "name": "Wasm2Cs.Modules",
   "autoReferenced": true,
-  "noEngineReferences": true
+  "noEngineReferences": false,
+  "references": [
+    "Wasm2Cs.Runtime",
+    "Unity.Mathematics",
+    "UnityEngine.MathematicsModule"
+  ],
+  "precompiledReferences": [
+    "Wasm2Cs.Runtime.dll"
+  ]
 }

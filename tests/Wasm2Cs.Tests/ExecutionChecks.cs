@@ -396,6 +396,23 @@ internal static class ExecutionChecks
             throw new Exception("Conversion did not enter canonical lowering.");
 
         byte[] vectorBytes = VectorModule();
+        var decodedVector = Decoder.Decode(vectorBytes);
+        Validator.Validate(decodedVector, "CanonicalVector");
+        var canonicalVector = CanonicalLowering.Lower(decodedVector);
+        if (canonicalVector.Source != decodedVector || canonicalVector.Bodies.Count != 1 ||
+            canonicalVector.Bodies[0].Instructions.Count != decodedVector.Bodies[0].Instructions.Count)
+            throw new Exception("Canonical module did not preserve the validated function graph.");
+        if (!canonicalVector.Bodies[0].Instructions.Any(i => i.VectorConstant?.Bytes.Length == 16) ||
+            !canonicalVector.Bodies[0].Instructions.Any(i => i.VectorOperation == CanonicalVectorOperation.AddF32x4) ||
+            !canonicalVector.Bodies[0].Instructions.Any(i => i.VectorOperation == CanonicalVectorOperation.MultiplyF32x4))
+            throw new Exception("Canonical vector lowering lost a typed vector instruction.");
+        var decodedScalar = Decoder.Decode(Module(2,[0x20,0,0x20,1,0x6a,0x0b]));
+        Validator.Validate(decodedScalar, "CanonicalScalar");
+        var canonicalScalar = CanonicalLowering.Lower(decodedScalar);
+        var scalarAdd = canonicalScalar.Bodies[0].Instructions.Single(i => i.Source.Opcode == 0x6a).Operation;
+        if (scalarAdd is null || scalarAdd.Kind != CanonicalOperationKind.I32 || scalarAdd.Inputs.Length != 2 ||
+            scalarAdd.Result != Wasm2Cs.ValueType.I32)
+            throw new Exception("Canonical scalar lowering lost operation type metadata.");
         string vectorSource = Transpiler.Translate(vectorBytes,"Vector",WasmTargetProfile.DotNetVector);
         if (!vectorSource.Contains("Vector128<float>") || !vectorSource.Contains("BitConverter.Int32BitsToSingle"))
             throw new Exception(".NET vector backend did not emit a v128 function.");

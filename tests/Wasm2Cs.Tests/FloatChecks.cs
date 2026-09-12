@@ -193,7 +193,7 @@ internal static class FloatChecks
         foreach (byte op in new byte[]{0x2a,0x2b,0x38,0x39}) Reject(Function([],[],[0x00,op,0,0,0x0b]),"requires memory");
         foreach (byte op in new byte[]{0x2a,0x2b,0x38,0x39})
             Reject(Function([],[],[0x00,op,(byte)(op%2==0 ? 3 : 4),0,0x0b],memory:true),"natural alignment");
-        Reject(Function([],[],[0x00,0xfc,8,0x0b]),"opcode 0xfc/8");
+        Reject(Function([],[],[0x00,0xfc,8,0,0,0x0b]),"data count");
         Reject(Function([],[],[0xfc,0x80]),"Unexpected end");
         Reject(Function([],[],[0xfc,0x80,0x80,0x80,0x80,0x80,0]),"too long");
     }

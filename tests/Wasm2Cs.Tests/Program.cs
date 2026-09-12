@@ -11,7 +11,8 @@ using Wasm2Cs;
 if (args.Contains("--floating")) { ConformanceChecks.VerifyFloating(); await FloatChecks.Verify(); return; }
 
 var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator)
-    .Select(p => MetadataReference.CreateFromFile(p)).ToArray();
+    .Select(p => MetadataReference.CreateFromFile(p))
+    .Append(MetadataReference.CreateFromFile(typeof(WasmMemory).Assembly.Location)).ToArray();
 CSharpCompilation Compilation(string source) => CSharpCompilation.Create("Test_" + Guid.NewGuid().ToString("N"),
     [CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.CSharp9))], references,
     new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, checkOverflow: true));
@@ -135,6 +136,7 @@ await ExecutionChecks.Numerics();
 await ExecutionChecks.ControlFlow();
 await ExecutionChecks.Calls();
 await ExecutionChecks.Memory();
+ExecutionChecks.SharedMemoryGlobalsAndBulkData();
 await ExecutionChecks.CAlgorithms();
 ExecutionChecks.Imports();
 ConformanceChecks.Verify();

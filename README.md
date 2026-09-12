@@ -2,7 +2,8 @@
 
 A proof of concept that translates WebAssembly binaries into ordinary C# methods,
 then runs the same translator from a Roslyn incremental Source Generator.
-The generated application does not need a WebAssembly runtime.
+The generated application does not need a WebAssembly interpreter. Modules that
+import or export memory/globals use the small `Wasm2Cs.Runtime` ABI assembly.
 
 The translator separates binary decoding, a module/instruction representation,
 validation, and C# emission. Invalid instructions and operand stacks include
@@ -148,6 +149,7 @@ paths. The complete example is `samples/Smoke/Smoke.csproj`.
   <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
 </PropertyGroup>
 <ItemGroup>
+  <ProjectReference Include="../../src/Wasm2Cs.Runtime/Wasm2Cs.Runtime.csproj" />
   <ProjectReference Include="../../src/Wasm2Cs.Generator/Wasm2Cs.Generator.csproj"
                     OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   <Wasm Include="Arithmetic.wasm" />
@@ -201,14 +203,18 @@ Translation errors fail the build with `WASM001`; duplicate class names use `WAS
 - Direct function calls, including non-exported functions and recursion. Each WASM
   function is emitted once; exports are public wrappers over private instance methods.
 
-- One owned memory32, i32/i64/f32/f64 loads/stores (including signed/unsigned narrow loads),
-  `memory.size/grow`, owned numeric globals, active data segments, and start functions.
-  Addresses remain i32; i64 loads/stores also support 8/16/32-bit storage widths.
-  Instantiation initializes memory/globals/data before calling start exactly once.
-  Memory is limited to 256 MiB; exceeding growth limits returns -1 without changing state.
-  Memory exports use `MemorySize` (bytes), `ReadMemory(uint offset, int count)` and
-  `WriteMemory(uint offset, byte[] bytes)`. Reads copy data rather than expose backing
-  arrays. Global exports become properties, writable only for mutable globals.
+- One memory32, whether owned or imported, with i32/i64/f32/f64 loads/stores (including
+  signed/unsigned narrow loads), `memory.size/grow`, numeric globals, active/passive data,
+  `memory.copy/fill/init`, `data.drop`, and start functions. Imported/exported objects are
+  shared through `Wasm2Cs.WasmMemory` and `WasmGlobal` from `Wasm2Cs.Runtime`; growth replaces private
+  backing storage without invalidating the shared object. Addresses remain i32; i64
+  loads/stores also support 8/16/32-bit storage widths. Instantiation initializes
+  memory/globals/data before calling start exactly once. Declared and host memory limits
+  are tracked separately; exceeding either returns -1 without changing state. Memory
+  exports use the shared object plus the compatibility `MemorySize`, `ReadMemory(uint
+  offset, int count)`, `ReadMemoryInto`, `WriteMemory(uint offset, byte[] bytes)`, and
+  `WriteMemoryFrom` APIs. Reads copy data rather than expose backing arrays. Global
+  exports become properties, writable only for mutable globals.
 
 - Function imports with typed parameters and zero, one, or multiple results. Constructor arguments follow
   import-section order (`import0`, `import1`, ...), using generated nested delegate

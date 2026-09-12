@@ -1,6 +1,6 @@
 # SH-05 メモリ・global・data の拡張
 
-状態: 未着手。前提: [SH-04](SH-04-floating-point.md)。次: [SH-06](SH-06-tables.md)。
+状態: 実施中。前提: [SH-04](SH-04-floating-point.md)。次: [SH-06](SH-06-tables.md)。機能実装と共通回帰は完了し、終了コミットと Unity 実行記録が未完了。
 
 ## 目的・変更対象
 
@@ -27,10 +27,10 @@
 
 ## 合格条件
 
-- [ ] 必要な memory/global import と data 命令が型付きで検証・実行される。
-- [ ] 各操作後の memory/global が参照実行と一致する。
-- [ ] 共有した memory オブジェクトの grow 後も、すべての参照元が新しい内容を見る。
-- [ ] 既存の独立インスタンスと ReadMemory／WriteMemory のテストが通る。
+- [x] 必要な memory/global import と data 命令が型付きで検証・実行される。
+- [x] 各操作後の memory/global が参照実行と一致する。
+- [x] 共有した memory オブジェクトの grow 後も、すべての参照元が新しい内容を見る。
+- [x] 既存の独立インスタンスと ReadMemory／WriteMemory のテストが通る。
 
 ## 非対象・失敗時の扱い
 
@@ -40,7 +40,7 @@ threads の共有メモリ、atomics、memory64 は追加しない。対象プ�
 
 import と状態共有、bulk memory・初期化、コピー API と検証に分ける。終了コミット例: `feat: extend wasm memory and data support`。
 
-- 実行コマンド・結果: 未実施
-- memory プロファイル・状態比較ログ: 未取得
-- 未解決事項: SH-01 の memory／初期化式の一覧待ち
+- 実行コマンド・結果: `dotnet build Wasm2Cs.slnx -m:1 -p:UseSharedCompilation=false -p:NuGetAudit=false --nologo`、`dotnet tests/Wasm2Cs.Tests/bin/Debug/net10.0/Wasm2Cs.Tests.dll`、`dotnet run --project samples/Smoke --no-build`、`node scripts/test-build.mjs`、`node scripts/test-package.mjs`、`node scripts/pack.mjs` が成功。SH-05 の共有 memory/global、初期化式、bulk data、範囲付きコピー、overlap copy、fill、data.drop、失敗 grow は `ExecutionChecks.SharedMemoryGlobalsAndBulkData` で検証した。
+- memory プロファイル・状態比較ログ: SH-01 の固定プロファイルを参照。SH-05 固有の永続ログは未取得。
+- 未解決事項: Unity Editor／IL2CPP の SH-05 専用実行記録が未取得。コミットは未作成。
 - 終了コミット: 未完了

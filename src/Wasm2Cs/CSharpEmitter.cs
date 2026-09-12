@@ -16,8 +16,18 @@ internal static class CSharpEmitter
             source.Append(FloatOperations.Helpers);
         if (module.Bodies.Any(f => f.Instructions.Any(i => ConversionOperations.Supports(i.Opcode))))
             source.Append(ConversionOperations.Helpers);
-        if (module.Memory != null) source.Append(MemoryOperations.Helpers.Replace("__WASM_MAX_PAGES__", module.Memory.Maximum.ToString(CultureInfo.InvariantCulture)));
-        for(int g=0;g<module.Globals.Count;g++) source.Append($"    private {TypeName(module.Globals[g].Type)} __wasm_G{g};\n");
+        if (module.Memory != null) source.Append(MemoryOperations.Helpers.Replace("__WASM_MAX_PAGES__", (module.Memory.Maximum ?? 65536).ToString(CultureInfo.InvariantCulture)));
+        for(int g=0;g<module.Globals.Count;g++)
+        {
+            if (module.Globals[g].Imported)
+                source.Append($"    private readonly global::Wasm2Cs.WasmGlobal __wasm_import_global{g};\n");
+            else
+                source.Append($"    private {TypeName(module.Globals[g].Type)} __wasm_G{g};\n");
+        }
+        for (int g=0;g<module.Globals.Count;g++)
+            if (module.Globals[g].Imported) source.Append(GlobalAccessor(module, g));
+        for (int d=0;d<module.Data.Count;d++)
+            if (module.Data[d].Passive) source.Append($"    private byte[] __wasm_D{d};\n");
         bool floatImports = module.Imports.Select((_, i) => module.FunctionSignature(i)).Any(t => t.Parameters.Any(IsFloat) || t.Results.Any(IsFloat));
         for (int i=0;i<module.Imports.Count;i++)
         {
@@ -31,7 +41,7 @@ internal static class CSharpEmitter
             string call = $"__wasm_host{i}({string.Join(", ",signature.Parameters.Select((t,p) => ToBoundary($"v{p}", t, floatImports)))})";
             source.Append($"    private {ResultType(signature.Results)} __wasm_F{i}({parameters}) {{ {ReturnBoundary(call, signature.Results, true, floatImports)} }}\n");
         }
-        source.Append($"    public @{className}({string.Join(", ",Enumerable.Range(0,module.Imports.Count).Select(i => $"__wasm_Import{i} import{i}"))})\n    {{\n");
+        source.Append($"    public @{className}({ConstructorParameters(module, false)})\n    {{\n");
         for (int i=0;i<module.Imports.Count;i++)
         {
             source.Append($"        if (import{i} == null) throw new global::System.ArgumentNullException(\"import{i}\");\n");
@@ -44,20 +54,67 @@ internal static class CSharpEmitter
                 source.Append($"        __wasm_host{i} = ({string.Join(", ",Enumerable.Range(0,signature.Parameters.Length).Select(p=>$"v{p}"))}) => {{ {returned} }};\n");
             }
         }
+        foreach (var binding in module.ImportBindings)
+        {
+            string parameter = ImportParameterName(binding);
+            if (binding.Kind == 2)
+            {
+                source.Append($"        __wasm_memory = {parameter} ?? throw new global::System.ArgumentNullException(\"{parameter}\");\n");
+                source.Append($"        __wasm_memory.ValidateImport({module.Memory!.Minimum}, {NullableInt(module.Memory.Maximum)});\n");
+            }
+            else if (binding.Kind == 3)
+            {
+                var global = module.Globals[binding.Index];
+                source.Append($"        __wasm_import_global{binding.Index} = {parameter} ?? throw new global::System.ArgumentNullException(\"{parameter}\");\n");
+                source.Append($"        __wasm_import_global{binding.Index}.Validate({WasmTypeName(global.Type)}, {(global.Mutable ? "true" : "false")});\n");
+            }
+        }
         source.Append("        __wasm_Initialize();\n    }\n");
         if (floatImports)
         {
-            string parameters = string.Join(", ",Enumerable.Range(0,module.Imports.Count).Select(i=>$"__wasm_BitsImport{i} import{i}"));
-            string arguments = string.Join(", ",Enumerable.Range(0,module.Imports.Count).Select(i=>$"import{i}"));
+            string parameters = ConstructorParameters(module, true);
+            string arguments = string.Join(", ", module.ImportBindings.Select(ImportParameterName));
             source.Append($"    public static @{className} __wasm_FromBits({parameters}) {{ return new @{className}({arguments}, true); }}\n");
             source.Append($"    private @{className}({parameters}, bool __wasm_bits)\n    {{\n");
-            for (int i=0;i<module.Imports.Count;i++) source.Append($"        __wasm_host{i} = import{i} ?? throw new global::System.ArgumentNullException(\"import{i}\");\n");
+            for (int i=0;i<module.Imports.Count;i++)
+            {
+                var parameter = ImportParameterName(module.ImportBindings.First(b => b.Kind == 0 && b.Index == i));
+                source.Append($"        __wasm_host{i} = {parameter} ?? throw new global::System.ArgumentNullException(\"{parameter}\");\n");
+            }
+            foreach (var binding in module.ImportBindings)
+            {
+                string parameter = ImportParameterName(binding);
+                if (binding.Kind == 2)
+                {
+                    source.Append($"        __wasm_memory = {parameter} ?? throw new global::System.ArgumentNullException(\"{parameter}\");\n");
+                    source.Append($"        __wasm_memory.ValidateImport({module.Memory!.Minimum}, {NullableInt(module.Memory.Maximum)});\n");
+                }
+                else if (binding.Kind == 3)
+                {
+                    var global = module.Globals[binding.Index];
+                    source.Append($"        __wasm_import_global{binding.Index} = {parameter} ?? throw new global::System.ArgumentNullException(\"{parameter}\");\n");
+                    source.Append($"        __wasm_import_global{binding.Index}.Validate({WasmTypeName(global.Type)}, {(global.Mutable ? "true" : "false")});\n");
+                }
+            }
             source.Append("        __wasm_Initialize();\n    }\n");
         }
         source.Append("    private void __wasm_Initialize()\n    {\n");
-        if (module.Memory != null) source.Append($"        __wasm_memory = new byte[{module.Memory.Minimum*65536}];\n");
-        for(int g=0;g<module.Globals.Count;g++) source.Append($"        __wasm_G{g} = {ConstantExpression(module.Globals[g].InitialValue)};\n");
-        foreach(var data in module.Data) source.Append($"        WriteMemory({data.Offset}u, global::System.Convert.FromBase64String(\"{Convert.ToBase64String(data.Bytes)}\"));\n");
+        if (module.Memory != null && !module.Memory.Imported)
+            source.Append($"        __wasm_memory = new global::Wasm2Cs.WasmMemory({module.Memory.Minimum}, {NullableInt(module.Memory.Maximum)}, 4096);\n");
+        for(int g=0;g<module.Globals.Count;g++)
+            if (!module.Globals[g].Imported)
+                source.Append($"        __wasm_G{g} = {ConstantExpression(module.Globals[g].InitialValue!, module)};\n");
+        for (int d=0;d<module.Data.Count;d++)
+        {
+            var data = module.Data[d];
+            if (data.Passive)
+                source.Append($"        __wasm_D{d} = global::System.Convert.FromBase64String(\"{Convert.ToBase64String(data.Bytes)}\");\n");
+            else
+            {
+                string offset = ConstantExpression(data.OffsetExpression ?? new ConstantValue(ValueType.I32, data.Offset), module);
+                source.Append($"        WriteMemory(unchecked((uint)({offset})), global::System.Convert.FromBase64String(\"{Convert.ToBase64String(data.Bytes)}\"));\n");
+            }
+        }
         if (module.Start.HasValue) source.Append($"        __wasm_F{module.Start.Value}();\n");
         source.Append("    }\n");
         for (int i=0;i<module.Bodies.Count;i++)
@@ -71,7 +128,11 @@ internal static class CSharpEmitter
         foreach (var export in module.Exports)
         {
             byte kind = module.ExportKinds[export.Key];
-            if (kind == 2) continue; // Memory exports use the copy-based host API.
+            if (kind == 2)
+            {
+                source.Append($"    public global::Wasm2Cs.WasmMemory @{export.Key} {{ get {{ return __wasm_memory; }} }}\n");
+                continue;
+            }
             bool floating = kind == 3 ? IsFloat(module.Globals[export.Value].Type) :
                 module.FunctionSignature(export.Value).Parameters.Any(IsFloat) || module.FunctionSignature(export.Value).Results.Any(IsFloat);
             foreach (bool bits in floating ? new[] { false, true } : new[] { false })
@@ -80,8 +141,12 @@ internal static class CSharpEmitter
                 if (kind == 3)
                 {
                     var global = module.Globals[export.Value];
-                    source.Append($"    public {BoundaryTypeName(global.Type,bits)} @{name} {{ get {{ return {ToBoundary($"__wasm_G{export.Value}",global.Type,bits)}; }}");
-                    if (global.Mutable) source.Append($" set {{ __wasm_G{export.Value} = {FromBoundary("value",global.Type,bits)}; }}");
+                    source.Append($"    public {BoundaryTypeName(global.Type,bits)} @{name} {{ get {{ return {ToBoundary(GlobalExpression(module, export.Value),global.Type,bits)}; }}");
+                    if (global.Mutable)
+                    {
+                        string value = FromBoundary("value", global.Type, bits);
+                        source.Append($" set {{ {GlobalSet(module, export.Value, value)} }}");
+                    }
                     source.Append(" }\n");
                     continue;
                 }
@@ -93,6 +158,64 @@ internal static class CSharpEmitter
         return source.Append("}\n}\n").ToString();
     }
     private static bool IsFloat(ValueType type) => type == ValueType.F32 || type == ValueType.F64;
+    private static string ImportParameterName(ImportBinding binding) => binding.Kind switch
+    {
+        0 => $"import{binding.Index}",
+        2 => "memory0",
+        3 => $"global{binding.Index}",
+        _ => throw new WasmException("Unsupported import kind.")
+    };
+    private static string ConstructorParameters(Module module, bool bits) => string.Join(", ", module.ImportBindings.Select(binding =>
+        binding.Kind == 0
+            ? $"__wasm_{(bits ? "BitsImport" : "Import")}{binding.Index} {ImportParameterName(binding)}"
+            : binding.Kind == 2
+                ? $"global::Wasm2Cs.WasmMemory {ImportParameterName(binding)}"
+                : $"global::Wasm2Cs.WasmGlobal {ImportParameterName(binding)}"));
+    private static string NullableInt(int? value) => value.HasValue ? value.Value.ToString(CultureInfo.InvariantCulture) : "null";
+    private static string WasmTypeName(ValueType type) => $"global::Wasm2Cs.WasmValueType.{type switch
+    {
+        ValueType.I32 => "I32", ValueType.I64 => "I64", ValueType.F32 => "F32", ValueType.F64 => "F64",
+        ValueType.FuncRef => "FuncRef", ValueType.ExternRef => "ExternRef",
+        _ => throw new WasmException($"Unsupported global type {type}.")
+    }}";
+    private static string GlobalExpression(Module module, int index) => module.Globals[index].Imported ?
+        $"__wasm_GetG{index}()" : $"__wasm_G{index}";
+    private static string GlobalSet(Module module, int index, string value) => module.Globals[index].Imported ?
+        $"__wasm_SetG{index}({value});" : $"__wasm_G{index} = {value};";
+    private static string GlobalAccessor(Module module, int index)
+    {
+        var type = module.Globals[index].Type;
+        string getter, setter;
+        if (type == ValueType.I32)
+        {
+            getter = $"unchecked((int)(uint)__wasm_import_global{index}.Bits)";
+            setter = $"__wasm_import_global{index}.Bits = unchecked((ulong)(uint)value);";
+        }
+        else if (type == ValueType.I64)
+        {
+            getter = $"unchecked((long)__wasm_import_global{index}.Bits)";
+            setter = $"__wasm_import_global{index}.Bits = unchecked((ulong)value);";
+        }
+        else if (type == ValueType.F32)
+        {
+            getter = $"__wasm_F32(unchecked((int)(uint)__wasm_import_global{index}.Bits))";
+            setter = $"__wasm_import_global{index}.Bits = unchecked((ulong)(uint)__wasm_Bits32(value));";
+        }
+        else if (type == ValueType.F64)
+        {
+            getter = $"__wasm_F64(unchecked((long)__wasm_import_global{index}.Bits))";
+            setter = $"__wasm_import_global{index}.Bits = unchecked((ulong)__wasm_Bits64(value));";
+        }
+        else
+        {
+            getter = type == ValueType.FuncRef
+                ? $"({TypeName(type)})__wasm_import_global{index}.ReferenceValue"
+                : $"__wasm_import_global{index}.ReferenceValue";
+            setter = $"__wasm_import_global{index}.ReferenceValue = value;";
+        }
+        return $"    private {TypeName(type)} __wasm_GetG{index}() => {getter};\n" +
+            $"    private void __wasm_SetG{index}({TypeName(type)} value) {{ {setter} }}\n";
+    }
     private static string BoundaryTypeName(ValueType type, bool bits) => type == ValueType.F32 ? (bits ? "int" : "float") :
         type == ValueType.F64 ? (bits ? "long" : "double") : TypeName(type);
     private static string BoundaryResultType(ValueType[] types, bool bits) => types.Length == 0 ? "void" :
@@ -112,14 +235,22 @@ internal static class CSharpEmitter
         if (types.Length == 1) return "return "+convert(call,types[0])+";";
         return "var __wasm_result = "+call+"; return ("+string.Join(", ",types.Select((t,i)=>convert($"__wasm_result.Item{i+1}",t)))+");";
     }
-    private static string ConstantExpression(ConstantValue value) => value.Type switch
+    private static string ConstantExpression(ConstantValue value, Module? module = null)
     {
-        ValueType.I32 => unchecked((int)value.Bits).ToString(CultureInfo.InvariantCulture),
-        ValueType.I64 => $"unchecked((long)0x{value.Bits.ToString("x16", CultureInfo.InvariantCulture)}UL)",
-        ValueType.F32 => $"__wasm_F32(unchecked((int)0x{value.Bits.ToString("x8", CultureInfo.InvariantCulture)}U))",
-        ValueType.F64 => $"__wasm_F64(unchecked((long)0x{value.Bits.ToString("x16", CultureInfo.InvariantCulture)}UL))",
-        _ => throw new WasmException($"Unsupported constant type {value.Type}.")
-    };
+        if (value.GlobalIndex.HasValue)
+        {
+            if (module == null) throw new WasmException("Global constant expression requires a module.");
+            return GlobalExpression(module, value.GlobalIndex.Value);
+        }
+        return value.Type switch
+        {
+            ValueType.I32 => unchecked((int)value.Bits).ToString(CultureInfo.InvariantCulture),
+            ValueType.I64 => $"unchecked((long)0x{value.Bits.ToString("x16", CultureInfo.InvariantCulture)}UL)",
+            ValueType.F32 => $"__wasm_F32(unchecked((int)0x{value.Bits.ToString("x8", CultureInfo.InvariantCulture)}U))",
+            ValueType.F64 => $"__wasm_F64(unchecked((long)0x{value.Bits.ToString("x16", CultureInfo.InvariantCulture)}UL))",
+            _ => throw new WasmException($"Unsupported constant type {value.Type}.")
+        };
+    }
     private static string TypeName(ValueType type) => type switch
     {
         ValueType.I32 => "int", ValueType.I64 => "long", ValueType.F32 => "__wasm_Float32", ValueType.F64 => "__wasm_Float64",
@@ -287,8 +418,11 @@ internal static class CSharpEmitter
                     if (instruction.Opcode == 0x22) stack.Add(localValue);
                     break;
                 case 0x41: case 0x42: case 0x43: case 0x44: Push(ConstantExpression(instruction.Constant!), instruction.Constant!.Type); break;
-                case 0x23: Push($"__wasm_G{instruction.Operand}", module.Globals[instruction.Operand].Type); break;
-                case 0x24: Line($"__wasm_G{instruction.Operand} = {Pop(module.Globals[instruction.Operand].Type).Name};"); break;
+                case 0x23: Push(GlobalExpression(module, instruction.Operand), module.Globals[instruction.Operand].Type); break;
+                case 0x24:
+                    var globalValue = Pop(module.Globals[instruction.Operand].Type).Name;
+                    Line(GlobalSet(module, instruction.Operand, globalValue));
+                    break;
                 case 0x2a: case 0x2b:
                 case 0x28: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
                 case 0x29: case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35:
@@ -307,8 +441,29 @@ internal static class CSharpEmitter
                     if (storeType == ValueType.F32) stored = $"__wasm_Bits32({stored})";
                     if (storeType == ValueType.F64) stored = $"__wasm_Bits64({stored})";
                     Line($"{store}({address}, {stored}, {instruction.Immediate}u, {MemoryOperations.Width(instruction.Opcode)});"); break;
-                case 0x3f: Push("__wasm_memory.Length / 65536"); break;
+                case 0x3f: Push("__wasm_memory.CurrentPages"); break;
                 case 0x40: Push($"__wasm_Grow({PopI32()})"); break;
+                case 0xfc when instruction.Operand == 8:
+                    string initLength = PopI32();
+                    string initSource = PopI32();
+                    string initDestination = PopI32();
+                    Line($"__wasm_Init(__wasm_D{instruction.Immediate}, {initDestination}, {initSource}, {initLength});");
+                    break;
+                case 0xfc when instruction.Operand == 9:
+                    Line($"__wasm_D{instruction.Immediate} = null;");
+                    break;
+                case 0xfc when instruction.Operand == 10:
+                    string copyLength = PopI32();
+                    string copySource = PopI32();
+                    string copyDestination = PopI32();
+                    Line($"__wasm_Copy({copyDestination}, {copySource}, {copyLength});");
+                    break;
+                case 0xfc when instruction.Operand == 11:
+                    string fillLength = PopI32();
+                    string fillValue = PopI32();
+                    string fillDestination = PopI32();
+                    Line($"__wasm_Fill({fillDestination}, {fillValue}, {fillLength});");
+                    break;
                 default:
                     if (ConversionOperations.Supports(instruction.Opcode))
                     {

@@ -24,8 +24,8 @@ internal static class ExecutionChecks
         if (calls != 2) throw new Exception("Imported function export did not run.");
         foreach (byte[] invalid in new byte[][] {
             [0,97,115,109,1,0,0,0,..Section(2,[1,0,0,0,0])],
-            [0,97,115,109,1,0,0,0,..Section(2,[1,0,0,2,0,0])],
-            [0,97,115,109,1,0,0,0,..Section(2,[1,0,0,3,0x7f,0])]
+            [0,97,115,109,1,0,0,0,..Section(2,[1,0,0,2,2,0,0])],
+            [0,97,115,109,1,0,0,0,..Section(2,[1,0,0,3,0x7f,2])]
         })
         {
             try { Transpiler.Translate(invalid,"Subject"); throw new Exception("Accepted invalid/unsupported import."); }
@@ -53,7 +53,8 @@ internal static class ExecutionChecks
     {
         var paths = portable ? Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "ReferenceAssemblies"), "*.dll") :
             ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Split(Path.PathSeparator);
-        var references = paths.Select(p => MetadataReference.CreateFromFile(p));
+        var references = paths.Select(p => MetadataReference.CreateFromFile(p))
+            .Append(MetadataReference.CreateFromFile(typeof(WasmMemory).Assembly.Location));
         var compilation = CSharpCompilation.Create("Execution_" + Guid.NewGuid().ToString("N"),
             [CSharpSyntaxTree.ParseText(Transpiler.Translate(bytes,name),new CSharpParseOptions(LanguageVersion.CSharp9))], references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, checkOverflow:true));
@@ -230,6 +231,97 @@ internal static class ExecutionChecks
             catch(WasmException) { }
         }
         Console.WriteLine("PASS: memory loads/stores, unsigned bounds, grow, data/start initialization, globals, and isolated instances.");
+    }
+    private static byte[] Name(string value) => [..U32(System.Text.Encoding.UTF8.GetByteCount(value)), ..System.Text.Encoding.UTF8.GetBytes(value)];
+    private static byte[] SharedMemoryModule()
+    {
+        byte[] types = [1,0x60,0,1,0x7f];
+        byte[] imports = [2,..Name("env"),..Name("memory"),2,1,1,2,..Name("env"),..Name("counter"),3,0x7f,1];
+        byte[] body = [0,0x23,0,0x41,1,0x6a,0x24,0,0x41,0,0x2d,0,0,0x0b];
+        return [0,97,115,109,1,0,0,0,..Section(1,types),..Section(2,imports),..Section(3,[1,0]),
+            ..Section(7,[3,1,(byte)'f',0,0,6,.."memory"u8.ToArray(),2,0,7,.."counter"u8.ToArray(),3,0]),
+            ..Section(10,[1,..U32(body.Length),..body])];
+    }
+    private static byte[] ImportedGlobalInitializer()
+    {
+        byte[] imports = [1,..Name("env"),..Name("offset"),3,0x7f,0];
+        byte[] globals = [1,0x7f,0,0x23,0,0x0b];
+        byte[] exports = [2,1,(byte)'g',3,1,6,.."memory"u8.ToArray(),2,0];
+        byte[] data = [1,2,0,0x23,0,0x0b,1,99];
+        return [0,97,115,109,1,0,0,0,..Section(2,imports),..Section(5,[1,1,1,1]),..Section(6,globals),
+            ..Section(7,exports),..Section(11,data)];
+    }
+    private static byte[] PassiveBulkModule()
+    {
+        byte[] types = [1,0x60,0,1,0x7f];
+        byte[] init = [0,0x41,0,0x41,0,0x41,3,0xfc,8,0,0,0x41,0,0x2d,0,0,0x0b];
+        byte[] drop = [0,0x41,0,0x41,0,0x41,1,0xfc,8,0,0,0xfc,9,0,0x41,0,0x41,0,0x41,1,0xfc,8,0,0,0x41,0,0x2d,0,0,0x0b];
+        byte[] code = [2,..U32(init.Length),..init,..U32(drop.Length),..drop];
+        byte[] exports = [2,1,(byte)'f',0,0,4,(byte)'d',(byte)'r',(byte)'o',(byte)'p',0,1];
+        byte[] data = [1,1,3,65,66,67];
+        return [0,97,115,109,1,0,0,0,..Section(1,types),..Section(3,[2,0,0]),..Section(5,[1,0,1]),
+            ..Section(7,exports),..Section(12,[1]),..Section(10,code),..Section(11,data)];
+    }
+    private static byte[] CopyFillModule()
+    {
+        byte[] types = [1,0x60,0,1,0x7f];
+        byte[] copy = [0,0x41,1,0x41,0,0x41,3,0xfc,10,0,0,0x41,1,0x2d,0,0,0x0b];
+        byte[] fill = [0,0x41,0,0x41,0x7f,0x41,2,0xfc,11,0,0x41,1,0x2d,0,0,0x0b];
+        byte[] code = [2,..U32(copy.Length),..copy,..U32(fill.Length),..fill];
+        byte[] exports = [2,1,(byte)'c',0,0,1,(byte)'f',0,1];
+        byte[] data = [1,0,0x41,0,0x0b,4,1,2,3,4];
+        return [0,97,115,109,1,0,0,0,..Section(1,types),..Section(3,[2,0,0]),..Section(5,[1,0,1]),
+            ..Section(7,exports),..Section(10,code),..Section(11,data)];
+    }
+    public static void SharedMemoryGlobalsAndBulkData()
+    {
+        var bytes = SharedMemoryModule();
+        File.WriteAllText("/tmp/shared.g.cs", Transpiler.Translate(bytes,"SharedA"));
+        var firstType = Compile(bytes,"SharedA").GetType("Wasm2Cs.Generated.SharedA")!;
+        var secondType = Compile(bytes,"SharedB").GetType("Wasm2Cs.Generated.SharedB")!;
+        var memory = new WasmMemory(1,2);
+        memory.WriteMemory(0,new byte[] { 7 });
+        var global = new WasmGlobal(WasmValueType.I32,10,true);
+        var first = Activator.CreateInstance(firstType,[memory,global])!;
+        var second = Activator.CreateInstance(secondType,[memory,global])!;
+        if ((int)firstType.GetMethod("f")!.Invoke(first,null)! != 7 || (int)global.Value! != 11)
+            throw new Exception("Imported memory/global state was not shared.");
+        if ((int)secondType.GetMethod("f")!.Invoke(second,null)! != 7 || (int)global.Value! != 12)
+            throw new Exception("Imported memory/global state was not visible to the second module.");
+        if (!ReferenceEquals(firstType.GetProperty("memory")!.GetValue(first), memory) || memory.Grow(1) != 1 ||
+            (int)firstType.GetProperty("MemorySize")!.GetValue(first)! != 131072 ||
+            (int)secondType.GetProperty("MemorySize")!.GetValue(second)! != 131072)
+            throw new Exception("Shared memory object or post-grow visibility differs.");
+        var buffer = new byte[3];
+        firstType.GetMethod("ReadMemoryInto")!.Invoke(first,[0u,buffer,1,1]);
+        if (buffer[1] != 7) throw new Exception("Range-based memory read failed.");
+        firstType.GetMethod("WriteMemoryFrom")!.Invoke(first,[1u,new byte[] { 8, 9 },1,1]);
+        if (memory.ReadMemory(1,1)[0] != 9) throw new Exception("Range-based memory write failed.");
+        try { firstType.GetMethod("ReadMemoryInto")!.Invoke(first,[0u,buffer,3,1]); throw new Exception("Accepted an invalid host buffer range."); }
+        catch (TargetInvocationException e) when (e.InnerException is ArgumentOutOfRangeException) { }
+        if (memory.Grow(1) != -1 || memory.CurrentPages != 2) throw new Exception("Failed grow changed memory state.");
+        try { Activator.CreateInstance(firstType,[new WasmMemory(1,3),global]); throw new Exception("Accepted an incompatible imported memory maximum."); }
+        catch (TargetInvocationException e) when (e.InnerException is ArgumentException) { }
+
+        var initializerType = Compile(ImportedGlobalInitializer(),"GlobalInit").GetType("Wasm2Cs.Generated.GlobalInit")!;
+        var initializer = Activator.CreateInstance(initializerType,[new WasmGlobal(WasmValueType.I32,4)])!;
+        if ((int)initializerType.GetProperty("g")!.GetValue(initializer)! != 4 ||
+            ((byte[])initializerType.GetMethod("ReadMemory")!.Invoke(initializer,[4u,1])!)[0] != 99)
+            throw new Exception("Imported immutable global was not visible to initialization.");
+
+        var bulkType = Compile(PassiveBulkModule(),"PassiveBulk").GetType("Wasm2Cs.Generated.PassiveBulk")!;
+        var bulk = Activator.CreateInstance(bulkType)!;
+        if ((int)bulkType.GetMethod("f")!.Invoke(bulk,null)! != 65) throw new Exception("memory.init failed.");
+        try { bulkType.GetMethod("drop")!.Invoke(bulk,null); throw new Exception("memory.init after data.drop did not trap."); }
+        catch (TargetInvocationException e) when (e.InnerException?.GetType().Name == "TrapException") { }
+
+        File.WriteAllText("/tmp/copyfill.g.cs", Transpiler.Translate(CopyFillModule(),"CopyFill"));
+        var copyFillType = Compile(CopyFillModule(),"CopyFill").GetType("Wasm2Cs.Generated.CopyFill")!;
+        var copyFill = Activator.CreateInstance(copyFillType)!;
+        if ((int)copyFillType.GetMethod("c")!.Invoke(copyFill,null)! != 1 ||
+            (int)copyFillType.GetMethod("f")!.Invoke(copyFill,null)! != 255)
+            throw new Exception("memory.copy or memory.fill failed.");
+        Console.WriteLine("PASS: imported/shared memory and globals, dynamic initialization, bulk data, overlap copy, fill, and data.drop.");
     }
     public static async Task CAlgorithms()
     {

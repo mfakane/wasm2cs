@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="src/Wasm2Cs/Wasm2Cs.csproj" />
+  <Project Path="src/Wasm2Cs.Runtime/Wasm2Cs.Runtime.csproj" />
   <Project Path="src/Wasm2Cs.Cli/Wasm2Cs.Cli.csproj" />
   <Project Path="src/Wasm2Cs.Generator/Wasm2Cs.Generator.csproj" />
   <Project Path="samples/Smoke/Smoke.csproj" />

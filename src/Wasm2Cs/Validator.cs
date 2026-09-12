@@ -14,11 +14,34 @@ internal static class Validator
             if (kind == 2 && (export.Value != 0 || module.Memory == null)) throw new WasmException("Invalid exported memory index.");
             if (kind == 3 && export.Value >= module.Globals.Count) throw new WasmException("Invalid exported global index.");
         }
-        if (module.Data.Count != 0 && module.Memory == null) throw new WasmException("Data segments require memory.");
+        if (module.Data.Any(data => !data.Passive) && module.Memory == null)
+            throw new WasmException("Active data segments require memory.");
+        if (module.DataCount.HasValue && module.DataCount.Value != module.Data.Count)
+            throw new WasmException("Data count and data segment count differ.");
         if (module.Start.HasValue && (module.Start.Value >= module.FunctionCount ||
             (module.FunctionSignature(module.Start.Value).Parameters.Length != 0 || module.FunctionSignature(module.Start.Value).Results.Length != 0))) throw new WasmException("Invalid start function.");
         foreach (var global in module.Globals)
-            if (global.Type != global.InitialValue.Type) throw new WasmException("Global initializer type mismatch.");
+        {
+            if (global.Imported)
+            {
+                if (global.InitialValue != null) throw new WasmException("Imported global cannot have an initializer.");
+                continue;
+            }
+            if (global.InitialValue == null || global.Type != global.InitialValue.Type)
+                throw new WasmException("Global initializer type mismatch.");
+            if (global.InitialValue.GlobalIndex.HasValue)
+            {
+                int index = global.InitialValue.GlobalIndex.Value;
+                if (index >= module.Globals.Count || !module.Globals[index].Imported || module.Globals[index].Mutable)
+                    throw new WasmException("Global initializer must use an imported immutable global.");
+            }
+        }
+        foreach (var data in module.Data)
+            if (data.OffsetExpression != null && data.OffsetExpression.Type != ValueType.I32)
+                throw new WasmException("Data offset must have type i32.");
+        bool requiresDataCount = module.Bodies.Any(f => f.Instructions.Any(i => i.Opcode == 0xfc && (i.Operand == 8 || i.Operand == 9)));
+        if (requiresDataCount && !module.DataCount.HasValue)
+            throw new WasmException("Bulk data instructions require a data count section.");
         for (int i = 0; i < module.Bodies.Count; i++) ValidateBody(module, module.Bodies[i], i);
     }
     private sealed class Control(byte opcode, int height, Signature signature)
@@ -154,6 +177,31 @@ internal static class Validator
                     if (module.Memory == null) Fail("Memory instruction requires memory.");
                     if (instruction.Opcode == 0x40) Pop(ValueType.I32);
                     Push(ValueType.I32); break;
+                case 0xfc when instruction.Operand >= 8:
+                    if (module.Memory == null) Fail("Memory instruction requires memory.");
+                    switch (instruction.Operand)
+                    {
+                        case 8:
+                            if (instruction.Secondary != 0) Fail("Invalid memory index.");
+                            if (instruction.Immediate >= module.Data.Count) Fail("Invalid data segment index.");
+                            if (!module.Data[(int)instruction.Immediate].Passive) Fail("memory.init requires a passive data segment.");
+                            Pop(ValueType.I32); Pop(ValueType.I32); Pop(ValueType.I32);
+                            break;
+                        case 9:
+                            if (instruction.Immediate >= module.Data.Count) Fail("Invalid data segment index.");
+                            if (!module.Data[(int)instruction.Immediate].Passive) Fail("data.drop requires a passive data segment.");
+                            break;
+                        case 10:
+                            if (instruction.Immediate != 0 || instruction.Secondary != 0) Fail("Invalid memory index.");
+                            Pop(ValueType.I32); Pop(ValueType.I32); Pop(ValueType.I32);
+                            break;
+                        case 11:
+                            if (instruction.Secondary != 0) Fail("Invalid memory index.");
+                            Pop(ValueType.I32); Pop(ValueType.I32); Pop(ValueType.I32);
+                            break;
+                        default: Fail("Unsupported bulk memory instruction."); break;
+                    }
+                    break;
                 default:
                     if (ConversionOperations.Supports(instruction.Opcode))
                     {

@@ -16,7 +16,7 @@
 | [SH-02](milestones/SH-02-typed-ir.md) | 型付き内部表現と検証基盤 | SH-01 | 完了 |
 | [SH-03](milestones/SH-03-i64.md) | i64 | SH-02 | 完了 |
 | [SH-04](milestones/SH-04-floating-point.md) | 浮動小数点と数値変換 | SH-03 | 完了 |
-| [SH-05](milestones/SH-05-memory-data.md) | メモリ・global・data の拡張 | SH-04 | 未着手 |
+| [SH-05](milestones/SH-05-memory-data.md) | メモリ・global・data の拡張 | SH-04 | 実施中 |
 | [SH-06](milestones/SH-06-tables.md) | table と間接呼び出し | SH-05 | 未着手 |
 | [SH-07](milestones/SH-07-exceptions.md) | WASM 例外処理 | SH-06 | 未着手 |
 | [SH-08](milestones/SH-08-large-codegen.md) | 巨大モジュールの C# 生成 | SH-07 | 未着手 |

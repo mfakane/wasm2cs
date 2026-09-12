@@ -1,4 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><TargetFramework>netstandard2.0</TargetFramework></PropertyGroup>
-  <ItemGroup><Compile Remove="HostObjects.cs" /></ItemGroup>
+  <ItemGroup>
+    <Compile Include="../Wasm2Cs/HostObjects.cs" Link="HostObjects.cs" />
+  </ItemGroup>
 </Project>

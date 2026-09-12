@@ -13,7 +13,7 @@ internal static class Decoder
         var bodies = new List<Reader>();
         var decoded = new List<Function>();
         var module = new Module(types, functions, exports, decoded);
-        byte previous = 0;
+        int previousOrder = 0;
         while (!reader.End)
         {
             var id = reader.Byte();
@@ -23,8 +23,9 @@ internal static class Decoder
                 section.Name(); // Custom sections still require a well-formed name.
                 continue;
             }
-            if (id <= previous) throw new WasmException("Duplicate or out-of-order section.");
-            previous = id;
+            int order = SectionOrder(id);
+            if (order <= previousOrder) throw new WasmException("Duplicate or out-of-order section.");
+            previousOrder = order;
             switch (id)
             {
                 case 1:
@@ -38,10 +39,31 @@ internal static class Decoder
                     for (int i = 0, count = section.Count(); i < count; i++)
                     {
                         string importModule = section.Name(), importName = section.Name();
-                        if (section.Byte() != 0) throw new WasmException("Only function imports are supported.");
-                        int type = section.Count();
-                        if (type >= types.Count) throw new WasmException("Invalid imported function type index.");
-                        module.Imports.Add(new FunctionImport(importModule, importName, type));
+                        byte kind = section.Byte();
+                        switch (kind)
+                        {
+                            case 0:
+                                int type = section.Count();
+                                if (type >= types.Count) throw new WasmException("Invalid imported function type index.");
+                                module.ImportBindings.Add(new ImportBinding(kind, module.Imports.Count, importModule, importName));
+                                module.Imports.Add(new FunctionImport(importModule, importName, type));
+                                break;
+                            case 2:
+                                if (module.Memory != null) throw new WasmException("Only one memory32 is supported.");
+                                module.Memory = Memory(importModule, importName, section);
+                                module.ImportBindings.Add(new ImportBinding(kind, 0, importModule, importName));
+                                break;
+                            case 3:
+                                var globalType = section.ValueType();
+                                byte mutable = section.Byte();
+                                if (mutable > 1) throw new WasmException("Invalid global mutability.");
+                                int globalIndex = module.Globals.Count;
+                                module.Globals.Add(new Global(globalType, mutable == 1, null, true, importModule, importName));
+                                module.ImportBindings.Add(new ImportBinding(kind, globalIndex, importModule, importName));
+                                break;
+                            default:
+                                throw new WasmException("Unsupported import kind.");
+                        }
                     }
                     break;
                 case 3:
@@ -60,16 +82,11 @@ internal static class Decoder
                     }
                     break;
                 case 5:
-                    int memories = section.Count();
-                    if (memories > 1) throw new WasmException("Only one memory32 is supported.");
-                    if (memories == 1)
+                    if (section.Count() > 1) throw new WasmException("Only one memory32 is supported.");
+                    if (!section.End)
                     {
-                        int flags = section.Count();
-                        if (flags > 1) throw new WasmException("Shared/memory64 memories are not supported.");
-                        int minimum = section.Count(), maximum = flags == 1 ? section.Count() : 65536;
-                        if (minimum > maximum || maximum > 65536) throw new WasmException("Invalid memory limits.");
-                        if (minimum > 4096) throw new WasmException("Initial memory exceeds 256 MiB implementation limit.");
-                        module.Memory = new MemoryDefinition(minimum, Math.Min(maximum,4096));
+                        if (module.Memory != null) throw new WasmException("Only one memory32 is supported.");
+                        module.Memory = Memory(null, null, section);
                     }
                     break;
                 case 6:
@@ -78,10 +95,11 @@ internal static class Decoder
                         var globalType = section.ValueType();
                         byte mutable = section.Byte();
                         if (mutable > 1) throw new WasmException("Invalid global mutability.");
-                        module.Globals.Add(new Global(globalType, mutable == 1, Constant(section)));
+                        module.Globals.Add(new Global(globalType, mutable == 1, Constant(section, module)));
                     }
                     break;
                 case 8: module.Start = section.Count(); break;
+                case 12: module.DataCount = section.Count(); break;
                 case 10:
                     for (int i = 0, count = section.Count(); i < count; i++)
                         bodies.Add(section.Slice(section.Count()));
@@ -90,12 +108,15 @@ internal static class Decoder
                     for(int i=0,count=section.Count();i<count;i++)
                     {
                         int flags = section.Count();
-                        if (flags != 0 && flags != 2) throw new WasmException("Only active data segments are supported.");
+                        if (flags != 0 && flags != 1 && flags != 2) throw new WasmException("Invalid data segment flags.");
+                        if (flags != 1 && module.Memory == null) throw new WasmException("Active data segments require memory.");
+                        ConstantValue? initialOffset = null;
                         if (flags == 2 && section.Count() != 0) throw new WasmException("Invalid data memory index.");
-                        var initialOffset = Constant(section);
-                        if (initialOffset.Type != ValueType.I32) throw new WasmException("Data offset must have type i32.");
-                        uint offset = (uint)initialOffset.Bits;
-                        module.Data.Add(new DataSegment(offset, section.Bytes(section.Count())));
+                        if (flags != 1) initialOffset = Constant(section, module);
+                        if (initialOffset != null && initialOffset.Type != ValueType.I32)
+                            throw new WasmException("Data offset must have type i32.");
+                        uint offset = initialOffset != null ? (uint)initialOffset.Bits : 0;
+                        module.Data.Add(new DataSegment(offset, section.Bytes(section.Count()), flags == 1, initialOffset));
                     }
                     break;
                 default:
@@ -104,6 +125,8 @@ internal static class Decoder
             section.RequireEnd();
         }
         if (functions.Count != bodies.Count) throw new WasmException("Function and code counts differ.");
+        if (module.DataCount.HasValue && module.DataCount.Value != module.Data.Count)
+            throw new WasmException("Data count and data segment count differ.");
 
         for (int i = 0; i < functions.Count; i++)
         {
@@ -113,20 +136,48 @@ internal static class Decoder
         }
         return module;
     }
-    private static ConstantValue Constant(Reader reader)
+    private static int SectionOrder(byte id) => id switch
     {
-        var value = ReadConstant(reader, reader.Byte());
+        1 => 1, 2 => 2, 3 => 3, 4 => 4, 5 => 5, 13 => 6, 6 => 7,
+        7 => 8, 8 => 9, 9 => 10, 12 => 11, 10 => 12, 11 => 13,
+        _ => 100
+    };
+
+    private static MemoryDefinition Memory(string? moduleName, string? name, Reader section)
+    {
+        int flags = section.Count();
+        if (flags != 0 && flags != 1) throw new WasmException("Shared/memory64 memories are not supported.");
+        int minimum = section.Count();
+        int? maximum = flags == 1 ? section.Count() : null;
+        if (minimum > 65536 || maximum.HasValue && (maximum.Value > 65536 || minimum > maximum.Value))
+            throw new WasmException("Invalid memory limits.");
+        if (minimum > 4096) throw new WasmException("Initial memory exceeds 256 MiB implementation limit.");
+        return new MemoryDefinition(minimum, maximum, moduleName != null, moduleName, name);
+    }
+
+    private static ConstantValue Constant(Reader reader, Module module)
+    {
+        var value = ReadConstant(reader, reader.Byte(), module);
         if (reader.Byte() != 0x0b) throw new WasmException("Invalid initializer expression.");
         return value;
     }
-    private static ConstantValue ReadConstant(Reader reader, byte opcode) => opcode switch
+    private static ConstantValue ReadConstant(Reader reader, byte opcode, Module? module = null) => opcode switch
     {
         0x41 => new ConstantValue(ValueType.I32, unchecked((uint)reader.SignedI32())),
         0x42 => new ConstantValue(ValueType.I64, unchecked((ulong)reader.SignedI64())),
         0x43 => new ConstantValue(ValueType.F32, reader.FloatBits(4)),
         0x44 => new ConstantValue(ValueType.F64, reader.FloatBits(8)),
+        0x23 when module != null => ImportedGlobalConstant(reader, module),
         _ => throw new WasmException($"Unsupported constant expression opcode 0x{opcode:x2}.")
     };
+
+    private static ConstantValue ImportedGlobalConstant(Reader reader, Module module)
+    {
+        int index = reader.Count();
+        if (index >= module.Globals.Count || !module.Globals[index].Imported || module.Globals[index].Mutable)
+            throw new WasmException("Constant expression must use an imported immutable global.");
+        return new ConstantValue(module.Globals[index].Type, 0, index);
+    }
     private static Function DecodeBody(Reader body, Signature signature, List<Signature> types)
     {
         var locals = new List<ValueType>(signature.Parameters);
@@ -146,6 +197,7 @@ internal static class Decoder
             int operand;
             int[]? targets = null;
             uint immediate = 0;
+            uint secondary = 0;
             Signature? blockType = null;
             ValueType? selectType = null;
             ConstantValue? constant = null;
@@ -180,13 +232,21 @@ internal static class Decoder
                 case 0x6a: case 0x6b: case 0x6c: operand = 0; break;
                 case 0xfc:
                     operand = body.Count();
-                    if (operand > 7) throw new WasmException($"Offset 0x{offset:x}: Unsupported WASM opcode 0xfc/{operand}.");
+                    switch (operand)
+                    {
+                        case <= 7: break;
+                        case 8: immediate = (uint)body.Count(); secondary = (uint)body.Count(); break; // data index, memory index
+                        case 9: immediate = (uint)body.Count(); break; // data.drop data index
+                        case 10: immediate = (uint)body.Count(); secondary = (uint)body.Count(); break; // destination, source memory index
+                        case 11: secondary = (uint)body.Count(); break; // memory index
+                        default: throw new WasmException($"Offset 0x{offset:x}: Unsupported WASM opcode 0xfc/{operand}.");
+                    }
                     break;
                 default:
                     if (I32Operations.Arity(opcode) != 0 || I64Operations.Arity(opcode) != 0 || FloatOperations.Arity(opcode) != 0 || ConversionOperations.Supports(opcode)) { operand = 0; break; }
                     throw new WasmException($"Offset 0x{offset:x}: Unsupported WASM opcode 0x{opcode:x2}.");
             }
-            instructions.Add(new Instruction(opcode, operand, offset, targets, immediate, blockType, selectType, constant));
+            instructions.Add(new Instruction(opcode, operand, offset, targets, immediate, blockType, selectType, constant, secondary));
             if (opcode == 0x0b)
             {
                 if (depth != 0) { depth--; continue; }

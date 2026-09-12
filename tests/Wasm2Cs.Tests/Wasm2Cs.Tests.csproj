@@ -2,6 +2,7 @@
   <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Wasm2Cs/Wasm2Cs.csproj" />
+    <ProjectReference Include="../../src/Wasm2Cs.Runtime/Wasm2Cs.Runtime.csproj" />
     <ProjectReference Include="../../src/Wasm2Cs.Generator/Wasm2Cs.Generator.csproj" Aliases="Generator" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.0" />
     <PackageReference Include="NETStandard.Library" Version="2.0.3" GeneratePathProperty="true" PrivateAssets="all" />

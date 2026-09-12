@@ -367,6 +367,9 @@ internal static class ExecutionChecks
             !vector.Contains("dotnet-vector") || !vector.Contains("ReadUInt32") ||
             !unity.Contains("unity-mathematics") || unity.Contains("ReadUInt32"))
             throw new Exception("Target profile did not select its memory backend.");
+        if (portable.Contains("System.Runtime.Intrinsics") || portable.Contains("Unity.Mathematics") ||
+            net21.Contains("System.Runtime.Intrinsics") || net21.Contains("Unity.Mathematics"))
+            throw new Exception("A non-vector profile leaked a target-specific vector assembly.");
         string floatNet21 = Transpiler.Translate(File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Floating", "Floating.wasm")),
             "FloatNet21", WasmTargetProfile.DotNetNetStandard21);
         string floatPortable = Transpiler.Translate(File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Floating", "Floating.wasm")),
@@ -459,6 +462,9 @@ internal static class ExecutionChecks
         string unityVectorSource = Transpiler.Translate(vectorBytes,"UnityVector",WasmTargetProfile.UnityMathematics);
         if (!unityVectorSource.Contains("Unity.Mathematics.float4") || !unityVectorSource.Contains("math.asfloat"))
             throw new Exception("Unity backend did not emit the canonical v128 fixture.");
+        if (vectorSource.Contains("Unity.Mathematics") || vectorSource.Contains("BitOperations") ||
+            unityVectorSource.Contains("System.Runtime.Intrinsics") || unityVectorSource.Contains("Vector128"))
+            throw new Exception("A selected vector backend leaked another target's type or assembly.");
         try { Transpiler.Translate(vectorBytes,"PortableVector",WasmTargetProfile.PortableNetStandard20); throw new Exception("Portable profile accepted v128."); }
         catch (WasmException) { }
 

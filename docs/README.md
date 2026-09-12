@@ -7,7 +7,7 @@
 ## 読む順序と現在地
 
 1. [共通設計](self-hosting-design.md) で対象構成、実行境界、検証規則を確認する。
-2. 次の表を上から進める。現在着手できる段階は SH-05 である。
+2. 次の表を上から進める。現在着手している段階は SH-05.5 である。
 3. 各段階の合格条件を満たしてコミットし、個別文書とこの表の状態を更新する。
 
 | ID | マイルストーン | 前提 | 状態 |
@@ -17,7 +17,7 @@
 | [SH-03](milestones/SH-03-i64.md) | i64 | SH-02 | 完了 |
 | [SH-04](milestones/SH-04-floating-point.md) | 浮動小数点と数値変換 | SH-03 | 完了 |
 | [SH-05](milestones/SH-05-memory-data.md) | メモリ・global・data の拡張 | SH-04 | 実施中 |
-| [SH-05.5](milestones/SH-05.5-lowering.md) | 意味保存 lowering とターゲット別 backend | SH-05 | 未着手 |
+| [SH-05.5](milestones/SH-05.5-lowering.md) | 意味保存 lowering とターゲット別 backend | SH-05 | 実施中 |
 | [SH-06](milestones/SH-06-tables.md) | table と間接呼び出し | SH-05.5 | 未着手 |
 | [SH-07](milestones/SH-07-exceptions.md) | WASM 例外処理 | SH-06 | 未着手 |
 | [SH-08](milestones/SH-08-large-codegen.md) | 巨大モジュールの C# 生成 | SH-07 | 未着手 |

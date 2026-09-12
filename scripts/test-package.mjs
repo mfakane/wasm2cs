@@ -80,6 +80,7 @@ try {
   run(['build','--no-restore','-m:1','-p:UseSharedCompilation=false','-p:Wasm2CsTargetProfile=dotnet-netstandard2.1','--nologo']);
   const optimizedOutput = run(['bin/Debug/net10.0/Consumer.dll']);
   const optimizedGenerated = readFileSync(join(directory,'obj/generated/Wasm2Cs.Generator/Wasm2Cs.WasmGenerator/Algorithms.g.cs'),'utf8');
+  assert.equal(optimizedOutput, output, 'netstandard2.1 profile changed the packaged consumer results');
   assert.match(optimizedGenerated,/wasm2cs target profile: dotnet-netstandard2.1/);
   assert.match(optimizedGenerated,/ReadUInt32/);
   assert.match(optimizedOutput,/Clang CRC32\(123456789\) = cbf43926/);
@@ -93,7 +94,7 @@ try {
   const vectorGenerated = readFileSync(join(directory,'obj/generated/Wasm2Cs.Generator/Wasm2Cs.WasmGenerator/Vector.g.cs'),'utf8');
   assert.match(vectorGenerated,/System\.Runtime\.Intrinsics\.Vector128<float>/);
   assert.match(vectorOutput,/Vector128 lowering passed/);
-  console.log(`PASS: fresh NuGet-only C# 9 consumer, isolated package cache, portable and netstandard2.1 profiles, arithmetic/CRC32/host imports/typed multi-results/i64/floating-point.\n${output}Artifacts: ${directory}`);
+  console.log(`PASS: fresh NuGet-only C# 9 consumer, isolated package cache, portable/netstandard2.1/Vector128 profiles, arithmetic/CRC32/host imports/typed multi-results/i64/floating-point/vector.\n${output}Artifacts: ${directory}`);
 } catch (error) {
   console.error(error.stdout?.toString(),error.stderr?.toString(),`Consumer: ${directory}`);
   throw error;

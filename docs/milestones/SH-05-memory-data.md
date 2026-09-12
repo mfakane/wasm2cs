@@ -1,6 +1,6 @@
 # SH-05 メモリ・global・data の拡張
 
-状態: 実施中。前提: [SH-04](SH-04-floating-point.md)。次: [SH-06](SH-06-tables.md)。機能実装と共通回帰は完了し、終了コミットと Unity 実行記録が未完了。
+状態: 実施中。前提: [SH-04](SH-04-floating-point.md)。次: [SH-05.5](SH-05.5-lowering.md)。機能実装と共通回帰は完了し、Unity 実行記録が未完了。
 
 ## 目的・変更対象
 

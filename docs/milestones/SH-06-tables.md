@@ -1,6 +1,6 @@
 # SH-06 table と間接呼び出し
 
-状態: 未着手。前提: [SH-05](SH-05-memory-data.md)。次: [SH-07](SH-07-exceptions.md)。
+状態: 未着手。前提: [SH-05.5](SH-05.5-lowering.md)。次: [SH-07](SH-07-exceptions.md)。
 
 ## 目的・変更対象
 

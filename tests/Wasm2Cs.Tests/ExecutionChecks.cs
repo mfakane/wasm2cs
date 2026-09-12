@@ -343,6 +343,17 @@ internal static class ExecutionChecks
             !vector.Contains("dotnet-vector") || !vector.Contains("ReadUInt32") ||
             !unity.Contains("unity-mathematics") || unity.Contains("ReadUInt32"))
             throw new Exception("Target profile did not select its memory backend.");
+        string floatNet21 = Transpiler.Translate(File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Floating", "Floating.wasm")),
+            "FloatNet21", WasmTargetProfile.DotNetNetStandard21);
+        string floatPortable = Transpiler.Translate(File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Floating", "Floating.wasm")),
+            "FloatPortable", WasmTargetProfile.PortableNetStandard20);
+        string floatUnity = Transpiler.Translate(File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Floating", "Floating.wasm")),
+            "FloatUnity", WasmTargetProfile.UnityMathematics);
+        if (!floatNet21.Contains("MathF.Sqrt") || !floatNet21.Contains("MathF.Round") ||
+            !floatNet21.Contains("__wasm_Sqrt32") || !floatNet21.Contains("__wasm_Round32"))
+            throw new Exception(".NET Standard 2.1 backend did not select the guarded MathF f32 backend.");
+        if (floatPortable.Contains("MathF") || floatUnity.Contains("MathF"))
+            throw new Exception("Target-specific MathF helpers leaked into a portable backend.");
 
         var type = Compile(bytes,"Net21",false,WasmTargetProfile.DotNetNetStandard21)
             .GetType("Wasm2Cs.Generated.Net21")!;

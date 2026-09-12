@@ -13,7 +13,7 @@ internal static class CSharpEmitter
             module.Bodies.Any(f => f.Locals.Any(IsFloat)) || module.Globals.Any(g => IsFloat(g.Type)) ||
             module.Bodies.Any(f => f.Instructions.Any(i => FloatOperations.Arity(i.Opcode) != 0 || ConversionOperations.Supports(i.Opcode) ||
                 i.Opcode == 0x43 || i.Opcode == 0x44 || i.Opcode == 0x2a || i.Opcode == 0x2b || i.Opcode == 0x38 || i.Opcode == 0x39)))
-            source.Append(FloatOperations.Helpers);
+            source.Append(FloatOperations.Helpers).Append(lowering.ExtraHelpers(module));
         if (module.Bodies.Any(f => f.Instructions.Any(i => ConversionOperations.Supports(i.Opcode))))
             source.Append(ConversionOperations.Helpers);
         if (module.Memory != null) source.Append(lowering.MemoryHelpers(module));
@@ -123,7 +123,7 @@ internal static class CSharpEmitter
             source.Append("    private ").Append(ResultType(function.Signature.Results))
                 .Append(" __wasm_F").Append(i + module.Imports.Count).Append('(')
                 .Append(string.Join(", ", function.Signature.Parameters.Select((type, p) => $"{TypeName(type)} v{p}")))
-                .Append(")\n    {\n").Append(EmitBody(module, function)).Append("    }\n");
+                .Append(")\n    {\n").Append(EmitBody(module, function, lowering)).Append("    }\n");
         }
         foreach (var export in module.Exports)
         {
@@ -272,7 +272,7 @@ internal static class CSharpEmitter
         public bool ElseSeen;
     }
 
-    private static string EmitBody(Module module, Function function)
+    private static string EmitBody(Module module, Function function, LoweringPlan lowering)
     {
         var code = new StringBuilder();
         var declarations = new StringBuilder();
@@ -468,14 +468,14 @@ internal static class CSharpEmitter
                     if (ConversionOperations.Supports(instruction.Opcode))
                     {
                         string converted = Pop(ConversionOperations.InputType(instruction.Opcode, instruction.Operand)).Name;
-                        Push(ConversionOperations.Expression(instruction.Opcode, instruction.Operand, converted), ConversionOperations.ResultType(instruction.Opcode, instruction.Operand));
+                        Push(lowering.ConversionExpression(instruction.Opcode, instruction.Operand, converted), ConversionOperations.ResultType(instruction.Opcode, instruction.Operand));
                         break;
                     }
                     if (FloatOperations.Arity(instruction.Opcode) != 0)
                     {
                         var floatType = FloatOperations.InputType(instruction.Opcode);
                         string rightFloat = FloatOperations.Arity(instruction.Opcode) == 2 ? Pop(floatType).Name : "";
-                        Push(FloatOperations.Expression(instruction.Opcode, Pop(floatType).Name, rightFloat), FloatOperations.ResultType(instruction.Opcode));
+                        Push(lowering.FloatExpression(instruction.Opcode, Pop(floatType).Name, rightFloat), FloatOperations.ResultType(instruction.Opcode));
                         break;
                     }
                     int arity = I64Operations.Arity(instruction.Opcode);
@@ -483,13 +483,13 @@ internal static class CSharpEmitter
                     {
                         var inputType = I64Operations.InputType(instruction.Opcode);
                         string right64 = arity == 2 ? Pop(inputType).Name : "";
-                        Push(I64Operations.Expression(instruction.Opcode, Pop(inputType).Name, right64), I64Operations.ResultType(instruction.Opcode));
+                        Push(lowering.I64Expression(instruction.Opcode, Pop(inputType).Name, right64), I64Operations.ResultType(instruction.Opcode));
                         break;
                     }
                     arity = I32Operations.Arity(instruction.Opcode);
                     if (arity == 0) break;
                     string right = arity == 2 ? PopI32() : "";
-                    Push(I32Operations.Expression(instruction.Opcode, PopI32(), right));
+                    Push(lowering.I32Expression(instruction.Opcode, PopI32(), right));
                     break;
             }
         }

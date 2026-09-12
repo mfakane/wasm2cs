@@ -37,15 +37,17 @@ public static class WasmTargetProfiles
     }
 }
 
-internal sealed class LoweringPlan(WasmTargetProfile profile)
+internal sealed class LoweringPlan(WasmTargetProfile profile, LoweringBackend backend)
 {
     public WasmTargetProfile Profile { get; } = profile;
+    public LoweringBackend Backend { get; } = backend;
 
-    public string MemoryHelpers(Module module)
-    {
-        if (module.Memory == null) throw new WasmException("Memory lowering requires a memory.");
-        return MemoryOperations.Helpers(Profile, module.Memory.Maximum ?? 65536);
-    }
+    public string MemoryHelpers(Module module) => Backend.MemoryHelpers(module);
+    public string I32Expression(byte opcode, string left, string right) => Backend.I32Expression(opcode, left, right);
+    public string I64Expression(byte opcode, string left, string right) => Backend.I64Expression(opcode, left, right);
+    public string FloatExpression(byte opcode, string left, string right) => Backend.FloatExpression(opcode, left, right);
+    public string ConversionExpression(byte opcode, int subopcode, string value) => Backend.ConversionExpression(opcode, subopcode, value);
+    public string ExtraHelpers(Module module) => Backend.ExtraHelpers(module);
 }
 
 internal static class Lowering
@@ -54,6 +56,14 @@ internal static class Lowering
     {
         if (!Enum.IsDefined(typeof(WasmTargetProfile), profile))
             throw new WasmException($"Unknown WASM target profile {profile}.");
-        return new LoweringPlan(profile);
+        LoweringBackend backend = profile switch
+        {
+            WasmTargetProfile.PortableNetStandard20 => new PortableLoweringBackend(profile),
+            WasmTargetProfile.DotNetNetStandard21 => new DotNetNetStandard21LoweringBackend(profile),
+            WasmTargetProfile.DotNetVector => new DotNetVectorLoweringBackend(profile),
+            WasmTargetProfile.UnityMathematics => new UnityMathematicsLoweringBackend(profile),
+            _ => throw new WasmException($"Unknown WASM target profile {profile}.")
+        };
+        return new LoweringPlan(profile, backend);
     }
 }

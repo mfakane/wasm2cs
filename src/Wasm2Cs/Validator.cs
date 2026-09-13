@@ -11,8 +11,36 @@ internal static class Validator
                 throw new WasmException($"Export '{export.Key}' cannot be represented as a C# method name.");
             byte kind = module.ExportKinds[export.Key];
             if (kind == 0 && export.Value >= module.FunctionCount) throw new WasmException("Invalid exported function index.");
+            if (kind == 1 && export.Value >= module.Tables.Count) throw new WasmException("Invalid exported table index.");
             if (kind == 2 && (export.Value != 0 || module.Memory == null)) throw new WasmException("Invalid exported memory index.");
             if (kind == 3 && export.Value >= module.Globals.Count) throw new WasmException("Invalid exported global index.");
+        }
+        foreach (var table in module.Tables)
+        {
+            if (table.Minimum < 0 || table.Maximum.HasValue && (table.Maximum.Value < table.Minimum))
+                throw new WasmException("Invalid table limits.");
+            if (table.ElementType != ValueType.FuncRef && table.ElementType != ValueType.ExternRef)
+                throw new WasmException("Unsupported table element type.");
+        }
+        foreach (var element in module.Elements)
+        {
+            if (element.ElementType != ValueType.FuncRef && element.ElementType != ValueType.ExternRef)
+                throw new WasmException("Unsupported element type.");
+            foreach (var value in element.Values)
+            {
+                if (value.Type != element.ElementType) throw new WasmException("Element expression type mismatch.");
+                if (value.FunctionIndex.HasValue && (value.Type != ValueType.FuncRef ||
+                    value.FunctionIndex.Value < 0 || value.FunctionIndex.Value >= module.FunctionCount))
+                    throw new WasmException("Invalid element function index.");
+            }
+            if (!element.Passive && !element.Declarative)
+            {
+                if (element.TableIndex >= module.Tables.Count) throw new WasmException("Invalid element table index.");
+                if (module.Tables[element.TableIndex].ElementType != element.ElementType)
+                    throw new WasmException("Element type does not match table type.");
+                if (element.OffsetExpression == null || element.OffsetExpression.Type != ValueType.I32)
+                    throw new WasmException("Element offset must have type i32.");
+            }
         }
         if (module.Data.Any(data => !data.Passive) && module.Memory == null)
             throw new WasmException("Active data segments require memory.");
@@ -138,6 +166,15 @@ internal static class Validator
                     var signature = module.FunctionSignature(instruction.Operand);
                     PopTypes(signature.Parameters); PushTypes(signature.Results);
                     break;
+                case 0x11:
+                    if (instruction.Operand >= module.Types.Count) Fail("Invalid indirect call type index.");
+                    if (instruction.Immediate >= module.Tables.Count) Fail("Invalid indirect call table index.");
+                    if (module.Tables[(int)instruction.Immediate].ElementType != ValueType.FuncRef)
+                        Fail("Indirect calls require a funcref table.");
+                    Pop(ValueType.I32);
+                    var indirectSignature = module.Types[instruction.Operand];
+                    PopTypes(indirectSignature.Parameters); PushTypes(indirectSignature.Results);
+                    break;
                 case 0x1a: Pop(); break;
                 case 0x1b: case 0x1c:
                     Pop(ValueType.I32);
@@ -148,6 +185,31 @@ internal static class Validator
                         Fail("Untyped select requires numeric operands.");
                     if (left.HasValue && right.HasValue && left != right) Fail("Select operand type mismatch.");
                     Push(instruction.SelectType ?? left ?? right);
+                    break;
+                case 0x25:
+                    Table(module, instruction.Operand, Fail, out var getTable);
+                    Pop(ValueType.I32); Push(getTable.ElementType); break;
+                case 0x26:
+                    Table(module, instruction.Operand, Fail, out var setTable);
+                    Pop(setTable.ElementType); Pop(ValueType.I32); break;
+                case 0xd0:
+                    var nullReference = instruction.Reference;
+                    if (nullReference == null) Fail("Missing ref.null type.");
+                    if (nullReference!.Type != ValueType.FuncRef && nullReference.Type != ValueType.ExternRef)
+                        Fail("Unsupported ref.null type.");
+                    Push(nullReference.Type);
+                    break;
+                case 0xd1:
+                    var reference = Pop();
+                    if (reference != ValueType.FuncRef && reference != ValueType.ExternRef && reference.HasValue)
+                        Fail("ref.is_null requires a reference.");
+                    Push(ValueType.I32);
+                    break;
+                case 0xd2:
+                    if (instruction.Reference?.Type != ValueType.FuncRef || !instruction.Reference.FunctionIndex.HasValue ||
+                        instruction.Reference.FunctionIndex.Value >= module.FunctionCount)
+                        Fail("Invalid ref.func function index.");
+                    Push(ValueType.FuncRef);
                     break;
                 case 0x20: case 0x21: case 0x22:
                     if (instruction.Operand >= function.Locals.Length) Fail("Invalid local index.");
@@ -180,7 +242,7 @@ internal static class Validator
                     if (instruction.Opcode == 0x40) Pop(ValueType.I32);
                     Push(ValueType.I32); break;
                 case 0xfc when instruction.Operand >= 8:
-                    if (module.Memory == null) Fail("Memory instruction requires memory.");
+                    if (instruction.Operand <= 11 && module.Memory == null) Fail("Memory instruction requires memory.");
                     switch (instruction.Operand)
                     {
                         case 8:
@@ -198,8 +260,41 @@ internal static class Validator
                             Pop(ValueType.I32); Pop(ValueType.I32); Pop(ValueType.I32);
                             break;
                         case 11:
+                            if (module.Memory == null) Fail("Memory instruction requires memory.");
                             if (instruction.Secondary != 0) Fail("Invalid memory index.");
                             Pop(ValueType.I32); Pop(ValueType.I32); Pop(ValueType.I32);
+                            break;
+                        case 12:
+                            if (instruction.Immediate >= module.Elements.Count) Fail("Invalid element segment index.");
+                            if (instruction.Secondary >= module.Tables.Count) Fail("Invalid table index.");
+                            var initElement = module.Elements[(int)instruction.Immediate];
+                            if (!initElement.Passive) Fail("table.init requires a passive element segment.");
+                            if (module.Tables[(int)instruction.Secondary].ElementType != initElement.ElementType)
+                                Fail("Element type does not match table type.");
+                            Pop(ValueType.I32); Pop(ValueType.I32); Pop(ValueType.I32);
+                            break;
+                        case 13:
+                            if (instruction.Immediate >= module.Elements.Count || !module.Elements[(int)instruction.Immediate].Passive)
+                                Fail("elem.drop requires a passive element segment.");
+                            break;
+                        case 14:
+                            if (instruction.Immediate >= module.Tables.Count || instruction.Secondary >= module.Tables.Count)
+                                Fail("Invalid table index.");
+                            if (module.Tables[(int)instruction.Immediate].ElementType != module.Tables[(int)instruction.Secondary].ElementType)
+                                Fail("table.copy requires matching table types.");
+                            Pop(ValueType.I32); Pop(ValueType.I32); Pop(ValueType.I32);
+                            break;
+                        case 15:
+                            Table(module, (int)instruction.Secondary, Fail, out var growTable);
+                            Pop(growTable.ElementType); Pop(ValueType.I32); Push(ValueType.I32);
+                            break;
+                        case 16:
+                            Table(module, (int)instruction.Secondary, Fail, out _);
+                            Push(ValueType.I32);
+                            break;
+                        case 17:
+                            Table(module, (int)instruction.Secondary, Fail, out var fillTable);
+                            Pop(ValueType.I32); Pop(fillTable.ElementType); Pop(ValueType.I32);
                             break;
                         default: Fail("Unsupported bulk memory instruction."); break;
                     }
@@ -223,6 +318,11 @@ internal static class Validator
             instruction.ResultTypes = produced.ToArray();
         }
         if (controls.Count != 0) throw new WasmException($"Function {index}: Unclosed control structure.");
+    }
+    private static void Table(Module module, int index, Action<string> fail, out TableDefinition table)
+    {
+        if (index < 0 || index >= module.Tables.Count) { fail("Invalid table index."); table = new TableDefinition(ValueType.FuncRef, 0, 0); return; }
+        table = module.Tables[index];
     }
     private static bool IsIdentifier(string name) => name.Length > 0 &&
         (IsLetter(name[0]) || name[0] == '_') &&

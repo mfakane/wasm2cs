@@ -3,7 +3,7 @@
 A proof of concept that translates WebAssembly binaries into ordinary C# methods,
 then runs the same translator from a Roslyn incremental Source Generator.
 The generated application does not need a WebAssembly interpreter. Modules that
-import or export memory/globals use the small `Wasm2Cs.Runtime` ABI assembly.
+import or export memory/globals/tables use the small `Wasm2Cs.Runtime` ABI assembly.
 
 The translator separates binary decoding, a module/instruction representation,
 validation, and C# emission. Invalid instructions and operand stacks include
@@ -195,8 +195,8 @@ Translation errors fail the build with `WASM001`; duplicate class names use `WAS
   uses C# `int`, `long`, `float`, and `double`; internal float values retain raw bits.
   The `dotnet-vector` and `unity-mathematics` profiles additionally support the
   initial `v128.const`, `f32x4.add`, and `f32x4.mul` subset.
-- Type, function import, function, memory, global, export, start, code, and active
-  data sections; custom sections are skipped.
+- Type, function import, function, table, memory, global, export, start, code,
+  element, and active/passive data sections; custom sections are skipped.
 - `local.get`, `local.set`, `local.tee`, i32/i64 constants and MVP integer arithmetic,
   comparisons, bitwise operations, shifts, rotates, and bit counts. Integer wrap/extend
   conversions and the five integer sign-extension instructions are supported.
@@ -209,6 +209,11 @@ Translation errors fail the build with `WASM001`; duplicate class names use `WAS
   `if`/`else`, `br`, `br_if`, and `br_table`. Block type indices, block/loop
   parameters, multiple results, and typed `select` are supported. Unreachable
   instructions are still decoded and type-checked.
+- `ref.null`, `ref.is_null`, `ref.func`, tables with `funcref` or `externref`
+  elements, active/passive/declarative element segments, typed `call_indirect`,
+  and `table.get/set/grow/size/fill/copy/init` plus `elem.drop`. Function
+  references use statically typed delegates; indirect calls compare structural
+  signatures rather than type indices.
 - Runtime traps use each generated module's nested `TrapException` and `TrapKind`.
   Signed division overflow and division/remainder by zero trap; signed remainder
   of `int.MinValue` or `long.MinValue` by `-1` returns zero.
@@ -255,8 +260,8 @@ and verifies callback order, memory exchange, reentry, and exception identity in
 both .NET and Unity. Run `node scripts/create-host-fixture.mjs` to reproduce its
 binary and verify the same callback scenario with WebAssembly.
 
-Imported memories/globals, indirect calls, unsupported SIMD instructions, reference instructions,
-and other unsupported instructions are rejected. v128 globals are not yet supported. This is not yet a general-purpose WASM compiler;
+Unsupported import kinds, unsupported SIMD instructions, reference instructions outside the
+supported table subset, and other unsupported instructions are rejected. v128 globals are not yet supported. This is not yet a general-purpose WASM compiler;
 ordinary Rust/C/C++ outputs will typically need more instructions and sections.
 All function bodies, including unexported ones, are checked. Parsing validates section
 boundaries/order, LEB128 encodings, indices, and operand/result stack types and heights within

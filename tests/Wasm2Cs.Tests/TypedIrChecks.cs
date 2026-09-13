@@ -43,8 +43,13 @@ internal static class TypedIrChecks
             ([0xff,0xff,0xff,0xff,0x0f], "block type index"),
             ([0x80,0x80,0x80,0x80,0x10], "33 bits"), ([0x80,0x80,0x80,0x80,0x80,0], "too long") })
             Reject(TypedModule([], [0x7f], [0x02,..encoding,0x41,0,0x0b,0x0b]), diagnostic);
-        foreach (byte opcode in new byte[] { 0xd0, 0xd1 })
-            Reject(TypedModule([], [], [0x00,opcode,0x0b]), $"opcode 0x{opcode:x2}");
+        if (Invoke(TypedModule([], [0x70], [0xd0,0x70,0x0b])) is not null)
+            throw new Exception("ref.null did not produce null.");
+        if (!Equals(Invoke(TypedModule([0x70], [0x7f], [0x20,0,0xd1,0x0b]), new object[] { null! }), 1))
+            throw new Exception("ref.is_null did not recognize null.");
+        if (Invoke(TypedModule([], [0x70], [0xd2,0,0x0b])) is not Delegate)
+            throw new Exception("ref.func did not produce a delegate.");
+        ExecutionChecks.Compile(TypedModule([], [0x7f], [0x00,0xd1,0x0b]), portable: true);
         Reject(TypedModule([], [], [0xfd,0x00,0x0b]), "opcode 0xfd/0");
         Reject(TypedModule([], [], [0x41,0,0x41,1,0xfd,0xe4,0x01,0x0b]), "expected V128");
         Reject(TypedModule([0x7b], [], [0x0b]), "does not support v128");

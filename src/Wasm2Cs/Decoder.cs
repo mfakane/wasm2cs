@@ -48,6 +48,11 @@ internal static class Decoder
                                 module.ImportBindings.Add(new ImportBinding(kind, module.Imports.Count, importModule, importName));
                                 module.Imports.Add(new FunctionImport(importModule, importName, type));
                                 break;
+                            case 1:
+                                int tableIndex = module.Tables.Count;
+                                module.Tables.Add(Table(importModule, importName, section));
+                                module.ImportBindings.Add(new ImportBinding(kind, tableIndex, importModule, importName));
+                                break;
                             case 2:
                                 if (module.Memory != null) throw new WasmException("Only one memory32 is supported.");
                                 module.Memory = Memory(importModule, importName, section);
@@ -70,12 +75,16 @@ internal static class Decoder
                     for (int i = 0, count = section.Count(); i < count; i++)
                         functions.Add(section.Count());
                     break;
+                case 4:
+                    for (int i = 0, count = section.Count(); i < count; i++)
+                        module.Tables.Add(Table(null, null, section));
+                    break;
                 case 7:
                     for (int i = 0, count = section.Count(); i < count; i++)
                     {
                         string name = section.Name();
                         byte kind = section.Byte();
-                        if (kind != 0 && kind != 2 && kind != 3) throw new WasmException("Unsupported export kind.");
+                        if (kind != 0 && kind != 1 && kind != 2 && kind != 3) throw new WasmException("Unsupported export kind.");
                         if (exports.ContainsKey(name)) throw new WasmException("Duplicate export name.");
                         exports.Add(name, section.Count());
                         module.ExportKinds.Add(name, kind);
@@ -99,6 +108,10 @@ internal static class Decoder
                     }
                     break;
                 case 8: module.Start = section.Count(); break;
+                case 9:
+                    for (int i = 0, count = section.Count(); i < count; i++)
+                        module.Elements.Add(Element(section, module));
+                    break;
                 case 12: module.DataCount = section.Count(); break;
                 case 10:
                     for (int i = 0, count = section.Count(); i < count; i++)
@@ -155,6 +168,20 @@ internal static class Decoder
         return new MemoryDefinition(minimum, maximum, moduleName != null, moduleName, name);
     }
 
+    private static TableDefinition Table(string? moduleName, string? name, Reader section)
+    {
+        var elementType = section.ValueType();
+        if (elementType != ValueType.FuncRef && elementType != ValueType.ExternRef)
+            throw new WasmException("Tables must contain funcref or externref values.");
+        int flags = section.Count();
+        if (flags != 0 && flags != 1) throw new WasmException("Invalid table limits.");
+        int minimum = section.Count();
+        int? maximum = flags == 1 ? section.Count() : null;
+        if (maximum.HasValue && minimum > maximum.Value)
+            throw new WasmException("Invalid table limits.");
+        return new TableDefinition(elementType, minimum, maximum, moduleName != null, moduleName, name);
+    }
+
     private static ConstantValue Constant(Reader reader, Module module)
     {
         var value = ReadConstant(reader, reader.Byte(), module);
@@ -178,6 +205,108 @@ internal static class Decoder
             throw new WasmException("Constant expression must use an imported immutable global.");
         return new ConstantValue(module.Globals[index].Type, 0, index);
     }
+
+    private static ElementSegment Element(Reader section, Module module)
+    {
+        int flags = section.Count();
+        int tableIndex = 0;
+        ConstantValue? offset = null;
+        bool passive = false, declarative = false;
+        ValueType elementType;
+        ReferenceValue[] values;
+        switch (flags)
+        {
+            case 0:
+                offset = Constant(section, module);
+                elementType = ValueType.FuncRef;
+                values = FunctionElements(section);
+                break;
+            case 1:
+                RequireElemKind(section);
+                passive = true;
+                elementType = ValueType.FuncRef;
+                values = FunctionElements(section);
+                break;
+            case 2:
+                tableIndex = section.Count();
+                offset = Constant(section, module);
+                RequireElemKind(section);
+                elementType = ValueType.FuncRef;
+                values = FunctionElements(section);
+                break;
+            case 3:
+                RequireElemKind(section);
+                declarative = true;
+                elementType = ValueType.FuncRef;
+                values = FunctionElements(section);
+                break;
+            case 4:
+                offset = Constant(section, module);
+                elementType = section.ValueType();
+                values = ElementExpressions(section, elementType);
+                break;
+            case 5:
+                passive = true;
+                elementType = section.ValueType();
+                values = ElementExpressions(section, elementType);
+                break;
+            case 6:
+                tableIndex = section.Count();
+                offset = Constant(section, module);
+                elementType = section.ValueType();
+                values = ElementExpressions(section, elementType);
+                break;
+            case 7:
+                declarative = true;
+                elementType = section.ValueType();
+                values = ElementExpressions(section, elementType);
+                break;
+            default:
+                throw new WasmException("Unsupported element segment kind.");
+        }
+        if (elementType != ValueType.FuncRef && elementType != ValueType.ExternRef)
+            throw new WasmException("Element segments must contain funcref or externref values.");
+        return new ElementSegment(tableIndex, elementType, values, passive, declarative, offset);
+    }
+
+    private static void RequireElemKind(Reader section)
+    {
+        if (section.Byte() != 0) throw new WasmException("Only funcref element segments are supported.");
+    }
+
+    private static ReferenceValue[] FunctionElements(Reader section)
+    {
+        int count = section.Count();
+        var values = new ReferenceValue[count];
+        for (int i = 0; i < count; i++) values[i] = new ReferenceValue(ValueType.FuncRef, section.Count());
+        return values;
+    }
+
+    private static ReferenceValue[] ElementExpressions(Reader section, ValueType elementType)
+    {
+        int count = section.Count();
+        var values = new ReferenceValue[count];
+        for (int i = 0; i < count; i++)
+        {
+            values[i] = ElementExpression(section);
+            if (values[i].Type != elementType) throw new WasmException("Element expression type mismatch.");
+        }
+        return values;
+    }
+
+    private static ReferenceValue ElementExpression(Reader section)
+    {
+        byte opcode = section.Byte();
+        ReferenceValue value = opcode switch
+        {
+            0xd0 => new ReferenceValue(section.ValueType(), null),
+            0xd2 => new ReferenceValue(ValueType.FuncRef, section.Count()),
+            _ => throw new WasmException("Unsupported element expression.")
+        };
+        if (section.Byte() != 0x0b) throw new WasmException("Invalid element expression.");
+        return value;
+    }
+
     private static Function DecodeBody(Reader body, Signature signature, List<Signature> types)
     {
         var locals = new List<ValueType>(signature.Parameters);
@@ -199,6 +328,7 @@ internal static class Decoder
             uint immediate = 0;
             uint secondary = 0;
             byte[]? vectorConstant = null;
+            ReferenceValue? reference = null;
             Signature? blockType = null;
             ValueType? selectType = null;
             ConstantValue? constant = null;
@@ -211,6 +341,10 @@ internal static class Decoder
                     if (body.Count() != 1) throw new WasmException("Typed select requires exactly one value type.");
                     selectType = body.ValueType(); operand = 0; break;
                 case 0x0c: case 0x0d: case 0x10: operand = body.Count(); break;
+                case 0x11:
+                    operand = body.Count();
+                    immediate = (uint)body.Count();
+                    break;
                 case 0x0e:
                     int count = body.Count();
                     if (count >= body.Remaining) throw new WasmException("Branch table extends past body boundary.");
@@ -228,7 +362,13 @@ internal static class Decoder
                 case 0x3f: case 0x40:
                     if (body.Byte() != 0) throw new WasmException("Invalid memory index.");
                     operand = 0; break;
+                case 0x25: case 0x26:
+                    operand = body.Count();
+                    break;
                 case 0x41: case 0x42: case 0x43: case 0x44: constant = ReadConstant(body, opcode); operand = 0; break;
+                case 0xd0: reference = new ReferenceValue(body.ValueType(), null); operand = 0; break;
+                case 0xd1: operand = 0; break;
+                case 0xd2: reference = new ReferenceValue(ValueType.FuncRef, body.Count()); operand = 0; break;
                 case 0x00: case 0x01: case 0x05: case 0x0b: case 0x0f: case 0x1a: case 0x1b:
                 case 0x6a: case 0x6b: case 0x6c: operand = 0; break;
                 case 0xfc:
@@ -240,6 +380,12 @@ internal static class Decoder
                         case 9: immediate = (uint)body.Count(); break; // data.drop data index
                         case 10: immediate = (uint)body.Count(); secondary = (uint)body.Count(); break; // destination, source memory index
                         case 11: secondary = (uint)body.Count(); break; // memory index
+                        case 12: immediate = (uint)body.Count(); secondary = (uint)body.Count(); break; // element index, table index
+                        case 13: immediate = (uint)body.Count(); break; // element.drop element index
+                        case 14: immediate = (uint)body.Count(); secondary = (uint)body.Count(); break; // destination, source table index
+                        case 15: secondary = (uint)body.Count(); break; // table index
+                        case 16: secondary = (uint)body.Count(); break; // table index
+                        case 17: secondary = (uint)body.Count(); break; // table index
                         default: throw new WasmException($"Offset 0x{offset:x}: Unsupported WASM opcode 0xfc/{operand}.");
                     }
                     break;
@@ -261,7 +407,7 @@ internal static class Decoder
                     if (I32Operations.Arity(opcode) != 0 || I64Operations.Arity(opcode) != 0 || FloatOperations.Arity(opcode) != 0 || ConversionOperations.Supports(opcode)) { operand = 0; break; }
                     throw new WasmException($"Offset 0x{offset:x}: Unsupported WASM opcode 0x{opcode:x2}.");
             }
-            instructions.Add(new Instruction(opcode, operand, offset, targets, immediate, blockType, selectType, constant, secondary, vectorConstant));
+            instructions.Add(new Instruction(opcode, operand, offset, targets, immediate, blockType, selectType, constant, secondary, vectorConstant, reference));
             if (opcode == 0x0b)
             {
                 if (depth != 0) { depth--; continue; }

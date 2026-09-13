@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace Wasm2Cs;
 
-// Public objects used by generated modules when a memory or global crosses a
+// Public objects used by generated modules when a memory, table, or global crosses a
 // module/host boundary. The backing storage is deliberately private so a grow
 // can replace it without leaving callers with a stale array.
 public enum WasmValueType : byte
@@ -190,6 +190,97 @@ public sealed class WasmMemory
     {
         if (offset < 0 || count < 0 || (long)offset + count > length)
             throw new ArgumentOutOfRangeException(nameof(offset));
+    }
+}
+
+public sealed class WasmTable
+{
+    private object?[] elements;
+
+    public WasmValueType ElementType { get; }
+    public int CurrentSize => elements.Length;
+    public int? DeclaredMaximum { get; }
+    public int HostMaximumSize { get; }
+
+    public WasmTable(WasmValueType elementType, int minimum, int? maximum = null, int hostMaximumSize = int.MaxValue)
+    {
+        if (elementType != WasmValueType.FuncRef && elementType != WasmValueType.ExternRef)
+            throw new ArgumentOutOfRangeException(nameof(elementType));
+        if (minimum < 0 || maximum.HasValue && (maximum.Value < minimum || maximum.Value < 0))
+            throw new ArgumentOutOfRangeException(nameof(minimum));
+        if (hostMaximumSize < 0 || minimum > hostMaximumSize || maximum.HasValue && maximum.Value > hostMaximumSize)
+            throw new ArgumentOutOfRangeException(nameof(hostMaximumSize));
+        ElementType = elementType;
+        DeclaredMaximum = maximum;
+        HostMaximumSize = hostMaximumSize;
+        elements = new object?[minimum];
+    }
+
+    public void ValidateImport(WasmValueType elementType, int minimum, int? maximum)
+    {
+        if (ElementType != elementType)
+            throw new ArgumentException("Imported table element type does not match.", nameof(elementType));
+        if (CurrentSize < minimum)
+            throw new ArgumentException("Imported table is smaller than the required minimum.", nameof(minimum));
+        if (maximum.HasValue && (!DeclaredMaximum.HasValue || DeclaredMaximum.Value > maximum.Value))
+            throw new ArgumentException("Imported table maximum does not match the required limit.", nameof(maximum));
+    }
+
+    public object? Get(uint index) => elements[checked((int)index)];
+
+    public void Set(uint index, object? value)
+    {
+        ValidateValue(value);
+        elements[checked((int)index)] = value;
+    }
+
+    public int Grow(int delta, object? value)
+    {
+        ValidateValue(value);
+        int previous = CurrentSize;
+        ulong requested = (ulong)previous + unchecked((uint)delta);
+        int maximum = HostMaximumSize;
+        if (DeclaredMaximum.HasValue && DeclaredMaximum.Value < maximum) maximum = DeclaredMaximum.Value;
+        if (requested > (ulong)maximum || requested > int.MaxValue) return -1;
+        if (delta == 0) return previous;
+        try
+        {
+            var grown = new object?[checked((int)requested)];
+            Array.Copy(elements, grown, elements.Length);
+            if (value != null)
+                for (int i = elements.Length; i < grown.Length; i++) grown[i] = value;
+            elements = grown;
+            return previous;
+        }
+        catch (OutOfMemoryException) { return -1; }
+        catch (OverflowException) { return -1; }
+    }
+
+    public void Copy(WasmTable source, uint destination, uint sourceIndex, uint count)
+    {
+        if (source == null) throw new ArgumentNullException(nameof(source));
+        if (ElementType != source.ElementType) throw new ArgumentException("Table element types do not match.", nameof(source));
+        Array.Copy(source.elements, checked((int)sourceIndex), elements, checked((int)destination), checked((int)count));
+    }
+
+    public void Init(object?[] source, uint destination, uint sourceIndex, uint count)
+    {
+        if (source == null) throw new ArgumentNullException(nameof(source));
+        for (uint i = 0; i < count; i++) Set(destination + i, source[checked((int)(sourceIndex + i))]);
+    }
+
+    public void Fill(uint destination, object? value, uint count)
+    {
+        ValidateValue(value);
+        if (count == 0) return;
+        int start = checked((int)destination), length = checked((int)count);
+        for (int i = 0; i < length; i++) elements[start + i] = value;
+    }
+
+    private void ValidateValue(object? value)
+    {
+        if (ElementType == WasmValueType.FuncRef && value != null && value is not Delegate)
+            throw new ArgumentException("Table value does not match its WebAssembly type.", nameof(value));
     }
 }
 

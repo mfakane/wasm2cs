@@ -7,7 +7,7 @@ internal sealed record Signature(ValueType[] Parameters, ValueType[] Results)
 }
 internal sealed record Instruction(byte Opcode, int Operand, int Offset, int[]? Targets = null,
     uint Immediate = 0, Signature? BlockType = null, ValueType? SelectType = null, ConstantValue? Constant = null,
-    uint Secondary = 0, byte[]? VectorConstant = null)
+    uint Secondary = 0, byte[]? VectorConstant = null, ReferenceValue? Reference = null)
 {
     // Filled by validation. null is the polymorphic bottom, never an executable value type.
     public ValueType?[] ResultTypes { get; set; } = Array.Empty<ValueType?>();
@@ -24,6 +24,8 @@ internal sealed record Module(List<Signature> Types, List<int> Functions,
     public MemoryDefinition? Memory { get; set; }
     public List<Global> Globals { get; } = new List<Global>();
     public List<DataSegment> Data { get; } = new List<DataSegment>();
+    public List<TableDefinition> Tables { get; } = new List<TableDefinition>();
+    public List<ElementSegment> Elements { get; } = new List<ElementSegment>();
     public int? DataCount { get; set; }
     public int? Start { get; set; }
 }
@@ -31,6 +33,11 @@ internal sealed record FunctionImport(string ModuleName, string Name, int TypeIn
 internal sealed record ImportBinding(byte Kind, int Index, string ModuleName, string Name);
 internal sealed record MemoryDefinition(int Minimum, int? Maximum, bool Imported = false, string? ModuleName = null, string? Name = null);
 internal sealed record ConstantValue(ValueType Type, ulong Bits, int? GlobalIndex = null);
+internal sealed record ReferenceValue(ValueType Type, int? FunctionIndex);
 internal sealed record Global(ValueType Type, bool Mutable, ConstantValue? InitialValue,
     bool Imported = false, string? ModuleName = null, string? Name = null);
 internal sealed record DataSegment(uint Offset, byte[] Bytes, bool Passive = false, ConstantValue? OffsetExpression = null);
+internal sealed record TableDefinition(ValueType ElementType, int Minimum, int? Maximum,
+    bool Imported = false, string? ModuleName = null, string? Name = null);
+internal sealed record ElementSegment(int TableIndex, ValueType ElementType, ReferenceValue[] Values,
+    bool Passive = false, bool Declarative = false, ConstantValue? OffsetExpression = null);

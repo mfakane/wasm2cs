@@ -31,7 +31,8 @@ internal static class I32Operations
     }
 
     public const string Helpers = """
-    public enum TrapKind { Unreachable, DivisionByZero, IntegerOverflow, MemoryOutOfBounds, InvalidConversionToInteger, DataSegmentOutOfBounds }
+    public enum TrapKind { Unreachable, DivisionByZero, IntegerOverflow, MemoryOutOfBounds, InvalidConversionToInteger, DataSegmentOutOfBounds,
+        TableOutOfBounds, ElementSegmentOutOfBounds, IndirectCallNull, IndirectCallTypeMismatch }
     public sealed class TrapException : global::System.Exception
     {
         public TrapKind Kind { get; private set; }

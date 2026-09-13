@@ -1,6 +1,6 @@
 # SH-06 table と間接呼び出し
 
-状態: 実施中。前提: [SH-05.5](SH-05.5-lowering.md)。次: [SH-07](SH-07-exceptions.md)。
+状態: 完了。前提: [SH-05.5](SH-05.5-lowering.md)。次: [SH-07](SH-07-exceptions.md)。
 
 ## 目的・変更対象
 
@@ -41,5 +41,5 @@ table と element、間接呼び出し、host／Unity 検証に分ける。終�
 
 - 実行コマンド・結果: `dotnet build Wasm2Cs.slnx --nologo`、`dotnet tests/Wasm2Cs.Tests/bin/Debug/net10.0/Wasm2Cs.Tests.dll` が成功。table／element／参照型、構造的な署名比較、null／範囲外／型不一致 trap、passive element の init/drop、grow／size／fill／copy、imported table／host delegate を検証。`pwsh.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-unity.ps1 -Editor "C:\Program Files\Unity\Hub\Editor\6000.6.0f1\Editor\Unity.exe" -PackagePath artifacts/com.mfakane.wasm2cs-0.1.0-preview.1.tgz` も成功。
 - 署名・table 比較、Unity ログ: Unity Editor と Windows x64 IL2CPP で `WASM2CS_TABLE_PASS`／`WASM2CS_SMOKE_PASS` を確認。ログ: `C:\Users\fumika\AppData\Local\Temp\wasm2cs-unity-3cc93a9f21d1428f91067efee746cf42`。fixture `samples/Tables/FunctionPointers.wasm` SHA-256: `2f263a219b98a9ee50c5f4e8559d3293f407e9e5d9253dc4b447bbcd0e91934d`。
-- 未解決事項: 終了コミットの記録
-- 終了コミット: 未完了
+- 未解決事項: なし
+- 終了コミット: `37946f3`

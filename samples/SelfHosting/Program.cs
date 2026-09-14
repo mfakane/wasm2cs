@@ -61,7 +61,7 @@ public static partial class SelfHostingDriver
         try
         {
             sourceEnumerator?.Dispose();
-            sourceEnumerator = Transpiler.TranslateSourceSequence(Convert.FromBase64String(wasmBase64), className).GetEnumerator();
+            sourceEnumerator = Transpiler.TranslateSourceChunkSequence(Convert.FromBase64String(wasmBase64), className).GetEnumerator();
             return "OK";
         }
         catch (Exception exception)
@@ -92,4 +92,7 @@ public static partial class SelfHostingDriver
             return $"ERROR: {exception.GetType().FullName}: {exception.Message}";
         }
     }
+
+    [JSExport]
+    internal static string CurrentTranslateSourceName() => sourceEnumerator?.Current.Name ?? string.Empty;
 }

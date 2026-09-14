@@ -80,7 +80,7 @@ internal static class CanonicalLowering
         return new CanonicalFunction(function.Signature, function.Locals, instructions);
     }
 
-    private static CanonicalInstruction LowerInstruction(Instruction instruction)
+    internal static CanonicalInstruction LowerInstruction(Instruction instruction)
     {
         if (instruction.Opcode == 0xfd)
         {

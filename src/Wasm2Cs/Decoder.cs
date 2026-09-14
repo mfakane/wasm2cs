@@ -1,7 +1,7 @@
 namespace Wasm2Cs;
 internal static class Decoder
 {
-    public static Module Decode(byte[] wasm, CancellationToken cancellationToken = default)
+    public static Module Decode(byte[] wasm, CancellationToken cancellationToken = default, bool retainBodies = true)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var reader = new Reader(wasm);
@@ -11,7 +11,6 @@ internal static class Decoder
         var types = new List<Signature>();
         var functions = new List<int>();
         var exports = new Dictionary<string, int>(StringComparer.Ordinal);
-        var bodies = new List<Reader>();
         var decoded = new List<Function>();
         var module = new Module(types, functions, exports, decoded);
         int previousOrder = 0;
@@ -149,7 +148,7 @@ internal static class Decoder
                     for (int i = 0, count = section.Count(); i < count; i++)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
-                        bodies.Add(section.Slice(section.Count()));
+                        module.BodyData.Add(section.Bytes(section.Count()));
                     }
                     break;
                 case 11:
@@ -173,7 +172,7 @@ internal static class Decoder
             }
             section.RequireEnd();
         }
-        if (functions.Count != bodies.Count) throw new WasmException("Function and code counts differ.");
+        if (functions.Count != module.BodyData.Count) throw new WasmException("Function and code counts differ.");
         if (module.DataCount.HasValue && module.DataCount.Value != module.Data.Count)
             throw new WasmException("Data count and data segment count differ.");
 
@@ -181,9 +180,15 @@ internal static class Decoder
         {
             if (functions[i] >= types.Count) throw new WasmException("Invalid function type index.");
             cancellationToken.ThrowIfCancellationRequested();
-            try { decoded.Add(DecodeBody(bodies[i], types[functions[i]], types, cancellationToken)); }
+            if (!retainBodies)
+            {
+                decoded.Add(new Function(types[functions[i]], Array.Empty<ValueType>(), new List<Instruction>()));
+                continue;
+            }
+            try { decoded.Add(DecodeBody(new Reader(module.BodyData[i]), types[functions[i]], types, cancellationToken)); }
             catch (WasmException e) { throw new WasmException($"Function {i}: {e.Message}"); }
         }
+        module.MetadataOnly = !retainBodies;
         return module;
     }
     private static int SectionOrder(byte id) => id switch
@@ -344,7 +349,7 @@ internal static class Decoder
         return value;
     }
 
-    private static Function DecodeBody(Reader body, Signature signature, List<Signature> types,
+    internal static Function DecodeBody(Reader body, Signature signature, List<Signature> types,
         CancellationToken cancellationToken)
     {
         var locals = new List<ValueType>(signature.Parameters);

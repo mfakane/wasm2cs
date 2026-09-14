@@ -87,13 +87,38 @@ internal static class Validator
             if (data.OffsetExpression != null && data.OffsetExpression.Type != ValueType.I32)
                 throw new WasmException("Data offset must have type i32.");
         }
-        bool requiresDataCount = module.Bodies.Any(f => f.Instructions.Any(i => i.Opcode == 0xfc && (i.Operand == 8 || i.Operand == 9)));
-        if (requiresDataCount && !module.DataCount.HasValue)
-            throw new WasmException("Bulk data instructions require a data count section.");
+        module.HasFloatHelpers = module.Types.Any(t => t.Parameters.Any(IsFloat) || t.Results.Any(IsFloat)) ||
+            module.Globals.Any(g => IsFloat(g.Type));
+        bool requiresDataCount = false;
         for (int i = 0; i < module.Bodies.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            ValidateBody(module, module.Bodies[i], i, cancellationToken);
+            var function = module.Bodies[i];
+            if (module.MetadataOnly)
+            {
+                try { function = Decoder.DecodeBody(new Reader(module.BodyData[i]), function.Signature, module.Types, cancellationToken); }
+                catch (WasmException e) { throw new WasmException($"Function {i}: {e.Message}"); }
+                module.Bodies[i] = function;
+            }
+            module.HasFloatHelpers |= function.Locals.Any(IsFloat);
+            foreach (var instruction in function.Instructions)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                module.HasFunctionReferences |= instruction.Opcode is 0xd2 or 0x11;
+                module.HasI64Operations |= I64Operations.Arity(instruction.Opcode) != 0;
+                module.HasConversionOperations |= ConversionOperations.Supports(instruction.Opcode);
+                requiresDataCount |= instruction.Opcode == 0xfc && instruction.Operand is 8 or 9;
+                module.HasFloatHelpers |= FloatOperations.Arity(instruction.Opcode) != 0 ||
+                    ConversionOperations.Supports(instruction.Opcode) || instruction.Opcode is 0x43 or 0x44 or 0x2a or 0x2b or 0x38 or 0x39;
+            }
+            if (requiresDataCount && !module.DataCount.HasValue)
+                throw new WasmException("Bulk data instructions require a data count section.");
+            ValidateBody(module, function, i, cancellationToken);
+            if (module.MetadataOnly)
+            {
+                function.Instructions.Clear();
+                function.Instructions.Capacity = 0;
+            }
         }
     }
     private sealed class Control(byte opcode, int height, Signature signature)
@@ -104,7 +129,7 @@ internal static class Validator
         public bool Unreachable, ElseSeen, CatchSeen, CatchAllSeen;
         public ValueType[] LabelTypes => Opcode == 0x03 ? Signature.Parameters : Signature.Results;
     }
-    private static void ValidateBody(Module module, Function function, int index, CancellationToken cancellationToken)
+    internal static void ValidateBody(Module module, Function function, int index, CancellationToken cancellationToken)
     {
         var stack = new List<ValueType?>();
         var controls = new List<Control> { new Control(0xff, 0, function.Signature) };
@@ -378,4 +403,5 @@ internal static class Validator
         if (index < 0 || index >= module.Tables.Count) { fail("Invalid table index."); table = new TableDefinition(ValueType.FuncRef, 0, 0); return; }
         table = module.Tables[index];
     }
+    private static bool IsFloat(ValueType type) => type == ValueType.F32 || type == ValueType.F64;
 }

@@ -3,6 +3,7 @@
 import {
   cpSync,
   existsSync,
+  mkdtempSync,
   mkdirSync,
   readdirSync,
   readFileSync,
@@ -13,6 +14,7 @@ import {
 } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -411,12 +413,40 @@ function parseReferenceOutput(output) {
   for (const line of output.trim().split(/\r?\n/).reverse()) {
     try {
       const value = JSON.parse(line);
-      if (value?.protocol === 1) return value;
+      if (value?.protocol === 1 && !value.stream) return value;
     } catch {
       // Runtime diagnostics are retained in the log; keep looking for the protocol line.
     }
   }
   throw new Error(`The guest did not emit a reference protocol result.\n${output}`);
+}
+
+function parseBundleOutput(output, streamId) {
+  const sources = [];
+  const sourceByName = new Map();
+  let response = null;
+  let streamError = null;
+  for (const line of output.trim().split(/\r?\n/)) {
+    try {
+      const value = JSON.parse(line);
+      if (value?.protocol === 1 && value.stream && value.id === streamId) {
+        if (value.error) streamError = value.error;
+        if (value.source) {
+          const existing = sourceByName.get(value.source.Name);
+          if (existing) existing.Text += value.source.Text;
+          else {
+            sourceByName.set(value.source.Name, value.source);
+            sources.push(value.source);
+          }
+        }
+      } else if (value?.protocol === 1) response = value;
+    } catch {
+      // Runtime diagnostics are retained in the log; keep looking for protocol lines.
+    }
+  }
+  if (!response) throw new Error(`The guest did not emit a reference protocol result.\n${output}`);
+  if (streamError) throw new Error(streamError);
+  return { response, sources };
 }
 
 function reference() {
@@ -484,7 +514,9 @@ function invokeBundle(request) {
       cwd: bundleRoot,
       env: { ...process.env, SELF_HOSTING_REQUEST_FILE: requestPath }
     });
-    return { manifest, response: parseReferenceOutput(result.output), host };
+    const stream = request.scenarios.find(scenario => scenario.operation === 'translate-sources-stream');
+    const parsed = stream ? parseBundleOutput(result.output, stream.id) : { response: parseReferenceOutput(result.output), sources: [] };
+    return { manifest, response: parsed.response, sources: parsed.sources, host };
   } finally {
     rmSync(requestPath, { force: true });
   }
@@ -507,18 +539,18 @@ function generate() {
     };
     const invoked = invokeBundle(request);
     const result = invoked.response.results?.find(item => item.id === 'runtime');
-    if (!result || typeof result.output !== 'string') throw new Error('Guest did not return generated sources.');
-    if (result.output.startsWith('ERROR:')) throw new Error(result.output);
-    let sources;
-    try { sources = JSON.parse(result.output); }
-    catch (error) { throw new Error(`Guest returned invalid generated-source JSON: ${error.message}`); }
+    if (!result || result.output !== 'STREAM') throw new Error(result?.output ?? 'Guest did not return generated sources.');
+    const sources = invoked.sources;
     if (!Array.isArray(sources) || sources.length === 0) throw new Error('Guest returned no generated sources.');
     const staging = join(artifactRoot, `.generated-${process.pid}`);
     rmSync(staging, { recursive: true, force: true });
     mkdirSync(staging, { recursive: true });
+    const names = new Set();
     const entries = sources.map((source, index) => {
-      const expected = index === 0 ? `${className}.g.cs` : `${className}.Functions.${String(index - 1).padStart(4, '0')}.g.cs`;
-      if (source.Name !== expected || typeof source.Text !== 'string') throw new Error(`Guest returned an invalid source at index ${index}.`);
+      if (!source || typeof source.Name !== 'string' || !/^[A-Za-z_][A-Za-z0-9_.-]*\.g\.cs$/.test(source.Name) ||
+          names.has(source.Name) || typeof source.Text !== 'string')
+        throw new Error(`Guest returned an invalid source at index ${index}.`);
+      names.add(source.Name);
       const bytes = Buffer.from(source.Text, 'utf8');
       writeFileSync(join(staging, source.Name), bytes);
       return { path: source.Name, bytes: bytes.length, sha256: sha256(bytes) };

@@ -18,6 +18,12 @@ internal sealed record Module(List<Signature> Types, List<int> Functions,
 {
     public List<FunctionImport> Imports { get; } = new List<FunctionImport>();
     public List<ImportBinding> ImportBindings { get; } = new List<ImportBinding>();
+    public List<byte[]> BodyData { get; } = new List<byte[]>();
+    public bool MetadataOnly { get; set; }
+    public bool HasFunctionReferences { get; set; }
+    public bool HasI64Operations { get; set; }
+    public bool HasFloatHelpers { get; set; }
+    public bool HasConversionOperations { get; set; }
     public int FunctionCount => Imports.Count + Bodies.Count;
     public Signature FunctionSignature(int index) => index < Imports.Count ? Types[Imports[index].TypeIndex] : Bodies[index - Imports.Count].Signature;
     public Dictionary<string, byte> ExportKinds { get; } = new Dictionary<string, byte>();

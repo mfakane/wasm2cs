@@ -20,7 +20,7 @@
 | [SH-05.5](milestones/SH-05.5-lowering.md) | 意味保存 lowering とターゲット別 backend | SH-05 | 完了 |
 | [SH-06](milestones/SH-06-tables.md) | table と間接呼び出し | SH-05.5 | 完了 |
 | [SH-07](milestones/SH-07-exceptions.md) | WASM 例外処理 | SH-06 | 完了 |
-| [SH-08](milestones/SH-08-large-codegen.md) | 巨大モジュールの C# 生成 | SH-07 | 進行中 |
+| [SH-08](milestones/SH-08-large-codegen.md) | 巨大モジュールの C# 生成 | SH-07 | 完了 |
 | [SH-09](milestones/SH-09-host.md) | C# ホスト機能 | SH-08 | 未着手 |
 | [SH-10](milestones/SH-10-mono-startup.md) | Mono 起動と Hello World | SH-09 | 未着手 |
 | [SH-11](milestones/SH-11-managed-runtime.md) | managed 実行の安定化 | SH-10 | 未着手 |

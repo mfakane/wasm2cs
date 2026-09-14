@@ -45,6 +45,10 @@ var repeated = Transpiler.TranslateSources(bytes, "Partitioned");
 Assert(partitioned.Count == repeated.Count && partitioned.Zip(repeated).All(pair => pair.First == pair.Second), "Partitioned output is not deterministic.");
 var partitionedModule = Compile(CompilationSources(partitioned.Select(source => source.Text))).GetType("Wasm2Cs.Generated.Partitioned")!;
 Assert((int)partitionedModule.GetMethod("add")!.Invoke(Activator.CreateInstance(partitionedModule), [20, 22])! == 42, "Partitioned source compilation differs.");
+var streamed = Transpiler.TranslateSourceChunkSequence(bytes, "Partitioned");
+var reassembled = streamed.GroupBy(source => source.Name)
+    .Select(group => new GeneratedSource(group.Key, string.Concat(group.Select(source => source.Text)))).ToArray();
+Assert(partitioned.SequenceEqual(reassembled), "Streamed source chunks do not reassemble to deterministic sources.");
 using var canceled = new CancellationTokenSource();
 canceled.Cancel();
 try { Transpiler.TranslateSources(bytes, "Canceled", WasmTargetProfile.PortableNetStandard20, canceled.Token); throw new Exception("Canceled translation completed."); }

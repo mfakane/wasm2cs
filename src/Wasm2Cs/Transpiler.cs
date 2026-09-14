@@ -24,17 +24,26 @@ public static class Transpiler
 
     public static IEnumerable<GeneratedSource> TranslateSourceSequence(byte[] wasm, string className,
         WasmTargetProfile profile = WasmTargetProfile.PortableNetStandard20, CancellationToken cancellationToken = default)
+        => TranslateSourceSequenceCore(wasm, className, profile, cancellationToken, streamFunctions: false);
+
+    // Streams function source parts under the same generated file name so a host
+    // can avoid holding a large generated method in the browser-wasm guest.
+    public static IEnumerable<GeneratedSource> TranslateSourceChunkSequence(byte[] wasm, string className,
+        WasmTargetProfile profile = WasmTargetProfile.PortableNetStandard20, CancellationToken cancellationToken = default)
+        => TranslateSourceSequenceCore(wasm, className, profile, cancellationToken, streamFunctions: true);
+
+    private static IEnumerable<GeneratedSource> TranslateSourceSequenceCore(byte[] wasm, string className,
+        WasmTargetProfile profile, CancellationToken cancellationToken, bool streamFunctions)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var module = Decoder.Decode(wasm, cancellationToken);
+        var module = Decoder.Decode(wasm, cancellationToken, retainBodies: false);
+        wasm = Array.Empty<byte>();
         Validator.Validate(module, className, cancellationToken);
         var lowering = Lowering.Create(module, profile);
-        int index = 0;
-        foreach (var text in CSharpEmitter.EmitSourceSequence(module, className, lowering, cancellationToken))
+        foreach (var source in CSharpEmitter.EmitSourceSequence(module, className, lowering, cancellationToken, streamFunctions))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            yield return new GeneratedSource(index == 0 ? $"{className}.g.cs" : $"{className}.Functions.{index - 1:D4}.g.cs", text);
-            index++;
+            yield return source;
         }
     }
 }

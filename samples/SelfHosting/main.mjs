@@ -43,17 +43,21 @@ const results = request.scenarios.map(scenario => {
   }
   if (scenario.operation === 'translate-sources-stream') {
     const started = driver.BeginTranslateSourcesBase64(scenario.wasmBase64, scenario.className);
-    if (started !== 'OK') return { id: scenario.id, operation: scenario.operation, output: started };
-    const sources = [];
-    let index = 0;
+    if (started !== 'OK') {
+      console.log(JSON.stringify({ protocol: 1, stream: true, id: scenario.id, error: started }));
+      return { id: scenario.id, operation: scenario.operation, output: 'STREAM_ERROR' };
+    }
     while (true) {
       const next = driver.NextTranslateSource();
       if (next === '') break;
-      if (next.startsWith('ERROR:')) return { id: scenario.id, operation: scenario.operation, output: next };
-      sources.push({ Name: index === 0 ? `${scenario.className}.g.cs` : `${scenario.className}.Functions.${String(index - 1).padStart(4, '0')}.g.cs`, Text: next });
-      index++;
+      if (next.startsWith('ERROR:')) {
+        console.log(JSON.stringify({ protocol: 1, stream: true, id: scenario.id, error: next }));
+        return { id: scenario.id, operation: scenario.operation, output: 'STREAM_ERROR' };
+      }
+      console.log(JSON.stringify({ protocol: 1, stream: true, id: scenario.id,
+        source: { Name: driver.CurrentTranslateSourceName(), Text: next } }));
     }
-    return { id: scenario.id, operation: scenario.operation, output: JSON.stringify(sources) };
+    return { id: scenario.id, operation: scenario.operation, output: 'STREAM' };
   }
   throw new Error(`Unknown reference operation: ${scenario.operation}`);
 });

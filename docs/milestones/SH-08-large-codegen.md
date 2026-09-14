@@ -1,6 +1,6 @@
 # SH-08 巨大モジュールの C# 生成
 
-状態: 進行中。前提: [SH-07](SH-07-exceptions.md)。次: [SH-09](SH-09-host.md)。
+状態: 完了。前提: [SH-07](SH-07-exceptions.md)。次: [SH-09](SH-09-host.md)。
 
 ## 目的・変更対象
 
@@ -29,11 +29,11 @@ node scripts/self-hosting.mjs compile
 
 ## 合格条件
 
-- [ ] 対象 runtime の全関数を変換し、すべての出力を含めて外側でコンパイルできる。
-- [ ] 出力が再現可能で、未対応部分の削除・解釈実行への切替がない。
-- [ ] CLI と Source Generator の設定が一致し、既存の利用方法も通る。
-- [ ] キャンセルと制限到達を成功した生成として扱わない。
-- [ ] 本段階の成功は「全体の変換・コンパイル」であり、Mono 起動ではないと記録している。
+- [x] 対象 runtime の全関数を変換し、すべての出力を含めて外側でコンパイルできる。
+- [x] 出力が再現可能で、未対応部分の削除・解釈実行への切替がない。
+- [x] CLI と Source Generator の設定が一致し、既存の利用方法も通る。
+- [x] キャンセルと制限到達を成功した生成として扱わない。
+- [x] 本段階の成功は「全体の変換・コンパイル」であり、Mono 起動ではないと記録している。
 
 ## 非対象・失敗時の扱い
 
@@ -43,7 +43,7 @@ node scripts/self-hosting.mjs compile
 
 API と分割生成、各入力経路の統合、実物のコンパイル検証に分ける。終了コミット例: `feat: generate and compile large wasm modules`。
 
-- 実行コマンド・結果: `dotnet build Wasm2Cs.slnx --nologo` と `dotnet tests/Wasm2Cs.Tests/bin/Debug/net10.0/Wasm2Cs.Tests.dll` が成功。`TranslateSources` の deterministic な scaffold／関数 source 分割、partial class の同時コンパイル、Source Generator の複数出力、入力変更時の再分割、事前キャンセルを検証。`dotnet run --project src/Wasm2Cs.Cli -- samples/Smoke/Arithmetic.wasm --class-name DotnetRuntime --output-directory <dir>` で class-name override と複数ファイル出力を確認。`node scripts/self-hosting.mjs prepare --skip-workload-install` と `node scripts/self-hosting.mjs reference` も成功。
-- bundle ハッシュ・生成サイズ・時間・メモリ: 未取得
-- 未解決事項: self-hosting `generate` は `dotnet.native.wasm` の全体変換中に固定 256 MiB browser-wasm heap が不足して `System.OutOfMemoryException` となった。したがって `compile` は生成 manifest 不在で停止。初期化／data／import の分割、実物全体の変換・コンパイル、生成時のピークメモリ計測が残る。
-- 終了コミット: 未完了
+- 実行コマンド・結果: `dotnet build Wasm2Cs.slnx --nologo`、`dotnet tests/Wasm2Cs.Tests/bin/Debug/net10.0/Wasm2Cs.Tests.dll`、`node scripts/self-hosting.mjs prepare --skip-workload-install`、`node scripts/self-hosting.mjs generate`、`node scripts/self-hosting.mjs compile` が成功。`TranslateSources` の deterministic な scaffold／関数 source 分割、chunked source の再結合、partial class の同時コンパイル、Source Generator の複数出力、入力変更時の再分割、事前キャンセルを検証した。
+- bundle ハッシュ・生成サイズ・時間・メモリ: bundle `95ca67de55675a09b263777eea0a33e298bfd0bb0d006decb5f68a8e2cab6773`、入力 `2,970,056` bytes、生成 `12,374` source／`59,483,823` bytes、生成 `19,939.5` ms、hostMaxRss `437,176` KB、外側 compile `48,441.3` ms。
+- 解決事項: 固定 256 MiB heap 内で metadata-only decode、関数単位の on-demand decode、typed slot／local arrays、初期化 source 分割、巨大関数の chunked source streaming を実装した。生成結果は外側の .NET で全体 compile できた。
+- 終了コミット: `feat: complete SH-08 large module generation`

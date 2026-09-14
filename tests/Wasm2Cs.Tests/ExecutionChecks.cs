@@ -94,7 +94,7 @@ internal static class ExecutionChecks
         if (!portable) return location;
         return Path.Combine(AppContext.BaseDirectory, "Runtime20", "Wasm2Cs.Runtime.dll");
     }
-    internal static async Task Compare(byte[] bytes, int[][] calls)
+    internal static async Task Compare(byte[] bytes, int[][] calls, string exportName = "f")
     {
         var type = Compile(bytes).GetType("Wasm2Cs.Generated.Subject")!;
         object? instance = null;
@@ -102,13 +102,13 @@ internal static class ExecutionChecks
         try { instance = Activator.CreateInstance(type); }
         catch (TargetInvocationException e) when (e.InnerException?.GetType().DeclaringType == type && e.InnerException.GetType().Name == "TrapException")
         { initializationTrapped = true; }
-        var method = type.GetMethod("f")!;
+        var method = type.GetMethod(exportName)!;
         var start = new ProcessStartInfo("node") { RedirectStandardInput=true, RedirectStandardOutput=true, RedirectStandardError=true };
         start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory,"execution-oracle.mjs"));
         using var node = Process.Start(start)!;
         var output = node.StandardOutput.ReadToEndAsync();
         var error = node.StandardError.ReadToEndAsync();
-        await node.StandardInput.WriteAsync(JsonSerializer.Serialize(new { Module=Convert.ToBase64String(bytes), Calls=calls }));
+        await node.StandardInput.WriteAsync(JsonSerializer.Serialize(new { Module=Convert.ToBase64String(bytes), Calls=calls, Export=exportName }));
         node.StandardInput.Close();
         await node.WaitForExitAsync();
         if (node.ExitCode != 0) throw new Exception(await error);

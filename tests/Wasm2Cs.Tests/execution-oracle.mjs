@@ -7,8 +7,9 @@ catch (error) {
   console.log(JSON.stringify({ InstantiationTrap: true }));
   process.exit(0);
 }
+const exportFunction = instance.exports[input.Export ?? 'f'];
 const outcomes = input.Calls.map(args => {
-  try { return { Trapped: false, Value: instance.exports.f(...args) ?? 0 }; }
+  try { return { Trapped: false, Value: exportFunction(...args) ?? 0 }; }
   catch (error) {
     if (!(error instanceof WebAssembly.RuntimeError)) throw error;
     return { Trapped: true, Value: 0 };

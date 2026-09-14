@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Linq;
 
 namespace Wasm2Cs;
 
@@ -281,6 +282,37 @@ public sealed class WasmTable
     {
         if (ElementType == WasmValueType.FuncRef && value != null && value is not Delegate)
             throw new ArgumentException("Table value does not match its WebAssembly type.", nameof(value));
+    }
+}
+
+public sealed class WasmTag
+{
+    private readonly WasmValueType[] parameterTypes;
+
+    public WasmValueType[] ParameterTypes => (WasmValueType[])parameterTypes.Clone();
+
+    public WasmTag(params WasmValueType[] parameterTypes)
+    {
+        if (parameterTypes == null) throw new ArgumentNullException(nameof(parameterTypes));
+        this.parameterTypes = (WasmValueType[])parameterTypes.Clone();
+    }
+
+    public void Validate(WasmValueType[] expected)
+    {
+        if (expected == null || !parameterTypes.SequenceEqual(expected))
+            throw new ArgumentException("Imported tag type does not match.", nameof(expected));
+    }
+}
+
+public sealed class WasmThrownException : Exception
+{
+    public WasmTag Tag { get; }
+    public object[] Payload { get; }
+
+    public WasmThrownException(WasmTag tag, object[] payload)
+    {
+        Tag = tag ?? throw new ArgumentNullException(nameof(tag));
+        Payload = payload ?? throw new ArgumentNullException(nameof(payload));
     }
 }
 

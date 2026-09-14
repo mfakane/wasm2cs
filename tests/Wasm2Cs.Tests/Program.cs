@@ -145,6 +145,7 @@ await TypedIrChecks.Verify();
 await I64Checks.Verify();
 await FloatChecks.Verify();
 await TableChecks.Verify();
+await ExceptionChecks.Verify();
 
 record Call(string Name, int[] Args);
 sealed class Input(string path, string content) : AdditionalText

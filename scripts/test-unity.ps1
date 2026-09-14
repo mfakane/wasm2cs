@@ -34,6 +34,9 @@ Copy-Item (Join-Path $repo "samples/CAlgorithms/Algorithms.wasm") (Join-Path $pr
 Copy-Item (Join-Path $repo "samples/Host/Host.wasm") (Join-Path $project "Assets/Host.wasm")
 Copy-Item (Join-Path $repo "samples/Floating/Floating.wasm") (Join-Path $project "Assets/Floating.wasm")
 Copy-Item (Join-Path $repo "samples/Tables/FunctionPointers.wasm") (Join-Path $project "Assets/FunctionPointers.wasm")
+Copy-Item (Join-Path $repo "samples/Exceptions/Exceptions.wasm") (Join-Path $project "Assets/Exceptions.wasm")
+Copy-Item (Join-Path $repo "samples/Exceptions/HostException.wasm") (Join-Path $project "Assets/HostException.wasm")
+Copy-Item (Join-Path $repo "samples/Exceptions/HostTagException.wasm") (Join-Path $project "Assets/HostTagException.wasm")
 $vectorBase64 = (Get-Content (Join-Path $repo "samples/Vectors/Vector.wasm.base64") -Raw).Trim()
 [IO.File]::WriteAllBytes((Join-Path $project "Assets/Vector.wasm"), [Convert]::FromBase64String($vectorBase64))
 RunEditor @("-executeMethod", "Wasm2Cs.Editor.WasmAssetBridge.Synchronize", "-quit") "inputs.log"
@@ -63,6 +66,7 @@ Copy-Item (Join-Path $repo "unity/Smoke/SmokeRunner.cs") (Join-Path $project "As
 Copy-Item (Join-Path $repo "samples/Host/HostChecks.cs") (Join-Path $project "Assets/HostChecks.cs")
 Copy-Item (Join-Path $repo "samples/Floating/FloatingChecks.cs") (Join-Path $project "Assets/FloatingChecks.cs")
 Copy-Item (Join-Path $repo "unity/Smoke/TableChecks.cs") (Join-Path $project "Assets/TableChecks.cs")
+Copy-Item (Join-Path $repo "unity/Smoke/ExceptionChecks.cs") (Join-Path $project "Assets/ExceptionChecks.cs")
 Copy-Item (Join-Path $repo "unity/Smoke/VectorChecks.cs") (Join-Path $project "Assets/VectorChecks.cs")
 New-Item -ItemType Directory -Path (Join-Path $project "Assets/Resources") -Force | Out-Null
 Copy-Item (Join-Path $repo "unity/Smoke/AlgorithmsGolden.json") (Join-Path $project "Assets/Resources/AlgorithmsGolden.json")

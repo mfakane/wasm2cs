@@ -34,7 +34,7 @@ internal sealed record CanonicalInstruction(
 
     private static CanonicalInstructionKind Classify(Instruction instruction) => instruction.Opcode switch
     {
-        0x00 or 0x02 or 0x03 or 0x04 or 0x05 or 0x0b or 0x0c or 0x0d or 0x0e or 0x0f => CanonicalInstructionKind.StructuredControl,
+        0x00 or 0x02 or 0x03 or 0x04 or 0x05 or 0x06 or 0x07 or 0x08 or 0x09 or 0x0b or 0x0c or 0x0d or 0x0e or 0x0f or 0x19 => CanonicalInstructionKind.StructuredControl,
         0x10 or 0x11 => CanonicalInstructionKind.Call,
         0x1a or 0x1b or 0x1c => CanonicalInstructionKind.Stack,
         0x20 or 0x21 or 0x22 => CanonicalInstructionKind.Local,

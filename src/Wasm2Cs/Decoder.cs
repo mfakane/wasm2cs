@@ -66,6 +66,13 @@ internal static class Decoder
                                 module.Globals.Add(new Global(globalType, mutable == 1, null, true, importModule, importName));
                                 module.ImportBindings.Add(new ImportBinding(kind, globalIndex, importModule, importName));
                                 break;
+                            case 4:
+                                if (section.Byte() != 0) throw new WasmException("Unsupported tag attribute.");
+                                int tagType = section.Count();
+                                if (tagType >= types.Count) throw new WasmException("Invalid imported tag type index.");
+                                module.Tags.Add(new TagDefinition(types[tagType], true, importModule, importName));
+                                module.ImportBindings.Add(new ImportBinding(kind, module.Tags.Count - 1, importModule, importName));
+                                break;
                             default:
                                 throw new WasmException("Unsupported import kind.");
                         }
@@ -84,7 +91,7 @@ internal static class Decoder
                     {
                         string name = section.Name();
                         byte kind = section.Byte();
-                        if (kind != 0 && kind != 1 && kind != 2 && kind != 3) throw new WasmException("Unsupported export kind.");
+                        if (kind != 0 && kind != 1 && kind != 2 && kind != 3 && kind != 4) throw new WasmException("Unsupported export kind.");
                         if (exports.ContainsKey(name)) throw new WasmException("Duplicate export name.");
                         exports.Add(name, section.Count());
                         module.ExportKinds.Add(name, kind);
@@ -105,6 +112,15 @@ internal static class Decoder
                         byte mutable = section.Byte();
                         if (mutable > 1) throw new WasmException("Invalid global mutability.");
                         module.Globals.Add(new Global(globalType, mutable == 1, Constant(section, module)));
+                    }
+                    break;
+                case 13:
+                    for (int i = 0, count = section.Count(); i < count; i++)
+                    {
+                        if (section.Byte() != 0) throw new WasmException("Unsupported tag attribute.");
+                        int tagType = section.Count();
+                        if (tagType >= types.Count) throw new WasmException("Invalid tag type index.");
+                        module.Tags.Add(new TagDefinition(types[tagType]));
                     }
                     break;
                 case 8: module.Start = section.Count(); break;
@@ -334,13 +350,15 @@ internal static class Decoder
             ConstantValue? constant = null;
             switch (opcode)
             {
-                case 0x02: case 0x03: case 0x04:
+                case 0x02: case 0x03: case 0x04: case 0x06:
                     blockType = body.BlockType(types);
                     operand = 0; depth++; break;
                 case 0x1c:
                     if (body.Count() != 1) throw new WasmException("Typed select requires exactly one value type.");
                     selectType = body.ValueType(); operand = 0; break;
-                case 0x0c: case 0x0d: case 0x10: operand = body.Count(); break;
+                case 0x07: case 0x08: case 0x09: case 0x0c: case 0x0d: case 0x10: case 0x18:
+                    operand = body.Count(); break;
+                case 0x19: operand = 0; break;
                 case 0x11:
                     operand = body.Count();
                     immediate = (uint)body.Count();

@@ -26,6 +26,7 @@ internal sealed record Module(List<Signature> Types, List<int> Functions,
     public List<DataSegment> Data { get; } = new List<DataSegment>();
     public List<TableDefinition> Tables { get; } = new List<TableDefinition>();
     public List<ElementSegment> Elements { get; } = new List<ElementSegment>();
+    public List<TagDefinition> Tags { get; } = new List<TagDefinition>();
     public int? DataCount { get; set; }
     public int? Start { get; set; }
 }
@@ -41,3 +42,5 @@ internal sealed record TableDefinition(ValueType ElementType, int Minimum, int? 
     bool Imported = false, string? ModuleName = null, string? Name = null);
 internal sealed record ElementSegment(int TableIndex, ValueType ElementType, ReferenceValue[] Values,
     bool Passive = false, bool Declarative = false, ConstantValue? OffsetExpression = null);
+internal sealed record TagDefinition(Signature Signature, bool Imported = false,
+    string? ModuleName = null, string? Name = null);

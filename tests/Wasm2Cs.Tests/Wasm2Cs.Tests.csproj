@@ -22,6 +22,10 @@
     <None Include="../Conformance/i64.wast" Link="Conformance/i64.wast" CopyToOutputDirectory="PreserveNewest" />
     <None Include="float-oracle.mjs" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../samples/Floating/Floating.wasm" Link="Floating/Floating.wasm" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../samples/Exceptions/Exceptions.wasm" Link="Exceptions/Exceptions.wasm" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../samples/Exceptions/Imported.wasm" Link="Exceptions/Imported.wasm" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../samples/Exceptions/HostException.wasm" Link="Exceptions/HostException.wasm" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../samples/Exceptions/HostTagException.wasm" Link="Exceptions/HostTagException.wasm" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../samples/Floating/operations.json" Link="Floating/operations.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="i64-oracle.mjs" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../Conformance/f32.*" Link="Conformance/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />

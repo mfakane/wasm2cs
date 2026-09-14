@@ -14,6 +14,7 @@ internal static class Validator
             if (kind == 1 && export.Value >= module.Tables.Count) throw new WasmException("Invalid exported table index.");
             if (kind == 2 && (export.Value != 0 || module.Memory == null)) throw new WasmException("Invalid exported memory index.");
             if (kind == 3 && export.Value >= module.Globals.Count) throw new WasmException("Invalid exported global index.");
+            if (kind == 4 && export.Value >= module.Tags.Count) throw new WasmException("Invalid exported tag index.");
         }
         foreach (var table in module.Tables)
         {
@@ -21,6 +22,11 @@ internal static class Validator
                 throw new WasmException("Invalid table limits.");
             if (table.ElementType != ValueType.FuncRef && table.ElementType != ValueType.ExternRef)
                 throw new WasmException("Unsupported table element type.");
+        }
+        foreach (var tag in module.Tags)
+        {
+            if (tag.Signature.Results.Length != 0)
+                throw new WasmException("Tag types must not have results.");
         }
         foreach (var element in module.Elements)
         {
@@ -79,7 +85,7 @@ internal static class Validator
         public byte Opcode = opcode;
         public int Height = height;
         public Signature Signature = signature;
-        public bool Unreachable, ElseSeen;
+        public bool Unreachable, ElseSeen, CatchSeen, CatchAllSeen;
         public ValueType[] LabelTypes => Opcode == 0x03 ? Signature.Parameters : Signature.Results;
     }
     private static void ValidateBody(Module module, Function function, int index)
@@ -117,12 +123,24 @@ internal static class Validator
             }
             switch (instruction.Opcode)
             {
-                case 0x02: case 0x03: case 0x04:
+                case 0x02: case 0x03: case 0x04: case 0x06:
                     if (instruction.Opcode == 0x04) Pop(ValueType.I32);
                     var block = instruction.BlockType!;
                     PopTypes(block.Parameters);
                     controls.Add(new Control(instruction.Opcode, stack.Count, block));
                     PushTypes(block.Parameters);
+                    break;
+                case 0x07:
+                    if (current.Opcode != 0x06 || current.CatchAllSeen) Fail("Unexpected catch.");
+                    EndArm();
+                    if (instruction.Operand >= module.Tags.Count) Fail("Invalid catch tag index.");
+                    current.CatchSeen = true; current.Unreachable = false;
+                    PushTypes(module.Tags[instruction.Operand].Signature.Parameters);
+                    break;
+                case 0x19:
+                    if (current.Opcode != 0x06 || current.CatchAllSeen) Fail("Unexpected catch_all.");
+                    EndArm();
+                    current.CatchSeen = true; current.CatchAllSeen = true; current.Unreachable = false;
                     break;
                 case 0x05:
                     if (current.Opcode != 0x04 || current.ElseSeen) Fail("Unexpected else.");
@@ -135,6 +153,7 @@ internal static class Validator
                     if (current.Opcode == 0x04 && !current.ElseSeen &&
                         !current.Signature.Parameters.SequenceEqual(current.Signature.Results))
                         Fail("If without else requires matching parameter and result types.");
+                    if (current.Opcode == 0x06 && !current.CatchSeen) Fail("Try requires a catch.");
                     controls.RemoveAt(controls.Count-1);
                     PushTypes(current.Signature.Results);
                     break;
@@ -165,6 +184,20 @@ internal static class Validator
                     if (instruction.Operand >= module.FunctionCount) Fail("Invalid called function index.");
                     var signature = module.FunctionSignature(instruction.Operand);
                     PopTypes(signature.Parameters); PushTypes(signature.Results);
+                    break;
+                case 0x08:
+                    if (instruction.Operand >= module.Tags.Count) Fail("Invalid thrown tag index.");
+                    PopTypes(module.Tags[instruction.Operand].Signature.Parameters);
+                    Unreachable();
+                    break;
+                case 0x09:
+                    var rethrowTarget = Target(instruction.Operand);
+                    if (rethrowTarget.Opcode != 0x06 || !rethrowTarget.CatchSeen)
+                        Fail("Rethrow must target a caught exception.");
+                    Unreachable();
+                    break;
+                case 0x18:
+                    Fail("Legacy delegate is not supported.");
                     break;
                 case 0x11:
                     if (instruction.Operand >= module.Types.Count) Fail("Invalid indirect call type index.");

@@ -4,13 +4,15 @@ internal static class Validator
     public static void Validate(Module module, string className, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (!IsIdentifier(className)) throw new WasmException("The WASM filename must be an ASCII C# identifier.");
-        if (Reserved(className)) throw new WasmException("Module name conflicts with generated support members.");
+        if (!ExportNames.IsIdentifier(className)) throw new WasmException("The WASM filename must be an ASCII C# identifier.");
+        if (ExportNames.IsReserved(className)) throw new WasmException("Module name conflicts with generated support members.");
+        var exportNames = new HashSet<string>(StringComparer.Ordinal);
         foreach (var export in module.Exports)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (!IsIdentifier(export.Key) || export.Key == className || Reserved(export.Key))
-                throw new WasmException($"Export '{export.Key}' cannot be represented as a C# method name.");
+            string exportName = ExportNames.For(export.Key);
+            if (exportName == className || !exportNames.Add(exportName))
+                throw new WasmException($"Export '{export.Key}' collides with another generated C# member.");
             byte kind = module.ExportKinds[export.Key];
             if (kind == 0 && export.Value >= module.FunctionCount) throw new WasmException("Invalid exported function index.");
             if (kind == 1 && export.Value >= module.Tables.Count) throw new WasmException("Invalid exported table index.");
@@ -212,7 +214,11 @@ internal static class Validator
                     Unreachable();
                     break;
                 case 0x18:
-                    Fail("Legacy delegate is not supported.");
+                    if (current.Opcode != 0x06) Fail("Delegate must close a try.");
+                    Target(instruction.Operand);
+                    EndArm();
+                    controls.RemoveAt(controls.Count-1);
+                    PushTypes(current.Signature.Results);
                     break;
                 case 0x11:
                     if (instruction.Operand >= module.Types.Count) Fail("Invalid indirect call type index.");
@@ -372,10 +378,4 @@ internal static class Validator
         if (index < 0 || index >= module.Tables.Count) { fail("Invalid table index."); table = new TableDefinition(ValueType.FuncRef, 0, 0); return; }
         table = module.Tables[index];
     }
-    private static bool IsIdentifier(string name) => name.Length > 0 &&
-        (IsLetter(name[0]) || name[0] == '_') &&
-        name.All(c => IsLetter(c) || (c >= '0' && c <= '9') || c == '_');
-    private static bool IsLetter(char c) => (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
-    private static bool Reserved(string name) => name.StartsWith("__wasm_", StringComparison.Ordinal) ||
-        name == "TrapKind" || name == "TrapException" || name == "ReadMemory" || name == "WriteMemory" || name == "MemorySize";
 }

@@ -6,9 +6,11 @@ if (typeof dotnet.withRuntimeOptions !== 'function') {
   throw new Error('The browser-wasm runtime does not expose withRuntimeOptions().');
 }
 
-const requestText = process.env.SELF_HOSTING_REQUEST;
+const requestText = process.env.SELF_HOSTING_REQUEST_FILE
+  ? (await import('node:fs')).readFileSync(process.env.SELF_HOSTING_REQUEST_FILE, 'utf8')
+  : process.env.SELF_HOSTING_REQUEST;
 const request = requestText
-  ? JSON.parse(Buffer.from(requestText, 'base64url').toString('utf8'))
+  ? JSON.parse(process.env.SELF_HOSTING_REQUEST_FILE ? requestText : Buffer.from(requestText, 'base64url').toString('utf8'))
   : { scenarios: [{ id: 'hello', operation: 'hello' }] };
 
 const runtime = dotnet
@@ -30,6 +32,28 @@ const results = request.scenarios.map(scenario => {
       className: scenario.className,
       output: driver.TranslateBase64(scenario.wasmBase64, scenario.className)
     };
+  }
+  if (scenario.operation === 'translate-sources') {
+    return {
+      id: scenario.id,
+      operation: scenario.operation,
+      className: scenario.className,
+      output: driver.TranslateSourcesBase64(scenario.wasmBase64, scenario.className)
+    };
+  }
+  if (scenario.operation === 'translate-sources-stream') {
+    const started = driver.BeginTranslateSourcesBase64(scenario.wasmBase64, scenario.className);
+    if (started !== 'OK') return { id: scenario.id, operation: scenario.operation, output: started };
+    const sources = [];
+    let index = 0;
+    while (true) {
+      const next = driver.NextTranslateSource();
+      if (next === '') break;
+      if (next.startsWith('ERROR:')) return { id: scenario.id, operation: scenario.operation, output: next };
+      sources.push({ Name: index === 0 ? `${scenario.className}.g.cs` : `${scenario.className}.Functions.${String(index - 1).padStart(4, '0')}.g.cs`, Text: next });
+      index++;
+    }
+    return { id: scenario.id, operation: scenario.operation, output: JSON.stringify(sources) };
   }
   throw new Error(`Unknown reference operation: ${scenario.operation}`);
 });

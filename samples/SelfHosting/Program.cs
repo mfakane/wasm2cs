@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices.JavaScript;
 using System.Runtime.Versioning;
+using System.Text.Json;
 using Wasm2Cs;
 
 return 0;
@@ -10,6 +11,8 @@ return 0;
 [SupportedOSPlatform("browser")]
 public static partial class SelfHostingDriver
 {
+    private static IEnumerator<GeneratedSource>? sourceEnumerator;
+
     [JSExport]
     internal static string Hello() => "Hello, World!";
 
@@ -34,6 +37,58 @@ public static partial class SelfHostingDriver
         }
         catch (Exception exception)
         {
+            return $"ERROR: {exception.GetType().FullName}: {exception.Message}";
+        }
+    }
+
+    [JSExport]
+    internal static string TranslateSourcesBase64(string wasmBase64, string className)
+    {
+        try
+        {
+            var sources = Transpiler.TranslateSources(Convert.FromBase64String(wasmBase64), className);
+            return JsonSerializer.Serialize(sources);
+        }
+        catch (Exception exception)
+        {
+            return $"ERROR: {exception.GetType().FullName}: {exception.Message}";
+        }
+    }
+
+    [JSExport]
+    internal static string BeginTranslateSourcesBase64(string wasmBase64, string className)
+    {
+        try
+        {
+            sourceEnumerator?.Dispose();
+            sourceEnumerator = Transpiler.TranslateSourceSequence(Convert.FromBase64String(wasmBase64), className).GetEnumerator();
+            return "OK";
+        }
+        catch (Exception exception)
+        {
+            sourceEnumerator = null;
+            return $"ERROR: {exception.GetType().FullName}: {exception.Message}";
+        }
+    }
+
+    [JSExport]
+    internal static string NextTranslateSource()
+    {
+        try
+        {
+            if (sourceEnumerator is null) return "ERROR: no active source translation";
+            if (!sourceEnumerator.MoveNext())
+            {
+                sourceEnumerator.Dispose();
+                sourceEnumerator = null;
+                return string.Empty;
+            }
+            return sourceEnumerator.Current.Text;
+        }
+        catch (Exception exception)
+        {
+            sourceEnumerator?.Dispose();
+            sourceEnumerator = null;
             return $"ERROR: {exception.GetType().FullName}: {exception.Message}";
         }
     }

@@ -8,7 +8,8 @@ import {
   readFileSync,
   rmSync,
   statSync,
-  writeFileSync
+  writeFileSync,
+  renameSync
 } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
@@ -25,11 +26,13 @@ const profile = JSON.parse(readFileSync(profilePath, 'utf8'));
 const args = process.argv.slice(2);
 const command = args[0];
 
-const help = `Usage: node scripts/self-hosting.mjs <prepare|inventory|reference>
+const help = `Usage: node scripts/self-hosting.mjs <prepare|inventory|reference|generate|compile>
 
 prepare    install/check the isolated workload and publish the guest bundle
 inventory  validate the bundle and record a full WABT inventory
 reference  run the bundle through the official Node.js browser-wasm host
+generate   translate dotnet.native.wasm into deterministic C# source files
+compile    compile the generated C# files against the runtime ABI
 
 prepare flags:
   --skip-workload-install  report a missing workload without attempting install
@@ -53,7 +56,7 @@ function run(program, programArgs, options = {}) {
     cwd: options.cwd ?? root,
     env: options.env ?? process.env,
     encoding: 'utf8',
-    maxBuffer: 128 * 1024 * 1024
+    maxBuffer: 512 * 1024 * 1024
   });
   const output = (result.stdout ?? '') + (result.stderr ?? '');
   if (result.error) {
@@ -454,6 +457,149 @@ function reference() {
   console.log(`Reference passed for Hello World, Arithmetic, Clang, and invalid input; bundle ${manifest.bundleSha256}.`);
 }
 
+function optionValue(name, fallback) {
+  const index = args.indexOf(name);
+  if (index < 0) return fallback;
+  if (index + 1 >= args.length || args[index + 1].startsWith('--'))
+    throw new Error(`${name} requires a value.`);
+  return args[index + 1];
+}
+
+function runtimeEntry(manifest) {
+  const entry = manifest.entries.find(item => item.path === '_framework/dotnet.native.wasm');
+  if (!entry) throw new Error('Bundle does not contain _framework/dotnet.native.wasm.');
+  return entry;
+}
+
+function invokeBundle(request) {
+  const manifest = verifyBundle();
+  const main = join(bundleRoot, 'main.mjs');
+  if (!existsSync(main)) throw new Error('Bundle is missing main.mjs.');
+  const host = tool('node');
+  if (host.version !== `v${profile.node}`) throw new Error(`Node ${profile.node} is required; selected Node is ${host.version ?? 'missing'}.`);
+  const requestPath = join(artifactRoot, `.request-${process.pid}.json`);
+  writeFileSync(requestPath, JSON.stringify(request));
+  try {
+    const result = run(process.execPath, [main], {
+      cwd: bundleRoot,
+      env: { ...process.env, SELF_HOSTING_REQUEST_FILE: requestPath }
+    });
+    return { manifest, response: parseReferenceOutput(result.output), host };
+  } finally {
+    rmSync(requestPath, { force: true });
+  }
+}
+
+function generate() {
+  const failurePath = join(artifactRoot, 'generate-failure.json');
+  try {
+    const manifest = verifyBundle();
+    const entry = runtimeEntry(manifest);
+    const className = optionValue('--class-name', 'DotnetRuntime');
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(className)) throw new Error(`Invalid generated class name '${className}'.`);
+    const wasmPath = join(bundleRoot, ...entry.path.split('/'));
+    const wasm = readFileSync(wasmPath);
+    const started = process.hrtime.bigint();
+    const request = {
+      protocol: 1,
+      scenarios: [{ id: 'runtime', operation: 'translate-sources-stream', className,
+        wasmBase64: wasm.toString('base64'), inputBytes: wasm.length, inputSha256: sha256(wasm) }]
+    };
+    const invoked = invokeBundle(request);
+    const result = invoked.response.results?.find(item => item.id === 'runtime');
+    if (!result || typeof result.output !== 'string') throw new Error('Guest did not return generated sources.');
+    if (result.output.startsWith('ERROR:')) throw new Error(result.output);
+    let sources;
+    try { sources = JSON.parse(result.output); }
+    catch (error) { throw new Error(`Guest returned invalid generated-source JSON: ${error.message}`); }
+    if (!Array.isArray(sources) || sources.length === 0) throw new Error('Guest returned no generated sources.');
+    const staging = join(artifactRoot, `.generated-${process.pid}`);
+    rmSync(staging, { recursive: true, force: true });
+    mkdirSync(staging, { recursive: true });
+    const entries = sources.map((source, index) => {
+      const expected = index === 0 ? `${className}.g.cs` : `${className}.Functions.${String(index - 1).padStart(4, '0')}.g.cs`;
+      if (source.Name !== expected || typeof source.Text !== 'string') throw new Error(`Guest returned an invalid source at index ${index}.`);
+      const bytes = Buffer.from(source.Text, 'utf8');
+      writeFileSync(join(staging, source.Name), bytes);
+      return { path: source.Name, bytes: bytes.length, sha256: sha256(bytes) };
+    });
+    const generated = {
+      schemaVersion: 1,
+      milestone: 'SH-08',
+      bundleSha256: manifest.bundleSha256,
+      input: { path: entry.path, bytes: wasm.length, sha256: sha256(wasm) },
+      className,
+      entries,
+      metrics: { durationMs: Number(process.hrtime.bigint() - started) / 1e6, hostMaxRss: process.resourceUsage().maxRSS }
+    };
+    rmSync(join(artifactRoot, 'generated'), { recursive: true, force: true });
+    renameSync(staging, join(artifactRoot, 'generated'));
+    json(join(artifactRoot, 'generated-manifest.json'), generated);
+    rmSync(failurePath, { force: true });
+    console.log(`Generated ${sources.length} C# source file(s) for ${className}; ${entries.reduce((sum, item) => sum + item.bytes, 0)} bytes.`);
+  } catch (error) {
+    json(failurePath, { schemaVersion: 1, milestone: 'SH-08', status: 'blocked', reason: error instanceof Error ? error.message : String(error) });
+    throw error;
+  }
+}
+
+function generatedManifest() {
+  const manifestPath = join(artifactRoot, 'generated-manifest.json');
+  if (!existsSync(manifestPath)) throw new Error(`Generated sources are missing. Run generate first: ${manifestPath}`);
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  const generatedRoot = join(artifactRoot, 'generated');
+  if (!existsSync(generatedRoot)) throw new Error('Generated source directory is missing.');
+  for (const entry of manifest.entries ?? []) {
+    const path = join(generatedRoot, entry.path);
+    if (!existsSync(path)) throw new Error(`Generated source is missing: ${entry.path}`);
+    const bytes = readFileSync(path);
+    if (bytes.length !== entry.bytes || sha256(bytes) !== entry.sha256)
+      throw new Error(`Generated source changed: ${entry.path}`);
+  }
+  return { manifest, generatedRoot };
+}
+
+function xml(value) {
+  return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+}
+
+function compile() {
+  const failurePath = join(artifactRoot, 'compile-failure.json');
+  try {
+    const { manifest, generatedRoot } = generatedManifest();
+    const directory = mkdtempSync(join(tmpdir(), 'wasm2cs-sh08-compile-'));
+    try {
+      for (const entry of manifest.entries) writeFileSync(join(directory, entry.path), readFileSync(join(generatedRoot, entry.path)));
+      const runtimeProject = join(root, 'src', 'Wasm2Cs.Runtime', 'Wasm2Cs.Runtime.csproj');
+      run('dotnet', ['build', runtimeProject, '--configuration', 'Release', '--framework', 'netstandard2.0', '--nologo']);
+      const runtimeDll = join(root, 'src', 'Wasm2Cs.Runtime', 'bin', 'Release', 'netstandard2.0', 'Wasm2Cs.Runtime.dll');
+      if (!existsSync(runtimeDll)) throw new Error(`Runtime assembly is missing: ${runtimeDll}`);
+      writeFileSync(join(directory, 'Generated.csproj'), `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><LangVersion>9.0</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems><TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <OutputType>Library</OutputType></PropertyGroup>
+  <ItemGroup><Compile Include="*.g.cs" /><Reference Include="Wasm2Cs.Runtime"><HintPath>${xml(runtimeDll)}</HintPath></Reference></ItemGroup>
+</Project>
+`);
+      const started = process.hrtime.bigint();
+      const result = run('dotnet', ['build', join(directory, 'Generated.csproj'), '--configuration', 'Release', '-m:1', '-p:UseSharedCompilation=false', '--nologo']);
+      json(join(artifactRoot, 'compile-results.json'), {
+        schemaVersion: 1, milestone: 'SH-08', bundleSha256: manifest.bundleSha256,
+        className: manifest.className, sourceCount: manifest.entries.length,
+        durationMs: Number(process.hrtime.bigint() - started) / 1e6,
+        output: result.output
+      });
+      rmSync(failurePath, { force: true });
+      console.log(`Compiled ${manifest.entries.length} generated C# source file(s) for ${manifest.className}.`);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  } catch (error) {
+    json(failurePath, { schemaVersion: 1, milestone: 'SH-08', status: 'blocked', reason: error instanceof Error ? error.message : String(error) });
+    throw error;
+  }
+}
+
 function prepare() {
   mkdirSync(environmentRoot, { recursive: true });
   rmSync(bundleRoot, { recursive: true, force: true });
@@ -586,6 +732,10 @@ try {
     inventory();
   } else if (command === 'reference') {
     reference();
+  } else if (command === 'generate') {
+    generate();
+  } else if (command === 'compile') {
+    compile();
   } else {
     console.error(help);
     process.exitCode = 2;

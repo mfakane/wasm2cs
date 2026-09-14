@@ -7,9 +7,7 @@ public static class Transpiler
         => Translate(wasm, className, WasmTargetProfile.PortableNetStandard20);
 
     public static string Translate(byte[] wasm, string className, WasmTargetProfile profile)
-    {
-        return string.Concat(TranslateSources(wasm, className, profile).Select(source => source.Text));
-    }
+        => string.Concat(TranslateSourceSequence(wasm, className, profile).Select(source => source.Text));
 
     public static IReadOnlyList<GeneratedSource> TranslateSources(byte[] wasm, string className)
         => TranslateSources(wasm, className, WasmTargetProfile.PortableNetStandard20, default);
@@ -22,18 +20,21 @@ public static class Transpiler
 
     public static IReadOnlyList<GeneratedSource> TranslateSources(byte[] wasm, string className,
         WasmTargetProfile profile, CancellationToken cancellationToken)
+        => TranslateSourceSequence(wasm, className, profile, cancellationToken).ToArray();
+
+    public static IEnumerable<GeneratedSource> TranslateSourceSequence(byte[] wasm, string className,
+        WasmTargetProfile profile = WasmTargetProfile.PortableNetStandard20, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var module = Decoder.Decode(wasm, cancellationToken);
         Validator.Validate(module, className, cancellationToken);
         var lowering = Lowering.Create(module, profile);
-        var texts = CSharpEmitter.EmitSources(module, className, lowering, cancellationToken);
-        var sources = new List<GeneratedSource>(texts.Count);
-        for (int i = 0; i < texts.Count; i++)
+        int index = 0;
+        foreach (var text in CSharpEmitter.EmitSourceSequence(module, className, lowering, cancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            sources.Add(new GeneratedSource(i == 0 ? $"{className}.g.cs" : $"{className}.Functions.{i - 1:D4}.g.cs", texts[i]));
+            yield return new GeneratedSource(index == 0 ? $"{className}.g.cs" : $"{className}.Functions.{index - 1:D4}.g.cs", text);
+            index++;
         }
-        return sources;
     }
 }

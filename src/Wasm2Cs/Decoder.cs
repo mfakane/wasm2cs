@@ -456,6 +456,11 @@ internal static class Decoder
                 body.RequireEnd();
                 return new Function(signature, locals.ToArray(), instructions);
             }
+            if (opcode == 0x18)
+            {
+                if (depth == 0) throw new WasmException("Delegate is outside a try.");
+                depth--;
+            }
         }
         throw new WasmException("Function body is missing end.");
     }

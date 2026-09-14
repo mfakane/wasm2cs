@@ -43,7 +43,7 @@ node scripts/self-hosting.mjs compile
 
 API と分割生成、各入力経路の統合、実物のコンパイル検証に分ける。終了コミット例: `feat: generate and compile large wasm modules`。
 
-- 実行コマンド・結果: `dotnet build Wasm2Cs.slnx --nologo` と `dotnet tests/Wasm2Cs.Tests/bin/Debug/net10.0/Wasm2Cs.Tests.dll` が成功。`TranslateSources` の deterministic な scaffold／関数 source 分割、partial class の同時コンパイル、Source Generator の複数出力、入力変更時の再分割、事前キャンセルを検証。
+- 実行コマンド・結果: `dotnet build Wasm2Cs.slnx --nologo` と `dotnet tests/Wasm2Cs.Tests/bin/Debug/net10.0/Wasm2Cs.Tests.dll` が成功。`TranslateSources` の deterministic な scaffold／関数 source 分割、partial class の同時コンパイル、Source Generator の複数出力、入力変更時の再分割、事前キャンセルを検証。`dotnet run --project src/Wasm2Cs.Cli -- samples/Smoke/Arithmetic.wasm --class-name DotnetRuntime --output-directory <dir>` で class-name override と複数ファイル出力を確認。`node scripts/self-hosting.mjs prepare --skip-workload-install` と `node scripts/self-hosting.mjs reference` も成功。
 - bundle ハッシュ・生成サイズ・時間・メモリ: 未取得
-- 未解決事項: CLI の出力ディレクトリ、`DotnetRuntime` class-name override、初期化／data／import の分割、self-hosting `generate`／`compile`、実物全体の変換・コンパイル。
+- 未解決事項: self-hosting `generate` は `dotnet.native.wasm` の全体変換中に固定 256 MiB browser-wasm heap が不足して `System.OutOfMemoryException` となった。したがって `compile` は生成 manifest 不在で停止。初期化／data／import の分割、実物全体の変換・コンパイル、生成時のピークメモリ計測が残る。
 - 終了コミット: 未完了

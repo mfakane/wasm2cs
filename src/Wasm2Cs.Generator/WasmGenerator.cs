@@ -46,9 +46,14 @@ public sealed class WasmGenerator : IIncrementalGenerator
                     return;
                 }
                 if (input.Text.StartsWith("!WASM001:", StringComparison.Ordinal)) throw new WasmException(input.Text.Substring(9));
-                string source = Transpiler.Translate(Convert.FromBase64String(input.Text), name,
-                    unity && combined.Right is null ? WasmTargetProfile.UnityMathematics : profile);
-                output.AddSource(name + ".g.cs", SourceText.From(source, Encoding.UTF8));
+                var sources = Transpiler.TranslateSources(Convert.FromBase64String(input.Text), name,
+                    unity && combined.Right is null ? WasmTargetProfile.UnityMathematics : profile,
+                    output.CancellationToken);
+                foreach (var source in sources)
+                {
+                    output.CancellationToken.ThrowIfCancellationRequested();
+                    output.AddSource(source.Name, SourceText.From(source.Text, Encoding.UTF8));
+                }
             }
             catch (Exception e) when (e is WasmException or FormatException)
             {

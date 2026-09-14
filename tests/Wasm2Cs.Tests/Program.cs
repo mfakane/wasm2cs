@@ -16,6 +16,9 @@ var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!).Sp
 CSharpCompilation Compilation(string source) => CSharpCompilation.Create("Test_" + Guid.NewGuid().ToString("N"),
     [CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.CSharp9))], references,
     new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, checkOverflow: true));
+CSharpCompilation CompilationSources(IEnumerable<string> sources) => CSharpCompilation.Create("Test_" + Guid.NewGuid().ToString("N"),
+    [.. sources.Select(source => CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.CSharp9)))], references,
+    new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, checkOverflow: true));
 Assembly Compile(Microsoft.CodeAnalysis.Compilation compilation)
 {
     using var stream = new MemoryStream();
@@ -34,6 +37,19 @@ var portableReferences = Directory.GetFiles(Path.Combine(AppContext.BaseDirector
     .Select(p => MetadataReference.CreateFromFile(p));
 Compile(Compilation(Transpiler.Translate(bytes, "Portable")).WithReferences(portableReferences));
 Console.WriteLine("PASS: Generated C# 9 compiles against .NET Standard 2.0 reference assemblies.");
+var partitioned = Transpiler.TranslateSources(bytes, "Partitioned");
+Assert(partitioned.Count > 1, "Large enough module was not partitioned into multiple sources.");
+Assert(partitioned[0].Name == "Partitioned.g.cs", "Scaffold source name is not stable.");
+Assert(partitioned.Skip(1).Select((source, index) => source.Name == $"Partitioned.Functions.{index:D4}.g.cs").All(value => value), "Function source names are not stable.");
+var repeated = Transpiler.TranslateSources(bytes, "Partitioned");
+Assert(partitioned.Count == repeated.Count && partitioned.Zip(repeated).All(pair => pair.First == pair.Second), "Partitioned output is not deterministic.");
+var partitionedModule = Compile(CompilationSources(partitioned.Select(source => source.Text))).GetType("Wasm2Cs.Generated.Partitioned")!;
+Assert((int)partitionedModule.GetMethod("add")!.Invoke(Activator.CreateInstance(partitionedModule), [20, 22])! == 42, "Partitioned source compilation differs.");
+using var canceled = new CancellationTokenSource();
+canceled.Cancel();
+try { Transpiler.TranslateSources(bytes, "Canceled", WasmTargetProfile.PortableNetStandard20, canceled.Token); throw new Exception("Canceled translation completed."); }
+catch (OperationCanceledException) { }
+Console.WriteLine("PASS: deterministic multi-source generation, partial-class compilation, and cancellation.");
 var calls = new List<Call>();
 int[] boundaries = [0, 1, -1, int.MinValue, int.MaxValue, 65536, -65536];
 foreach (var name in new[] { "add", "sub", "mul" })
@@ -100,6 +116,7 @@ GeneratorDriver driver = CSharpGeneratorDriver.Create([new WasmGenerator().AsSou
     parseOptions: new CSharpParseOptions(LanguageVersion.CSharp9));
 driver = driver.RunGeneratorsAndUpdateCompilation(Compilation(""), out var generated, out var diagnostics);
 Assert(diagnostics.Length == 0, string.Join("\n", diagnostics));
+Assert(generated.SyntaxTrees.Count() - 1 == partitioned.Count, $"Generator did not emit every partitioned source: {generated.SyntaxTrees.Count() - 1} != {partitioned.Count}.");
 var generatedModule = Compile(generated).GetType("Wasm2Cs.Generated.Arithmetic")!;
 Assert((int)generatedModule.GetMethod("add")!.Invoke(Activator.CreateInstance(generatedModule), [20,22])! == 42, "Generator result differs.");
 
@@ -108,6 +125,7 @@ var updated = new Input(input.Path, Convert.ToBase64String(Module([0x41,42,0x0b]
 driver = driver.ReplaceAdditionalText(input, updated);
 driver = driver.RunGeneratorsAndUpdateCompilation(Compilation(""), out generated, out diagnostics);
 Assert(diagnostics.Length == 0, "Updated input failed.");
+Assert(generated.SyntaxTrees.Count() - 1 == 2, "Updated generator output was not repartitioned.");
 generatedModule = Compile(generated).GetType("Wasm2Cs.Generated.Arithmetic")!;
 Assert((int)generatedModule.GetMethod("f")!.Invoke(Activator.CreateInstance(generatedModule), null)! == 42, "Generator retained stale binary.");
 Assert(generatedModule.GetMethod("add") is null, "Old export retained.");
@@ -124,7 +142,7 @@ GeneratorDriver unityDriver = CSharpGeneratorDriver.Create([new WasmGenerator().
 unityDriver = unityDriver.RunGeneratorsAndUpdateCompilation(Compilation("").WithAssemblyName("Wasm2Cs.Modules"), out generated, out diagnostics);
 Assert(diagnostics.Length == 0, "Unity input failed.");
 Compile(generated);
-Assert(unityDriver.GetRunResult().GeneratedTrees.Length == 1, "Unity module was not generated.");
+Assert(unityDriver.GetRunResult().GeneratedTrees.Length == partitioned.Count, "Unity module was not fully generated.");
 unityDriver = unityDriver.RunGenerators(Compilation("").WithAssemblyName("Consumer"));
 Assert(unityDriver.GetRunResult().GeneratedTrees.Length == 0, "Unity module leaked into a referencing assembly.");
 var duplicate = new Input(unityInput.Path, "!WASM002:Duplicate module name: Arithmetic");

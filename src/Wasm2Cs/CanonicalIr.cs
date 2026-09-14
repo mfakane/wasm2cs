@@ -57,14 +57,28 @@ internal sealed record CanonicalModule(
 
 internal static class CanonicalLowering
 {
-    public static CanonicalModule Lower(Module module) => new(
-        module,
-        module.Bodies.Select(LowerFunction).ToArray());
+    public static CanonicalModule Lower(Module module, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var functions = new List<CanonicalFunction>(module.Bodies.Count);
+        foreach (var function in module.Bodies)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            functions.Add(LowerFunction(function, cancellationToken));
+        }
+        return new CanonicalModule(module, functions);
+    }
 
-    private static CanonicalFunction LowerFunction(Function function) => new(
-        function.Signature,
-        function.Locals,
-        function.Instructions.Select(LowerInstruction).ToArray());
+    private static CanonicalFunction LowerFunction(Function function, CancellationToken cancellationToken)
+    {
+        var instructions = new List<CanonicalInstruction>(function.Instructions.Count);
+        foreach (var instruction in function.Instructions)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            instructions.Add(LowerInstruction(instruction));
+        }
+        return new CanonicalFunction(function.Signature, function.Locals, instructions);
+    }
 
     private static CanonicalInstruction LowerInstruction(Instruction instruction)
     {

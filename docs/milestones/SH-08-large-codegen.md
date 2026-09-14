@@ -1,6 +1,6 @@
 # SH-08 巨大モジュールの C# 生成
 
-状態: 未着手。前提: [SH-07](SH-07-exceptions.md)。次: [SH-09](SH-09-host.md)。
+状態: 進行中。前提: [SH-07](SH-07-exceptions.md)。次: [SH-09](SH-09-host.md)。
 
 ## 目的・変更対象
 
@@ -43,7 +43,7 @@ node scripts/self-hosting.mjs compile
 
 API と分割生成、各入力経路の統合、実物のコンパイル検証に分ける。終了コミット例: `feat: generate and compile large wasm modules`。
 
-- 実行コマンド・結果: 未実施
+- 実行コマンド・結果: `dotnet build Wasm2Cs.slnx --nologo` と `dotnet tests/Wasm2Cs.Tests/bin/Debug/net10.0/Wasm2Cs.Tests.dll` が成功。`TranslateSources` の deterministic な scaffold／関数 source 分割、partial class の同時コンパイル、Source Generator の複数出力、入力変更時の再分割、事前キャンセルを検証。
 - bundle ハッシュ・生成サイズ・時間・メモリ: 未取得
-- 未解決事項: 実物の関数／ローカル／初期化規模の調査待ち
+- 未解決事項: CLI の出力ディレクトリ、`DotnetRuntime` class-name override、初期化／data／import の分割、self-hosting `generate`／`compile`、実物全体の変換・コンパイル。
 - 終了コミット: 未完了

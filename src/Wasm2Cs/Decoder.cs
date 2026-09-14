@@ -1,8 +1,9 @@
 namespace Wasm2Cs;
 internal static class Decoder
 {
-    public static Module Decode(byte[] wasm)
+    public static Module Decode(byte[] wasm, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var reader = new Reader(wasm);
         foreach (var expected in new byte[] { 0, 97, 115, 109, 1, 0, 0, 0 })
             if (reader.Byte() != expected) throw new WasmException("Invalid WASM magic or version.");
@@ -16,6 +17,7 @@ internal static class Decoder
         int previousOrder = 0;
         while (!reader.End)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var id = reader.Byte();
             var section = reader.Slice(reader.Count());
             if (id == 0)
@@ -31,6 +33,7 @@ internal static class Decoder
                 case 1:
                     for (int i = 0, count = section.Count(); i < count; i++)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         if (section.Byte() != 0x60) throw new WasmException("Only function types are supported.");
                         types.Add(new(section.ValueTypes(), section.ValueTypes()));
                     }
@@ -38,6 +41,7 @@ internal static class Decoder
                 case 2:
                     for (int i = 0, count = section.Count(); i < count; i++)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         string importModule = section.Name(), importName = section.Name();
                         byte kind = section.Byte();
                         switch (kind)
@@ -80,15 +84,22 @@ internal static class Decoder
                     break;
                 case 3:
                     for (int i = 0, count = section.Count(); i < count; i++)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
                         functions.Add(section.Count());
+                    }
                     break;
                 case 4:
                     for (int i = 0, count = section.Count(); i < count; i++)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
                         module.Tables.Add(Table(null, null, section));
+                    }
                     break;
                 case 7:
                     for (int i = 0, count = section.Count(); i < count; i++)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         string name = section.Name();
                         byte kind = section.Byte();
                         if (kind != 0 && kind != 1 && kind != 2 && kind != 3 && kind != 4) throw new WasmException("Unsupported export kind.");
@@ -108,6 +119,7 @@ internal static class Decoder
                 case 6:
                     for(int i=0,count=section.Count();i<count;i++)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         var globalType = section.ValueType();
                         byte mutable = section.Byte();
                         if (mutable > 1) throw new WasmException("Invalid global mutability.");
@@ -117,6 +129,7 @@ internal static class Decoder
                 case 13:
                     for (int i = 0, count = section.Count(); i < count; i++)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         if (section.Byte() != 0) throw new WasmException("Unsupported tag attribute.");
                         int tagType = section.Count();
                         if (tagType >= types.Count) throw new WasmException("Invalid tag type index.");
@@ -126,16 +139,23 @@ internal static class Decoder
                 case 8: module.Start = section.Count(); break;
                 case 9:
                     for (int i = 0, count = section.Count(); i < count; i++)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
                         module.Elements.Add(Element(section, module));
+                    }
                     break;
                 case 12: module.DataCount = section.Count(); break;
                 case 10:
                     for (int i = 0, count = section.Count(); i < count; i++)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
                         bodies.Add(section.Slice(section.Count()));
+                    }
                     break;
                 case 11:
                     for(int i=0,count=section.Count();i<count;i++)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         int flags = section.Count();
                         if (flags != 0 && flags != 1 && flags != 2) throw new WasmException("Invalid data segment flags.");
                         if (flags != 1 && module.Memory == null) throw new WasmException("Active data segments require memory.");
@@ -160,7 +180,8 @@ internal static class Decoder
         for (int i = 0; i < functions.Count; i++)
         {
             if (functions[i] >= types.Count) throw new WasmException("Invalid function type index.");
-            try { decoded.Add(DecodeBody(bodies[i], types[functions[i]], types)); }
+            cancellationToken.ThrowIfCancellationRequested();
+            try { decoded.Add(DecodeBody(bodies[i], types[functions[i]], types, cancellationToken)); }
             catch (WasmException e) { throw new WasmException($"Function {i}: {e.Message}"); }
         }
         return module;
@@ -323,11 +344,13 @@ internal static class Decoder
         return value;
     }
 
-    private static Function DecodeBody(Reader body, Signature signature, List<Signature> types)
+    private static Function DecodeBody(Reader body, Signature signature, List<Signature> types,
+        CancellationToken cancellationToken)
     {
         var locals = new List<ValueType>(signature.Parameters);
         for (int i = 0, groups = body.Count(); i < groups; i++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             int count = body.Count();
             var type = body.ValueType();
             if ((long)locals.Count + count > 100_000) throw new WasmException("Too many locals (limit: 100000).");
@@ -337,6 +360,7 @@ internal static class Decoder
         int depth = 0;
         while (!body.End)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             int offset = body.Offset;
             byte opcode = body.Byte();
             int operand;

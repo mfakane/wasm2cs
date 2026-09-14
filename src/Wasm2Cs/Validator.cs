@@ -1,12 +1,14 @@
 namespace Wasm2Cs;
 internal static class Validator
 {
-    public static void Validate(Module module, string className)
+    public static void Validate(Module module, string className, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (!IsIdentifier(className)) throw new WasmException("The WASM filename must be an ASCII C# identifier.");
         if (Reserved(className)) throw new WasmException("Module name conflicts with generated support members.");
         foreach (var export in module.Exports)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (!IsIdentifier(export.Key) || export.Key == className || Reserved(export.Key))
                 throw new WasmException($"Export '{export.Key}' cannot be represented as a C# method name.");
             byte kind = module.ExportKinds[export.Key];
@@ -18,6 +20,7 @@ internal static class Validator
         }
         foreach (var table in module.Tables)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (table.Minimum < 0 || table.Maximum.HasValue && (table.Maximum.Value < table.Minimum))
                 throw new WasmException("Invalid table limits.");
             if (table.ElementType != ValueType.FuncRef && table.ElementType != ValueType.ExternRef)
@@ -25,15 +28,18 @@ internal static class Validator
         }
         foreach (var tag in module.Tags)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (tag.Signature.Results.Length != 0)
                 throw new WasmException("Tag types must not have results.");
         }
         foreach (var element in module.Elements)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (element.ElementType != ValueType.FuncRef && element.ElementType != ValueType.ExternRef)
                 throw new WasmException("Unsupported element type.");
             foreach (var value in element.Values)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (value.Type != element.ElementType) throw new WasmException("Element expression type mismatch.");
                 if (value.FunctionIndex.HasValue && (value.Type != ValueType.FuncRef ||
                     value.FunctionIndex.Value < 0 || value.FunctionIndex.Value >= module.FunctionCount))
@@ -56,6 +62,7 @@ internal static class Validator
             (module.FunctionSignature(module.Start.Value).Parameters.Length != 0 || module.FunctionSignature(module.Start.Value).Results.Length != 0))) throw new WasmException("Invalid start function.");
         foreach (var global in module.Globals)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (global.Type == ValueType.V128)
                 throw new WasmException("v128 globals are not supported by the current host boundary.");
             if (global.Imported)
@@ -73,12 +80,19 @@ internal static class Validator
             }
         }
         foreach (var data in module.Data)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
             if (data.OffsetExpression != null && data.OffsetExpression.Type != ValueType.I32)
                 throw new WasmException("Data offset must have type i32.");
+        }
         bool requiresDataCount = module.Bodies.Any(f => f.Instructions.Any(i => i.Opcode == 0xfc && (i.Operand == 8 || i.Operand == 9)));
         if (requiresDataCount && !module.DataCount.HasValue)
             throw new WasmException("Bulk data instructions require a data count section.");
-        for (int i = 0; i < module.Bodies.Count; i++) ValidateBody(module, module.Bodies[i], i);
+        for (int i = 0; i < module.Bodies.Count; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ValidateBody(module, module.Bodies[i], i, cancellationToken);
+        }
     }
     private sealed class Control(byte opcode, int height, Signature signature)
     {
@@ -88,12 +102,13 @@ internal static class Validator
         public bool Unreachable, ElseSeen, CatchSeen, CatchAllSeen;
         public ValueType[] LabelTypes => Opcode == 0x03 ? Signature.Parameters : Signature.Results;
     }
-    private static void ValidateBody(Module module, Function function, int index)
+    private static void ValidateBody(Module module, Function function, int index, CancellationToken cancellationToken)
     {
         var stack = new List<ValueType?>();
         var controls = new List<Control> { new Control(0xff, 0, function.Signature) };
         foreach (var instruction in function.Instructions)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             void Fail(string message) => throw new WasmException($"Function {index}, offset 0x{instruction.Offset:x}: {message}");
             var current = controls[controls.Count-1];
             var produced = new List<ValueType?>();

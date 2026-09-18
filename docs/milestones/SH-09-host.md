@@ -45,4 +45,4 @@ import 対応表とバインド、基本入出力、runtime 固有支援と ABI 
 - bundle ハッシュ・runtime WASM ハッシュ: bundle `01edf9ec336605992764326157649e4e6f555e91243f52aa1801a859c9471523`、runtime `d531922c75237648c1f643077c13ba0da8f9583ecfa3304476ab196984c3efe4`。
 - ABI 対応表・比較ログ: [SH-09-imports.json](../self-hosting/SH-09-imports.json)。74 import を型付きで分類し、fixture 必須の3件を実装、未使用の71件は名前付き reject とした。`HostAbi.wat`（235 bytes、SHA-256 `7bf62f5ae938f562801e3918b4d7c0c213196424a7d0cbdffe2c157d5f27e460`）を Node.js 参照実行と C# ホストで比較し、時刻 `1234.5`、乱数 `[1,2,3,4]`、grow 後の乱数、stdout `host`、write 数4が一致した。生成 runtime 全体（12,374 source）の構築にも成功したが、Mono 起動は SH-10 の対象外である。
 - 未解決事項: Mono 起動に必要な import の実装は SH-10 で続ける。SH-09 の JavaScript は参照実行専用で、C# ホスト経路では使用しない。
-- 終了コミット: 未コミット
+- 終了コミット: `555cf67` (`feat: implement dotnet wasm host services`)

@@ -28,13 +28,14 @@ const profile = JSON.parse(readFileSync(profilePath, 'utf8'));
 const args = process.argv.slice(2);
 const command = args[0];
 
-const help = `Usage: node scripts/self-hosting.mjs <prepare|inventory|reference|generate|compile>
+const help = `Usage: node scripts/self-hosting.mjs <prepare|inventory|reference|generate|compile|host>
 
 prepare    install/check the isolated workload and publish the guest bundle
 inventory  validate the bundle and record a full WABT inventory
 reference  run the bundle through the official Node.js browser-wasm host
 generate   translate dotnet.native.wasm into deterministic C# source files
 compile    compile the generated C# files against the runtime ABI
+host       run the C# SH-09 ABI fixture and construct the full generated runtime
 
 prepare flags:
   --skip-workload-install  report a missing workload without attempting install
@@ -484,7 +485,267 @@ function reference() {
   };
   json(join(artifactRoot, 'reference-results.json'), record);
   writeFileSync(join(artifactRoot, 'reference.log'), result.output);
+  abiReference();
   console.log(`Reference passed for Hello World, Arithmetic, Clang, and invalid input; bundle ${manifest.bundleSha256}.`);
+}
+
+function loadSh09Contract(manifest) {
+  const contractPath = join(root, 'docs', 'self-hosting', 'SH-09-imports.json');
+  if (!existsSync(contractPath)) throw new Error(`SH-09 import contract is missing: ${contractPath}`);
+  const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
+  const runtime = runtimeEntry(manifest);
+  const runtimePath = join(bundleRoot, ...runtime.path.split('/'));
+  if (runtime.path !== contract.runtimePath) throw new Error(`SH-09 contract targets ${contract.runtimePath}, not ${runtime.path}.`);
+  const runtimeSha256 = sha256File(runtimePath);
+  if (runtimeSha256 !== contract.runtimeSha256)
+    throw new Error(`SH-09 runtime hash differs: contract ${contract.runtimeSha256}, bundle ${runtimeSha256}.`);
+  const inventoryPath = join(artifactRoot, 'inventory.json');
+  if (!existsSync(inventoryPath)) throw new Error(`Runtime inventory is missing. Run inventory first: ${inventoryPath}`);
+  const inventory = JSON.parse(readFileSync(inventoryPath, 'utf8'));
+  const moduleInventory = inventory.wasm?.find(item => item.path === runtime.path);
+  if (!moduleInventory) throw new Error(`Inventory does not contain ${runtime.path}.`);
+  const supported = new Map((contract.supportedImports ?? []).map(item => [`${item.module}\0${item.name}`, item]));
+  if (contract.defaultDisposition !== 'reject') throw new Error('SH-09 contract must use reject as its default disposition.');
+  const inventoryKeys = new Set();
+  const imports = moduleInventory.imports.map((entry, index) => {
+    const match = /^func\[(\d+)\] sig=(\d+) <(.+)> <- (.+)$/.exec(entry);
+    if (!match) throw new Error(`Cannot parse runtime import ${index}: ${entry}`);
+    const separator = match[3].lastIndexOf('.');
+    if (separator <= 0) throw new Error(`Cannot split runtime import ${index}: ${entry}`);
+    const module = match[3].slice(0, separator);
+    const name = match[3].slice(separator + 1);
+    inventoryKeys.add(`${module}\0${name}`);
+    const item = supported.get(`${module}\0${name}`);
+    if (item && Number(item.signatureId) !== Number(match[2]))
+      throw new Error(`SH-09 signature mismatch for ${module}.${name}: contract ${item.signatureId}, inventory ${match[2]}.`);
+    return { index: Number(match[1]), signatureId: Number(match[2]), module, name,
+      disposition: item ? 'supported' : contract.defaultDisposition, scenario: item?.scenario ?? null };
+  });
+  if (imports.some(item => item.disposition !== 'supported' && item.disposition !== 'reject'))
+    throw new Error('SH-09 import contract contains an unknown disposition.');
+  for (const key of supported.keys()) if (!inventoryKeys.has(key))
+    throw new Error(`SH-09 contract contains an import absent from the runtime inventory: ${key.replace('\0', '.')}`);
+  if (contract.bundleSha256 && contract.bundleSha256 !== manifest.bundleSha256)
+    throw new Error(`SH-09 bundle hash differs: contract ${contract.bundleSha256}, bundle ${manifest.bundleSha256}.`);
+  return { contract, imports, bundleSha256: manifest.bundleSha256, runtimeSha256 };
+}
+
+function hostAbiWasm() {
+  const output = join(artifactRoot, 'host-abi.wasm');
+  const wat = join(root, 'samples', 'SelfHosting', 'HostAbi.wat');
+  const wat2wasm = savedWabtTool('wat2wasm') ?? commandPath('wat2wasm');
+  if (!wat2wasm) throw new Error('Pinned wat2wasm is required for the SH-09 fixture.');
+  run(wat2wasm, [wat, '-o', output]);
+  return output;
+}
+
+function readU32(bytes, offset) {
+  return (bytes[offset] | bytes[offset + 1] << 8 | bytes[offset + 2] << 16 | bytes[offset + 3] << 24) >>> 0;
+}
+
+function writeU32(bytes, offset, value) {
+  bytes[offset] = value & 0xff;
+  bytes[offset + 1] = (value >>> 8) & 0xff;
+  bytes[offset + 2] = (value >>> 16) & 0xff;
+  bytes[offset + 3] = (value >>> 24) & 0xff;
+}
+
+function abiReference() {
+  const fixture = hostAbiWasm();
+  const bytes = readFileSync(fixture);
+  let instance;
+  const output = [];
+  const imports = {
+    env: {
+      emscripten_get_now: () => 1234.5,
+      mono_wasm_browser_entropy: (address, length) => {
+        const memory = new Uint8Array(instance.exports.memory.buffer);
+        for (let i = 0; i < length; i++) memory[address + i] = i + 1;
+        return 0;
+      }
+    },
+    wasi_snapshot_preview1: {
+      fd_write: (fd, iovs, count, result) => {
+        const memory = new Uint8Array(instance.exports.memory.buffer);
+        let written = 0;
+        for (let i = 0; i < count; i++) {
+          const vector = iovs + i * 8;
+          const address = readU32(memory, vector);
+          const length = readU32(memory, vector + 4);
+          output.push(...memory.slice(address, address + length));
+          written += length;
+        }
+        writeU32(memory, result, written);
+        return 0;
+      }
+    }
+  };
+  instance = new WebAssembly.Instance(new WebAssembly.Module(bytes), imports);
+  const status = instance.exports.run();
+  const memory = new Uint8Array(instance.exports.memory.buffer);
+  const record = {
+    schemaVersion: 1,
+    milestone: 'SH-09',
+    fixture: { path: 'samples/SelfHosting/HostAbi.wat', bytes: bytes.length, sha256: sha256(bytes) },
+    results: {
+      status,
+      nowMs: instance.exports.now_ms(),
+      entropy: Array.from(memory.slice(32, 36)),
+      grownEntropy: Array.from(memory.slice(65536, 65540)),
+      stdout: Buffer.from(output).toString('utf8'),
+      written: readU32(memory, 12)
+    }
+  };
+  json(join(artifactRoot, 'host-reference.json'), record);
+  return record;
+}
+
+function csharpIdentifier(module, name) {
+  const candidate = `import_${module}_${name}`;
+  if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(candidate) && !candidate.startsWith('__wasm_')) return candidate;
+  return `wasm_export_${Buffer.from(candidate, 'utf8').toString('hex')}`;
+}
+
+function hostRunnerSource() {
+  const now = csharpIdentifier('env', 'emscripten_get_now');
+  const entropy = csharpIdentifier('env', 'mono_wasm_browser_entropy');
+  const write = csharpIdentifier('wasi_snapshot_preview1', 'fd_write');
+  return `using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Text.Json;
+using Wasm2Cs;
+using Wasm2Cs.DotnetHost;
+using Wasm2Cs.Generated;
+
+var stdout = new List<byte>();
+var environment = new HostEnvironment(
+    wallClock: () => DateTimeOffset.FromUnixTimeMilliseconds(1234),
+    entropy: bytes => { for (int i = 0; i < bytes.Length; i++) bytes[i] = (byte)(i + 1); },
+    stdout: bytes => stdout.AddRange(bytes));
+WasmMemory? attachedMemory = null;
+WasmMemory RequireMemory() => attachedMemory ?? throw new InvalidOperationException("WASM memory was not attached.");
+var bindings = new HostAbi.Bindings
+{
+    ${now} = () => environment.WallClock().ToUnixTimeMilliseconds() + 0.5,
+    ${entropy} = (address, length) =>
+    {
+        var memory = RequireMemory();
+        var bytes = new byte[length];
+        environment.Entropy(bytes);
+        memory.WriteMemory(unchecked((uint)address), bytes);
+        return 0;
+    },
+    ${write} = (fd, iovs, count, result) =>
+    {
+        var memory = RequireMemory();
+        var bytes = new byte[1024];
+        var length = HostEnvironment.ReadIovecs(memory, unchecked((uint)iovs), count, bytes);
+        var written = environment.Write(fd, bytes, 0, length);
+        HostEnvironment.WriteUInt32(memory, unchecked((uint)result), unchecked((uint)written));
+        return 0;
+    }
+};
+var module = new HostAbi(bindings);
+attachedMemory = module.memory;
+var status = module.run();
+var memory = RequireMemory();
+var actual = new
+{
+    status,
+    nowMs = module.now_ms(),
+    entropy = memory.ReadMemory(32, 4).Select(value => (int)value).ToArray(),
+    grownEntropy = memory.ReadMemory(65536, 4).Select(value => (int)value).ToArray(),
+    stdout = Encoding.UTF8.GetString(stdout.ToArray()),
+    written = (int)HostEnvironment.ReadUInt32(memory, 12)
+};
+var fullRuntime = new DotnetRuntime(new DotnetRuntime.Bindings());
+_ = fullRuntime.memory;
+_ = fullRuntime.__indirect_function_table;
+Console.WriteLine("HOST_ABI_RESULT:" + JsonSerializer.Serialize(actual));
+`;
+}
+
+function host() {
+  const failurePath = join(artifactRoot, 'host-failure.json');
+  try {
+    const manifest = verifyBundle();
+    const sh09 = loadSh09Contract(manifest);
+    for (const [module, name] of [
+      ['env', 'emscripten_get_now'],
+      ['env', 'mono_wasm_browser_entropy'],
+      ['wasi_snapshot_preview1', 'fd_write']
+    ]) {
+      const item = sh09.imports.find(value => value.module === module && value.name === name);
+      if (item?.disposition !== 'supported') throw new Error(`SH-09 runner requires supported import ${module}.${name}.`);
+    }
+    const referencePath = join(artifactRoot, 'host-reference.json');
+    if (!existsSync(referencePath)) throw new Error(`SH-09 reference result is missing. Run reference first: ${referencePath}`);
+    const reference = JSON.parse(readFileSync(referencePath, 'utf8'));
+    const fixture = hostAbiWasm();
+    if (reference.fixture?.sha256 !== sha256File(fixture)) throw new Error('SH-09 fixture differs from its reference result.');
+    const directory = mkdtempSync(join(tmpdir(), 'wasm2cs-sh09-host-'));
+    try {
+      const cliProject = join(root, 'src', 'Wasm2Cs.Cli', 'Wasm2Cs.Cli.csproj');
+      run('dotnet', ['build', cliProject, '--configuration', 'Release', '-m:1', '-p:UseSharedCompilation=false', '--nologo']);
+      const cli = join(root, 'src', 'Wasm2Cs.Cli', 'bin', 'Release', 'net10.0', 'Wasm2Cs.Cli.dll');
+      const fixtureSources = join(directory, 'fixture');
+      mkdirSync(fixtureSources, { recursive: true });
+      run('dotnet', [cli, fixture, '--class-name', 'HostAbi', '--output-directory', fixtureSources, '--target-profile', 'portable-netstandard2.0']);
+      const generated = generatedManifest();
+      for (const entry of generated.manifest.entries)
+        writeFileSync(join(directory, entry.path), readFileSync(join(generated.generatedRoot, entry.path)));
+      if (generated.manifest.bundleSha256 !== sh09.bundleSha256 || generated.manifest.input?.sha256 !== sh09.runtimeSha256)
+        throw new Error('Generated sources do not match the verified SH-09 runtime bundle.');
+      for (const path of walkFiles(fixtureSources))
+        writeFileSync(join(directory, `HostAbi.${path.split(/[\\/]/).pop()}`), readFileSync(path));
+      writeFileSync(join(directory, 'Program.cs'), hostRunnerSource());
+      writeFileSync(join(directory, 'Host.csproj'), `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="*.g.cs" />
+    <Compile Include="Program.cs" />
+    <ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.Runtime', 'Wasm2Cs.Runtime.csproj'))}" />
+    <ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.DotnetHost', 'Wasm2Cs.DotnetHost.csproj'))}" />
+  </ItemGroup>
+</Project>
+`);
+      const build = run('dotnet', ['run', '--project', join(directory, 'Host.csproj'), '--configuration', 'Release', '-p:UseSharedCompilation=false', '--nologo']);
+      const line = build.output.trim().split(/\r?\n/).reverse().find(value => value.startsWith('HOST_ABI_RESULT:'));
+      if (!line) throw new Error(`Host runner did not emit HOST_ABI_RESULT.\n${build.output}`);
+      const actual = JSON.parse(line.slice('HOST_ABI_RESULT:'.length));
+      const expected = reference.results;
+      if (JSON.stringify(actual) !== JSON.stringify(expected))
+        throw new Error(`SH-09 ABI result differs.\nExpected: ${JSON.stringify(expected)}\nActual: ${JSON.stringify(actual)}`);
+      const record = {
+        schemaVersion: 1,
+        milestone: 'SH-09',
+        bundleSha256: sh09.bundleSha256,
+        runtimeSha256: sh09.runtimeSha256,
+        fixture: reference.fixture,
+        imports: sh09.imports,
+        results: actual,
+        fullRuntime: { constructed: true, monoStarted: false }
+      };
+      json(join(artifactRoot, 'host-results.json'), record);
+      rmSync(failurePath, { force: true });
+      console.log(`SH-09 host passed: ${sh09.imports.length} imports classified, ABI fixture matched, full runtime constructed.`);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  } catch (error) {
+    json(failurePath, { schemaVersion: 1, milestone: 'SH-09', status: 'blocked', reason: error instanceof Error ? error.message : String(error) });
+    throw error;
+  }
 }
 
 function optionValue(name, fallback) {
@@ -768,6 +1029,8 @@ try {
     generate();
   } else if (command === 'compile') {
     compile();
+  } else if (command === 'host') {
+    host();
   } else {
     console.error(help);
     process.exitCode = 2;

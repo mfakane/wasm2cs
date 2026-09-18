@@ -40,7 +40,7 @@ Jiterpreter は IL 解釈を補助する動的 WASM コンパイラーである�
 
 ## 現在の実装との差分
 
-基準点 `5d0de8d` は i32、直接呼び出し、単一の所有 memory、所有 global、active data、型付き関数 import に対応する。現在の SH-06 実装では、memory/global の import、共有オブジェクト、passive data と bulk memory 命令、imported immutable global を使う初期化式に加え、table／element、参照型命令、構造的な署名比較による間接呼び出しまで拡張している。関数署名は引数と結果の個数を持ち、検証スタックは主に高さを追跡する。生成処理はモジュール全体を一つの C# テキストにまとめる。
+基準点 `5d0de8d` は i32、直接呼び出し、単一の所有 memory、所有 global、active data、型付き関数 import に対応する。SH-09 着手時点では、memory/global の import、共有オブジェクト、passive data と bulk memory 命令、imported immutable global を使う初期化式に加え、table／element、参照型命令、構造的な署名比較による間接呼び出しまで実装済みである。関数署名は引数と結果の個数を持ち、検証スタックは主に高さを追跡する。生成処理は複数 source と型付き import `Bindings` を返す。
 
 自己実行に必要な命令と ABI の全体は未調査である。SH-01 で、全関数の命令・即値・型、セクション、import/export、table、memory、data、起動順序、managed 依存関係を取得する。現在の限定された Decoder が最初の未対応命令で失敗する結果を、完全な一覧として扱わない。
 

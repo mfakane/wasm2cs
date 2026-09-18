@@ -3,6 +3,21 @@ using System.Linq;
 
 namespace Wasm2Cs;
 
+public sealed class WasmImportException : Exception
+{
+    public string ModuleName { get; }
+    public string ImportName { get; }
+    public object[] Arguments { get; }
+
+    public WasmImportException(string moduleName, string importName, object[] arguments)
+        : base($"WASM import '{moduleName}.{importName}' is not implemented. Arguments: [{string.Join(", ", (arguments ?? Array.Empty<object>()).Select(value => value?.ToString() ?? "null"))}]")
+    {
+        ModuleName = moduleName ?? throw new ArgumentNullException(nameof(moduleName));
+        ImportName = importName ?? throw new ArgumentNullException(nameof(importName));
+        Arguments = arguments ?? throw new ArgumentNullException(nameof(arguments));
+    }
+}
+
 // Public objects used by generated modules when a memory, table, or global crosses a
 // module/host boundary. The backing storage is deliberately private so a grow
 // can replace it without leaving callers with a stale array.

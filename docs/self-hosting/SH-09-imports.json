@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "milestone": "SH-09",
+  "runtimePath": "_framework/dotnet.native.wasm",
+  "runtimeSha256": "d531922c75237648c1f643077c13ba0da8f9583ecfa3304476ab196984c3efe4",
+  "bundleSha256Source": "artifacts/self-hosting/bundle-manifest.json",
+  "defaultDisposition": "reject",
+  "supportedImports": [
+    {
+      "module": "env",
+      "name": "emscripten_get_now",
+      "signatureId": 38,
+      "scenario": "controlled wall-clock milliseconds"
+    },
+    {
+      "module": "env",
+      "name": "mono_wasm_browser_entropy",
+      "signatureId": 1,
+      "scenario": "controlled entropy buffer"
+    },
+    {
+      "module": "wasi_snapshot_preview1",
+      "name": "fd_write",
+      "signatureId": 6,
+      "scenario": "stdout iovec write"
+    }
+  ],
+  "notes": [
+    "Every import in the pinned runtime inventory is covered: listed entries are supported for SH-09 fixtures and all omitted entries are explicit rejects.",
+    "The JavaScript files in the bundle are reference-only; the C# host path does not execute a WASM or JavaScript engine.",
+    "This is the SH-09 ABI surface, not a claim that Mono startup imports are already implemented; startup is SH-10."
+  ]
+}

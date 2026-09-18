@@ -71,10 +71,36 @@ internal static class CSharpEmitter
             source.Append($"    // Import {i}: module/name UTF-8 base64 {Convert.ToBase64String(Encoding.UTF8.GetBytes(module.Imports[i].ModuleName))}/{Convert.ToBase64String(Encoding.UTF8.GetBytes(module.Imports[i].Name))}\n");
             source.Append($"    public delegate {BoundaryResultType(signature.Results, false, lowering)} __wasm_Import{i}({BoundaryParameters(signature.Parameters, false, lowering)});\n");
             if (floatImports) source.Append($"    public delegate {BoundaryResultType(signature.Results, true, lowering)} __wasm_BitsImport{i}({BoundaryParameters(signature.Parameters, true, lowering)});\n");
-            source.Append($"    private readonly __wasm_{(floatImports ? "BitsImport" : "Import")}{i} __wasm_host{i};\n");
+            source.Append($"    private __wasm_{(floatImports ? "BitsImport" : "Import")}{i} __wasm_host{i};\n");
             string call = $"__wasm_host{i}({string.Join(", ",signature.Parameters.Select((t,p) => ToBoundary($"v{p}", t, floatImports)))})";
-            source.Append($"    private {ResultType(signature.Results, lowering)} __wasm_F{i}({parameters}) {{ {ReturnBoundary(call, signature.Results, true, floatImports)} }}\n");
+            source.Append($"    private {ResultType(signature.Results, lowering)} __wasm_F{i}({parameters}) {{ if (__wasm_host{i} == null) throw new global::Wasm2Cs.WasmImportException(\"")
+                .Append(EscapeString(module.Imports[i].ModuleName)).Append("\", \"")
+                .Append(EscapeString(module.Imports[i].Name)).Append("\", new object[] { ")
+                .Append(string.Join(", ", signature.Parameters.Select((_, p) => $"v{p}")))
+                .Append(" }); ").Append(ReturnBoundary(call, signature.Results, true, floatImports)).Append(" }\n");
         }
+        var bindingNames = BindingMemberNames(module);
+        source.Append("    public sealed class Bindings\n    {\n");
+        for (int i=0;i<module.ImportBindings.Count;i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var binding = module.ImportBindings[i];
+            string member = bindingNames[i];
+            source.Append("        // Import UTF-8 base64 ")
+                .Append(Convert.ToBase64String(Encoding.UTF8.GetBytes(binding.ModuleName))).Append('/')
+                .Append(Convert.ToBase64String(Encoding.UTF8.GetBytes(binding.Name))).Append("\n");
+            if (binding.Kind == 0)
+                source.Append($"        public __wasm_Import{binding.Index} {member} {{ get; set; }}\n");
+            else if (binding.Kind == 1)
+                source.Append($"        public global::Wasm2Cs.WasmTable {member} {{ get; set; }}\n");
+            else if (binding.Kind == 2)
+                source.Append($"        public global::Wasm2Cs.WasmMemory {member} {{ get; set; }}\n");
+            else if (binding.Kind == 3)
+                source.Append($"        public global::Wasm2Cs.WasmGlobal {member} {{ get; set; }}\n");
+            else if (binding.Kind == 4)
+                source.Append($"        public global::Wasm2Cs.WasmTag {member} {{ get; set; }}\n");
+        }
+        source.Append("    }\n");
         for (int e=0;e<module.Elements.Count;e++)
             if (module.Elements[e].Passive || (!module.Elements[e].Declarative && module.Elements[e].Values.Length > InitializationElementChunkSize))
                 source.Append($"    private object[] __wasm_E{e};\n");
@@ -116,6 +142,49 @@ internal static class CSharpEmitter
             {
                 var tag = module.Tags[binding.Index];
                 source.Append($"        __wasm_tag{binding.Index} = {parameter} ?? throw new global::System.ArgumentNullException(\"{parameter}\");\n");
+                source.Append($"        __wasm_tag{binding.Index}.Validate({TagParameterTypes(tag.Signature)});\n");
+            }
+        }
+        source.Append("        __wasm_Initialize();\n    }\n");
+        source.Append($"    public @{className}(Bindings bindings)\n    {{\n        if (bindings == null) throw new global::System.ArgumentNullException(\"bindings\");\n");
+        for (int i=0;i<module.Imports.Count;i++)
+        {
+            var bindingIndex = module.ImportBindings.FindIndex(binding => binding.Kind == 0 && binding.Index == i);
+            string parameter = $"bindings.{bindingNames[bindingIndex]}";
+            if (!floatImports) source.Append($"        __wasm_host{i} = {parameter};\n");
+            else
+            {
+                var signature = module.FunctionSignature(i);
+                string call = $"{parameter}({string.Join(", ", signature.Parameters.Select((t,p) => ToBoundary(FromBoundary($"v{p}", t, true), t, false)))})";
+                string returned = ReturnConverted(call, signature.Results, (value,t) => ToBoundary(FromBoundary(value,t,false),t,true));
+                source.Append($"        if ({parameter} != null) __wasm_host{i} = ({string.Join(", ",Enumerable.Range(0,signature.Parameters.Length).Select(p=>$"v{p}"))}) => {{ {returned} }};\n");
+            }
+        }
+        foreach (var binding in module.ImportBindings)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            string parameter = $"bindings.{bindingNames[module.ImportBindings.IndexOf(binding)]}";
+            if (binding.Kind == 2)
+            {
+                source.Append($"        __wasm_memory = {parameter} ?? throw new global::System.ArgumentNullException(\"{binding.Name}\");\n");
+                source.Append($"        __wasm_memory.ValidateImport({module.Memory!.Minimum}, {NullableInt(module.Memory.Maximum)});\n");
+            }
+            else if (binding.Kind == 3)
+            {
+                var global = module.Globals[binding.Index];
+                source.Append($"        __wasm_import_global{binding.Index} = {parameter} ?? throw new global::System.ArgumentNullException(\"{binding.Name}\");\n");
+                source.Append($"        __wasm_import_global{binding.Index}.Validate({WasmTypeName(global.Type)}, {(global.Mutable ? "true" : "false")});\n");
+            }
+            else if (binding.Kind == 1)
+            {
+                var table = module.Tables[binding.Index];
+                source.Append($"        __wasm_table{binding.Index} = {parameter} ?? throw new global::System.ArgumentNullException(\"{binding.Name}\");\n");
+                source.Append($"        __wasm_table{binding.Index}.ValidateImport({WasmTypeName(table.ElementType)}, {table.Minimum}, {NullableInt(table.Maximum)});\n");
+            }
+            else if (binding.Kind == 4)
+            {
+                var tag = module.Tags[binding.Index];
+                source.Append($"        __wasm_tag{binding.Index} = {parameter} ?? throw new global::System.ArgumentNullException(\"{binding.Name}\");\n");
                 source.Append($"        __wasm_tag{binding.Index}.Validate({TagParameterTypes(tag.Signature)});\n");
             }
         }
@@ -487,6 +556,27 @@ internal static class CSharpEmitter
         4 => $"tag{binding.Index}",
         _ => throw new WasmException("Unsupported import kind.")
     };
+    private static string[] BindingMemberNames(Module module)
+    {
+        var names = new string[module.ImportBindings.Count];
+        var used = new HashSet<string>(StringComparer.Ordinal);
+        for (int i = 0; i < module.ImportBindings.Count; i++)
+        {
+            var binding = module.ImportBindings[i];
+            string name = ExportNames.For($"import_{binding.ModuleName}_{binding.Name}");
+            if (!used.Add(name))
+            {
+                int suffix = 2;
+                string candidate;
+                do candidate = name + "_" + suffix++; while (!used.Add(candidate));
+                name = candidate;
+            }
+            names[i] = name;
+        }
+        return names;
+    }
+    private static string EscapeString(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"")
+        .Replace("\r", "\\r").Replace("\n", "\\n");
     private static string ConstructorParameters(Module module, bool bits) => string.Join(", ", module.ImportBindings.Select(binding =>
         binding.Kind == 0
             ? $"__wasm_{(bits ? "BitsImport" : "Import")}{binding.Index} {ImportParameterName(binding)}"

@@ -33,6 +33,10 @@ var bytes = File.ReadAllBytes(wasmPath);
 var assembly = Compile(Compilation(Transpiler.Translate(bytes, "Arithmetic")));
 var module = assembly.GetType("Wasm2Cs.Generated.Arithmetic")!;
 var instance = Activator.CreateInstance(module)!;
+var bindingsType = module.GetNestedType("Bindings")!;
+var bindings = Activator.CreateInstance(bindingsType)!;
+var boundInstance = module.GetConstructor(new[] { bindingsType })!.Invoke(new[] { bindings });
+Assert((int)module.GetMethod("add")!.Invoke(boundInstance, [20, 22])! == 42, "Typed bindings constructor differs.");
 var portableReferences = Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "ReferenceAssemblies"), "*.dll")
     .Select(p => MetadataReference.CreateFromFile(p));
 Compile(Compilation(Transpiler.Translate(bytes, "Portable")).WithReferences(portableReferences));
@@ -168,6 +172,7 @@ await I64Checks.Verify();
 await FloatChecks.Verify();
 await TableChecks.Verify();
 await ExceptionChecks.Verify();
+HostChecks.Verify();
 
 record Call(string Name, int[] Args);
 sealed class Input(string path, string content) : AdditionalText

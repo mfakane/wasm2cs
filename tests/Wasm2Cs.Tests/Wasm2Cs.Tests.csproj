@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="../../src/Wasm2Cs/Wasm2Cs.csproj" />
     <ProjectReference Include="../../src/Wasm2Cs.Runtime/Wasm2Cs.Runtime.csproj" />
+    <ProjectReference Include="../../src/Wasm2Cs.DotnetHost/Wasm2Cs.DotnetHost.csproj" />
     <ProjectReference Include="../../src/Wasm2Cs.Generator/Wasm2Cs.Generator.csproj" Aliases="Generator" />
     <None Include="../../src/Wasm2Cs.Runtime/bin/$(Configuration)/netstandard2.0/Wasm2Cs.Runtime.dll"
           Link="Runtime20/Wasm2Cs.Runtime.dll" CopyToOutputDirectory="PreserveNewest" />

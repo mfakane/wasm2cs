@@ -1,0 +1,16 @@
+(module
+  (import "env" "emscripten_get_now" (func $now (result f64)))
+  (import "env" "mono_wasm_browser_entropy" (func $entropy (param i32 i32) (result i32)))
+  (import "wasi_snapshot_preview1" "fd_write"
+    (func $write (param i32 i32 i32 i32) (result i32)))
+  (memory (export "memory") 1 2)
+  (data (i32.const 0) "\10\00\00\00\04\00\00\00")
+  (data (i32.const 16) "host")
+  (func (export "now_ms") (result f64)
+    (call $now))
+  (func (export "run") (result i32)
+    (drop (call $entropy (i32.const 32) (i32.const 4)))
+    (drop (memory.grow (i32.const 1)))
+    (drop (call $entropy (i32.const 65536) (i32.const 4)))
+    (drop (call $write (i32.const 1) (i32.const 0) (i32.const 1) (i32.const 12)))
+    (i32.const 0)))

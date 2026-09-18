@@ -54,8 +54,15 @@ const results = request.scenarios.map(scenario => {
         console.log(JSON.stringify({ protocol: 1, stream: true, id: scenario.id, error: next }));
         return { id: scenario.id, operation: scenario.operation, output: 'STREAM_ERROR' };
       }
-      console.log(JSON.stringify({ protocol: 1, stream: true, id: scenario.id,
-        source: { Name: driver.CurrentTranslateSourceName(), Text: next } }));
+      const name = driver.CurrentTranslateSourceName();
+      // Keep each stdout protocol line below the browser-wasm host's line
+      // limit. parseBundleOutput reassembles chunks with the same source name.
+      for (let offset = 0; offset < next.length; offset += 48 * 1024) {
+        let end = Math.min(next.length, offset + 48 * 1024);
+        if (end < next.length && next.charCodeAt(end - 1) >= 0xd800 && next.charCodeAt(end - 1) <= 0xdbff) end--;
+        console.log(JSON.stringify({ protocol: 1, stream: true, id: scenario.id,
+          source: { Name: name, Text: next.slice(offset, end) } }));
+      }
     }
     return { id: scenario.id, operation: scenario.operation, output: 'STREAM' };
   }

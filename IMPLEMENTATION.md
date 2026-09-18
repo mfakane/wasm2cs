@@ -3,8 +3,8 @@
 Baseline: `8818947`. Work branch: `feat/unity-wasm-pipeline`.
 Each milestone is committed separately after its checks pass. No registry publishing.
 
-This file records the completed initial scope. The next, unimplemented sequence
-is [SH-01 through SH-14](docs/README.md): run `Wasm2Cs.dll` inside a translated
+This file records the completed initial scope. The remaining unimplemented sequence
+is [SH-10 through SH-14](docs/README.md): run `Wasm2Cs.dll` inside a translated
 .NET WASM runtime, then repeat on Unity IL2CPP. Its design explicitly allows the
 guest Mono IL interpreter while retaining ahead-of-time WASM-to-C# translation.
 

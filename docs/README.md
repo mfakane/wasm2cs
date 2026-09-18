@@ -7,7 +7,7 @@
 ## 読む順序と現在地
 
 1. [共通設計](self-hosting-design.md) で対象構成、実行境界、検証規則を確認する。
-2. 次の表を上から進める。現在着手できる段階は SH-06 である。
+2. 次の表を上から進める。現在着手できる段階は SH-10 である。
 3. 各段階の合格条件を満たしてコミットし、個別文書とこの表の状態を更新する。
 
 | ID | マイルストーン | 前提 | 状態 |
@@ -21,7 +21,7 @@
 | [SH-06](milestones/SH-06-tables.md) | table と間接呼び出し | SH-05.5 | 完了 |
 | [SH-07](milestones/SH-07-exceptions.md) | WASM 例外処理 | SH-06 | 完了 |
 | [SH-08](milestones/SH-08-large-codegen.md) | 巨大モジュールの C# 生成 | SH-07 | 完了 |
-| [SH-09](milestones/SH-09-host.md) | C# ホスト機能 | SH-08 | 未着手 |
+| [SH-09](milestones/SH-09-host.md) | C# ホスト機能 | SH-08 | 完了 |
 | [SH-10](milestones/SH-10-mono-startup.md) | Mono 起動と Hello World | SH-09 | 未着手 |
 | [SH-11](milestones/SH-11-managed-runtime.md) | managed 実行の安定化 | SH-10 | 未着手 |
 | [SH-12](milestones/SH-12-self-hosting.md) | wasm2cs 自己実行 | SH-11 | 未着手 |

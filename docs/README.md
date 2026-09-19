@@ -22,7 +22,7 @@
 | [SH-07](milestones/SH-07-exceptions.md) | WASM 例外処理 | SH-06 | 完了 |
 | [SH-08](milestones/SH-08-large-codegen.md) | 巨大モジュールの C# 生成 | SH-07 | 完了 |
 | [SH-09](milestones/SH-09-host.md) | C# ホスト機能 | SH-08 | 完了 |
-| [SH-10](milestones/SH-10-mono-startup.md) | Mono 起動と Hello World | SH-09 | 未着手 |
+| [SH-10](milestones/SH-10-mono-startup.md) | Mono 起動と Hello World | SH-09 | 完了 |
 | [SH-11](milestones/SH-11-managed-runtime.md) | managed 実行の安定化 | SH-10 | 未着手 |
 | [SH-12](milestones/SH-12-self-hosting.md) | wasm2cs 自己実行 | SH-11 | 未着手 |
 | [SH-13](milestones/SH-13-unity.md) | Unity IL2CPP 自己実行 | SH-12 | 未着手 |

@@ -1,6 +1,6 @@
 # SH-10 Mono 起動と Hello World
 
-状態: 未着手。前提: [SH-09](SH-09-host.md)。次: [SH-11](SH-11-managed-runtime.md)。
+状態: 完了。前提: [SH-09](SH-09-host.md)。次: [SH-11](SH-11-managed-runtime.md)。
 
 ## 目的・変更対象
 
@@ -26,10 +26,10 @@ node scripts/self-hosting.mjs hello
 
 ## 合格条件
 
-- [ ] 生成 runtime が初期化され、ゲストの Hello World と整数計算が一致する。
-- [ ] 必要な DLL を欠落させると、供給・ロードの失敗として検出する。
-- [ ] 通常終了と異常終了を区別でき、初期化・実行が二重に発生しない。
-- [ ] 外側の WASM／JavaScript エンジンや通常 CLR によるゲスト実行の代替がない。
+- [x] 生成 runtime が初期化され、ゲストの Hello World と整数計算が一致する。
+- [x] 必要な DLL を欠落させると、供給・ロードの失敗として検出する。
+- [x] 通常終了と異常終了を区別でき、初期化・実行が二重に発生しない。
+- [x] 外側の WASM／JavaScript エンジンや通常 CLR によるゲスト実行の代替がない。
 
 ## 非対象・失敗時の扱い
 
@@ -39,7 +39,7 @@ Hello World が動いたことを BCL 全体や wasm2cs 自己実行の成功と
 
 起動・DLL 供給、entry point・終了処理、負のテストに分ける。終了コミット例: `feat: boot translated mono runtime`。
 
-- 実行コマンド・結果: 未実施
-- bundle ハッシュ・起動状態・DLL 供給ログ: 未取得
-- 未解決事項: 固定版 runtime の正確な初期化手順
-- 終了コミット: 未完了
+- 実行コマンド・結果: `prepare --skip-workload-install`、`inventory`、`reference`、`generate`、`compile`、`host`、`hello` が成功。`hello` は正常系で174 assembly登録、managed Mainの stdout、戻り値0、終了コード0を確認し、CoreLib欠落、ゲストDLL欠落・破損、必須 import 欠落、native 異常終了を別シナリオで検出した。
+- bundle ハッシュ・起動状態・DLL 供給ログ: bundle `2b89bf1bd90a650fe81dad2de5ebcd4a8dd339b21f0b7d465895287251bf3d1a`、runtime `d531922c75237648c1f643077c13ba0da8f9583ecfa3304476ab196984c3efe4`。生成C#は `artifacts/self-hosting/generated/` と `generated-manifest.json` に保存し、compile結果は `artifacts/self-hosting/compiled/bin/Release/net10.0/Generated.dll` と `compile-results.json` に保存する。正常系と負のシナリオは `artifacts/self-hosting/hello-results.json`、ハーネス自体の失敗は `artifacts/self-hosting/hello-failure.json` に記録する。起動ログは `results.phases` に保持する。
+- 未解決事項: なし。
+- 終了コミット: `2e6913ad7eebea081febb532a9a37365055cee9e`

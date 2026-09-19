@@ -4,7 +4,9 @@ using System.Runtime.Versioning;
 using System.Text.Json;
 using Wasm2Cs;
 
-return 0;
+#pragma warning disable CA1416
+
+return SelfHostingDriver.RunManagedEntry();
 
 // The JavaScript file is only the official browser-wasm host. The conversion
 // itself happens here, inside the managed guest assembly.
@@ -12,6 +14,25 @@ return 0;
 public static partial class SelfHostingDriver
 {
     private static IEnumerator<GeneratedSource>? sourceEnumerator;
+
+    // SH-10 invokes this managed method through Mono's exported method bridge.
+    // The top-level entry point and the bridge share the same managed body.
+    [JSExport]
+    internal static int RunManagedMain() => RunManagedEntry();
+
+    internal static int RunManagedEntry()
+    {
+        try
+        {
+            Console.WriteLine("Hello, World!");
+            Console.WriteLine(40 + 2);
+            return 0;
+        }
+        catch
+        {
+            return -1;
+        }
+    }
 
     [JSExport]
     internal static string Hello() => "Hello, World!";

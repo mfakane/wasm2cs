@@ -24,11 +24,12 @@ const environmentRoot = join(artifactRoot, 'environment');
 const bundleRoot = join(artifactRoot, 'bundle');
 const manifestPath = join(artifactRoot, 'bundle-manifest.json');
 const profilePath = join(root, 'docs', 'self-hosting', 'SH-01-profile.json');
+const startupProfilePath = join(root, 'docs', 'self-hosting', 'SH-10-startup.json');
 const profile = JSON.parse(readFileSync(profilePath, 'utf8'));
 const args = process.argv.slice(2);
 const command = args[0];
 
-const help = `Usage: node scripts/self-hosting.mjs <prepare|inventory|reference|generate|compile|host>
+const help = `Usage: node scripts/self-hosting.mjs <prepare|inventory|reference|generate|compile|host|hello>
 
 prepare    install/check the isolated workload and publish the guest bundle
 inventory  validate the bundle and record a full WABT inventory
@@ -36,6 +37,7 @@ reference  run the bundle through the official Node.js browser-wasm host
 generate   translate dotnet.native.wasm into deterministic C# source files
 compile    compile the generated C# files against the runtime ABI
 host       run the C# SH-09 ABI fixture and construct the full generated runtime
+hello      start the generated Mono runtime and run managed Hello World
 
 prepare flags:
   --skip-workload-install  report a missing workload without attempting install
@@ -211,6 +213,55 @@ function verifyBundle() {
     }
   }
   return manifest;
+}
+
+function bootConfig(manifest) {
+  const profile = JSON.parse(readFileSync(startupProfilePath, 'utf8'));
+  const bootPath = join(bundleRoot, ...profile.bootConfigPath.split('/'));
+  if (!existsSync(bootPath)) throw new Error(`Boot config is missing: ${bootPath}`);
+  const text = readFileSync(bootPath, 'utf8');
+  const match = /\/\*json-start\*\/([\s\S]*?)\/\*json-end\*\//.exec(text);
+  if (!match) throw new Error(`Boot config is not a pinned JSON module: ${bootPath}`);
+  const config = JSON.parse(match[1]);
+  const runtime = runtimeEntry(manifest);
+  const runtimePath = join(bundleRoot, ...runtime.path.split('/'));
+  if (runtime.path !== profile.runtimePath) throw new Error(`SH-10 runtime path differs: ${runtime.path}`);
+  if (sha256File(runtimePath) !== profile.runtimeWasmSha256)
+    throw new Error(`SH-10 runtime hash differs from ${startupProfilePath}.`);
+  if (config.mainAssemblyName !== profile.mainAssemblyName)
+    throw new Error(`SH-10 main assembly differs: ${config.mainAssemblyName}`);
+  if (Number(config.debugLevel ?? 0) !== Number(profile.debugLevel))
+    throw new Error(`SH-10 debug level differs: ${config.debugLevel}`);
+  if (config.globalizationMode !== profile.globalizationMode)
+    throw new Error(`SH-10 globalization mode differs: ${config.globalizationMode}`);
+  const assemblies = [...(config.resources?.coreAssembly ?? []), ...(config.resources?.assembly ?? [])];
+  if (assemblies.length === 0) throw new Error('SH-10 boot config contains no managed assemblies.');
+  const paths = new Set(manifest.entries.map(entry => entry.path));
+  for (const assembly of assemblies) {
+    const path = assembly.virtualPath ?? assembly.name;
+    if (!path || !paths.has(`_framework/${path}`)) throw new Error(`SH-10 managed asset is missing: ${path}`);
+  }
+  const properties = config.runtimeConfig?.runtimeOptions?.configProperties ?? {};
+  if (JSON.stringify(sortedProperties(properties)) !== JSON.stringify(sortedProperties(propertiesFromProfile())))
+    throw new Error('SH-10 runtime properties differ from the boot config.');
+  const inventoryPath = join(artifactRoot, 'inventory.json');
+  if (!existsSync(inventoryPath)) throw new Error(`Runtime inventory is missing: ${inventoryPath}`);
+  const inventory = JSON.parse(readFileSync(inventoryPath, 'utf8'));
+  const runtimeInventory = inventory.wasm?.find(item => item.path === runtime.path);
+  if (!runtimeInventory) throw new Error(`Inventory does not contain ${runtime.path}.`);
+  const exportNames = new Set((runtimeInventory.exports ?? []).map(item => /-> "([^"]+)"$/.exec(item)?.[1]).filter(Boolean));
+  for (const name of Object.values(profile.requiredExports))
+    if (!exportNames.has(name)) throw new Error(`SH-10 required export is missing: ${name}`);
+  if (!profile.managedEntryWrapper) throw new Error('SH-10 managed entry wrapper is missing from the startup profile.');
+  return { profile, config, assemblies, properties, managedEntryWrapper: profile.managedEntryWrapper, runtimeSha256: sha256File(runtimePath) };
+}
+
+function propertiesFromProfile() {
+  return JSON.parse(readFileSync(startupProfilePath, 'utf8')).runtimeProperties;
+}
+
+function sortedProperties(properties) {
+  return Object.entries(properties).sort(([left], [right]) => left.localeCompare(right));
 }
 
 function sectionItems(text) {
@@ -474,6 +525,8 @@ function reference() {
   if (!byId.get('invalid-input')?.output?.startsWith('ERROR:')) {
     throw new Error('Invalid input did not return a conversion diagnostic.');
   }
+  if (!result.output.includes('Hello, World!\n42'))
+    throw new Error('Managed Main did not print the SH-10 Hello World probe.');
   const record = {
     schemaVersion: 1,
     milestone: 'SH-01',
@@ -481,7 +534,8 @@ function reference() {
     bundleSha256: manifest.bundleSha256,
     host: { node: host, command: 'official browser-wasm AppBundle/main.mjs' },
     request: { protocol: request.protocol, scenarios: request.scenarios.map(({ id, operation, className, inputBytes, inputSha256 }) => ({ id, operation, className, inputBytes, inputSha256 })) },
-    results: response.results
+    results: response.results,
+    managedMain: { stdout: 'Hello, World!\n42\n', exitCode: 0 }
   };
   json(join(artifactRoot, 'reference-results.json'), record);
   writeFileSync(join(artifactRoot, 'reference.log'), result.output);
@@ -667,6 +721,296 @@ Console.WriteLine("HOST_ABI_RESULT:" + JsonSerializer.Serialize(actual));
 `;
 }
 
+function helloRunnerSource(boot) {
+  const assemblyLines = boot.assemblies.map(assembly => {
+    const name = assembly.virtualPath ?? assembly.name;
+    const path = JSON.stringify(join(bundleRoot, '_framework', name));
+    const condition = name === 'System.Private.CoreLib.dll'
+      ? 'scenario != "missing-corelib"'
+      : name === boot.profile.mainAssemblyName ? 'scenario != "missing-selfhosting"' : 'true';
+    if (name === boot.profile.mainAssemblyName) {
+      return `var selfHostingData = File.ReadAllBytes(${path});
+if (scenario == "corrupt-selfhosting") selfHostingData[0] ^= 0xff;
+if (${condition}) assemblies.Add(new MonoAssembly(${JSON.stringify(name)}, selfHostingData));`;
+    }
+    return `if (${condition}) assemblies.Add(new MonoAssembly(${JSON.stringify(name)}, File.ReadAllBytes(${path})));`;
+  }).join('\n');
+  const propertyLines = Object.entries(boot.properties).map(([key, value]) =>
+    `    new KeyValuePair<string, string>(${JSON.stringify(key)}, ${JSON.stringify(String(value).toLowerCase())})`).join(',\n');
+  const now = csharpIdentifier('env', 'emscripten_get_now');
+  const dateNow = csharpIdentifier('env', 'emscripten_date_now');
+  const nowRes = csharpIdentifier('env', 'emscripten_get_now_res');
+  const monotonic = csharpIdentifier('env', '_emscripten_get_now_is_monotonic');
+  const entropy = csharpIdentifier('env', 'mono_wasm_browser_entropy');
+  const pid = csharpIdentifier('env', 'mono_wasm_process_current_pid');
+  const heapMax = csharpIdentifier('env', 'emscripten_get_heap_max');
+  const resizeHeap = csharpIdentifier('env', 'emscripten_resize_heap');
+  const assertFail = csharpIdentifier('env', '__assert_fail');
+  const abort = csharpIdentifier('env', 'abort');
+  const exit = csharpIdentifier('env', 'exit');
+  const forceExit = csharpIdentifier('env', 'emscripten_force_exit');
+  const fdWrite = csharpIdentifier('wasi_snapshot_preview1', 'fd_write');
+  const fdRead = csharpIdentifier('wasi_snapshot_preview1', 'fd_read');
+  const fdClose = csharpIdentifier('wasi_snapshot_preview1', 'fd_close');
+  const fdStat = csharpIdentifier('wasi_snapshot_preview1', 'fd_fdstat_get');
+  const fdSync = csharpIdentifier('wasi_snapshot_preview1', 'fd_sync');
+  const envSizes = csharpIdentifier('wasi_snapshot_preview1', 'environ_sizes_get');
+  const envGet = csharpIdentifier('wasi_snapshot_preview1', 'environ_get');
+  const getcwd = csharpIdentifier('env', '__syscall_getcwd');
+  const fcntl64 = csharpIdentifier('env', '__syscall_fcntl64');
+  const openat = csharpIdentifier('env', '__syscall_openat');
+  const assignments = `    ${now} = () => environment.WallClock().ToUnixTimeMilliseconds(),
+    ${dateNow} = () => environment.WallClock().ToUnixTimeMilliseconds(),
+    ${nowRes} = () => 1.0,
+    ${monotonic} = () => 1,
+    ${pid} = () => 1,
+    ${heapMax} = () => RequireMemory().Size,
+    ${resizeHeap} = bytes =>
+    {
+        var memory = RequireMemory();
+        var pages = (int)(((long)bytes + 65535L) / 65536L);
+        var delta = pages - memory.CurrentPages;
+        return delta < 0 ? 0 : (memory.Grow(delta) >= 0 ? 1 : 0);
+    },
+    ${entropy} = (address, length) =>
+    {
+        var bytes = new byte[length];
+        environment.Entropy(bytes);
+        RequireMemory().WriteMemory(unchecked((uint)address), bytes);
+        return 0;
+    },
+     ${assertFail} = (message, file, line, functionName) => throw new InvalidOperationException($"WASM assertion failed: {HostEnvironment.ReadString(RequireMemory(), unchecked((uint)message))} at {HostEnvironment.ReadString(RequireMemory(), unchecked((uint)file))}:{line}"),
+     ${abort} = () => { requestedAbort = true; throw new InvalidOperationException("WASM abort requested."); },
+    ${exit} = code => requestedExit = code,
+    ${forceExit} = code => requestedExit = code,
+    ${envSizes} = (count, bufferSize) =>
+    {
+        var memory = RequireMemory();
+        var entries = environment.Environment.Select(pair => pair.Key + "=" + pair.Value).ToArray();
+        HostEnvironment.WriteUInt32(memory, unchecked((uint)count), unchecked((uint)entries.Length));
+        HostEnvironment.WriteUInt32(memory, unchecked((uint)bufferSize), unchecked((uint)entries.Sum(value => Encoding.UTF8.GetByteCount(value) + 1)));
+        return 0;
+    },
+    ${envGet} = (environmentPointers, buffer) =>
+    {
+        var memory = RequireMemory();
+        var offset = unchecked((uint)buffer);
+        var index = 0;
+        foreach (var pair in environment.Environment)
+        {
+            var bytes = Encoding.UTF8.GetBytes(pair.Key + "=" + pair.Value + "\\0");
+            HostEnvironment.WriteUInt32(memory, unchecked((uint)(environmentPointers + index * 4)), offset);
+            memory.WriteMemory(offset, bytes);
+            offset += unchecked((uint)bytes.Length);
+            index++;
+        }
+        HostEnvironment.WriteUInt32(memory, unchecked((uint)(environmentPointers + index * 4)), 0);
+        return 0;
+    },
+    ${getcwd} = (buffer, size) =>
+    {
+        if (size == 0) return -28;
+        var bytes = Encoding.UTF8.GetBytes("/\\0");
+        if (size < bytes.Length) return -68;
+        RequireMemory().WriteMemory(unchecked((uint)buffer), bytes);
+        return bytes.Length;
+    },
+     ${fcntl64} = (fd, command, varargs) => command == 0 || command == 1030 ? fd : command >= 1 && command <= 4 ? 0 : -28,
+    ${openat} = (directory, path, flags, mode) =>
+    {
+        var value = HostEnvironment.ReadString(RequireMemory(), unchecked((uint)path));
+        if (value.EndsWith("stdout", StringComparison.Ordinal)) return 1;
+        if (value.EndsWith("stderr", StringComparison.Ordinal)) return 2;
+        return -2;
+    },
+    ${fdWrite} = (fd, iovs, count, result) =>
+    {
+        var memory = RequireMemory();
+        var bytes = new byte[4096];
+        var length = HostEnvironment.ReadIovecs(memory, unchecked((uint)iovs), count, bytes);
+        var written = environment.Write(fd, bytes, 0, length);
+        HostEnvironment.WriteUInt32(memory, unchecked((uint)result), unchecked((uint)written));
+        return 0;
+    },
+    ${fdRead} = (fd, iovs, count, result) =>
+    {
+        var memory = RequireMemory();
+        var total = 0;
+        for (var i = 0; i < count; i++)
+        {
+            var vector = HostEnvironment.ReadIovec(memory, unchecked((uint)(iovs + i * 8)));
+            var amount = environment.Read(fd, memory, vector.Address, checked((int)vector.Length));
+            total += amount;
+            if (amount != vector.Length) break;
+        }
+        HostEnvironment.WriteUInt32(memory, unchecked((uint)result), unchecked((uint)total));
+        return 0;
+    },
+     ${fdStat} = (fd, result) =>
+     {
+         if (fd >= 3) return 8;
+         RequireMemory().WriteByte(unchecked((uint)result), 2);
+         RequireMemory().WriteByte(unchecked((uint)(result + 1)), 0);
+         RequireMemory().WriteByte(unchecked((uint)(result + 2)), 0);
+         RequireMemory().WriteByte(unchecked((uint)(result + 3)), 0);
+         return 0;
+     },
+     ${fdSync} = fd => fd < 3 ? 0 : 8,
+     ${fdClose} = fd => fd < 3 || environment.Close(fd) ? 0 : 8`;
+  return `using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Text.Json;
+using Wasm2Cs;
+using Wasm2Cs.DotnetHost;
+using Wasm2Cs.Generated;
+
+ var stdout = new List<byte>();
+ var environment = new HostEnvironment(
+     wallClock: () => DateTimeOffset.FromUnixTimeMilliseconds(1234),
+     entropy: bytes => { for (int i = 0; i < bytes.Length; i++) bytes[i] = (byte)(i + 1); },
+     stdout: bytes => stdout.AddRange(bytes));
+ var scenario = Environment.GetEnvironmentVariable("SH10_SCENARIO") ?? "positive";
+ var requestedExit = (int?)null;
+ var requestedAbort = false;
+ WasmMemory? attachedMemory = null;
+ DotnetRuntime? runtime = null;
+ WasmMemory RequireMemory() => attachedMemory ?? throw new InvalidOperationException("WASM memory was not attached.");
+ DotnetRuntime RequireRuntime() => runtime ?? throw new InvalidOperationException("runtime was not constructed");
+ // Unassigned imports stay null so the generated runtime rejects unexpected calls.
+ var bindings = new DotnetRuntime.Bindings
+ {
+ ${assignments}
+ };
+ if (scenario == "missing-import") bindings.${fdWrite} = null!;
+ runtime = new DotnetRuntime(bindings);
+attachedMemory = runtime.memory;
+var exports = new MonoBoot.NativeExports
+{
+    CallConstructors = () => { RequireRuntime().wasm_export___wasm_call_ctors(); return 0; },
+    Malloc = length => unchecked((uint)RequireRuntime().malloc(length)),
+    Free = address => RequireRuntime().free(unchecked((int)address)),
+    AddAssembly = (name, data, size) => RequireRuntime().mono_wasm_add_assembly(unchecked((int)name), unchecked((int)data), size),
+    LoadRuntime = (debug, count, keys, values) => RequireRuntime().mono_wasm_load_runtime(debug, count, unchecked((int)keys), unchecked((int)values)),
+    ConfigureArgs = (argc, argv) => RequireRuntime().mono_wasm_set_main_args(argc, unchecked((int)argv)),
+     InvokeMain = () =>
+     {
+         if (scenario == "native-exit")
+         {
+             RequireRuntime().mono_wasm_exit(9);
+             return 0;
+         }
+         uint assemblyName = 0;
+         uint namespaceName = 0;
+         uint className = 0;
+         uint methodName = 0;
+         uint arguments = 0;
+         try
+         {
+             assemblyName = MonoPtr("${boot.profile.mainAssemblyName}");
+             namespaceName = MonoPtr("");
+             className = MonoPtr("SelfHostingDriver");
+             methodName = MonoPtr("${boot.managedEntryWrapper}");
+             var assembly = RequireRuntime().mono_wasm_assembly_load(unchecked((int)assemblyName));
+             if (assembly == 0) throw new InvalidOperationException("managed startup assembly was not found.");
+             var klass = RequireRuntime().mono_wasm_assembly_find_class(assembly, unchecked((int)namespaceName), unchecked((int)className));
+             if (klass == 0) throw new InvalidOperationException("managed startup class was not found.");
+             var method = RequireRuntime().mono_wasm_assembly_find_method(klass, unchecked((int)methodName), -1);
+             if (method == 0) throw new InvalidOperationException("managed startup method was not found.");
+             arguments = AllocateNative(64);
+             RequireMemory().WriteMemory(arguments, new byte[64]);
+             RequireRuntime().mono_wasm_invoke_jsexport(method, unchecked((int)arguments));
+             var exceptionType = ReadUInt32Unchecked(unchecked(arguments + 12));
+             if (exceptionType != 0) throw new InvalidOperationException($"managed startup raised marshaled exception type {exceptionType}");
+             var resultType = ReadUInt32Unchecked(unchecked(arguments + 44));
+             if (resultType != 7) throw new InvalidOperationException($"managed startup returned marshaled type {resultType}, expected Int32");
+             return unchecked((int)ReadUInt32Unchecked(unchecked(arguments + 32)));
+         }
+         finally
+         {
+             if (arguments != 0) RequireRuntime().free(unchecked((int)arguments));
+             if (methodName != 0) RequireRuntime().free(unchecked((int)methodName));
+             if (className != 0) RequireRuntime().free(unchecked((int)className));
+             if (namespaceName != 0) RequireRuntime().free(unchecked((int)namespaceName));
+             if (assemblyName != 0) RequireRuntime().free(unchecked((int)assemblyName));
+         }
+     },
+     // mono_wasm_exit records the native exit and deliberately traps after
+     // calling emscripten_force_exit. Only that expected boundary is normal.
+     Exit = code =>
+     {
+         try
+         {
+             _ = RequireRuntime().mono_wasm_exit(code);
+             throw new InvalidOperationException("mono_wasm_exit returned without its native exit trap.");
+         }
+         catch (DotnetRuntime.TrapException exception) when (requestedExit == code && exception.Kind == DotnetRuntime.TrapKind.Unreachable)
+         {
+         }
+     }
+ };
+ uint AllocateNative(int length)
+ {
+     var address = unchecked((uint)RequireRuntime().malloc(length));
+     if (address == 0 || (ulong)address + (ulong)length > (ulong)RequireMemory().Size)
+         throw new InvalidOperationException($"Runtime malloc returned an invalid address for {length} bytes: {address}.");
+     return address;
+ }
+ uint MonoPtr(string value)
+ {
+     var bytes = Encoding.UTF8.GetBytes(value + "\\0");
+     var address = AllocateNative(bytes.Length);
+    RequireMemory().WriteMemory(address, bytes);
+    return address;
+}
+ uint ReadUInt32Unchecked(uint address) => BitConverter.ToUInt32(RequireMemory().ReadMemory(address, 4), 0);
+ var assemblies = new List<MonoAssembly>();
+ ${assemblyLines}
+ MonoBoot? boot = null;
+ int? managedReturn = null;
+ Exception? failure = null;
+ try
+ {
+     if (assemblies.Count != ${boot.assemblies.length})
+         throw new InvalidOperationException($"Managed assembly supply is incomplete: expected ${boot.assemblies.length}, received {assemblies.Count}.");
+     var request = new MonoBootRequest(
+         assemblies,
+         Array.Empty<string>(),
+         ${JSON.stringify(boot.profile.mainAssemblyName)},
+         ${Number(boot.profile.debugLevel)},
+         new KeyValuePair<string, string>[]
+         {
+ ${propertyLines}
+         });
+     boot = new MonoBoot(RequireMemory(), exports, request);
+     boot.Start();
+     managedReturn = boot.Run();
+     boot.Exit(managedReturn.Value);
+ }
+ catch (Exception exception)
+ {
+     failure = exception;
+ }
+ Console.WriteLine("SH10_RESULT:" + JsonSerializer.Serialize(new
+ {
+     scenario,
+     stdout = Encoding.UTF8.GetString(stdout.ToArray()),
+     managedReturn,
+     exitCode = boot?.ExitCode,
+     requestedExit,
+     requestedAbort,
+      state = boot?.State.ToString() ?? (failure == null ? null : "Failed"),
+     failure = failure == null ? null : new { type = failure.GetType().FullName, message = failure.Message },
+     phases = boot?.PhaseLog.ToArray() ?? Array.Empty<string>()
+ }));
+ Environment.ExitCode = scenario == "positive"
+     ? failure == null && managedReturn == 0 && boot?.ExitCode == 0 ? 0 : 1
+     : failure == null ? 1 : 0;
+ `;
+}
+
 function host() {
   const failurePath = join(artifactRoot, 'host-failure.json');
   try {
@@ -744,6 +1088,98 @@ function host() {
     }
   } catch (error) {
     json(failurePath, { schemaVersion: 1, milestone: 'SH-09', status: 'blocked', reason: error instanceof Error ? error.message : String(error) });
+    throw error;
+  }
+}
+
+function hello() {
+  const failurePath = join(artifactRoot, 'hello-failure.json');
+  try {
+    const manifest = verifyBundle();
+    const startup = bootConfig(manifest);
+    const referencePath = join(artifactRoot, 'reference-results.json');
+    if (!existsSync(referencePath)) throw new Error(`Reference result is missing. Run reference first: ${referencePath}`);
+    const reference = JSON.parse(readFileSync(referencePath, 'utf8'));
+    if (reference.managedMain?.stdout !== 'Hello, World!\n42\n' || reference.managedMain?.exitCode !== 0)
+      throw new Error('Reference result does not contain the SH-10 managed Main probe.');
+    const generated = generatedManifest();
+    if (generated.manifest.bundleSha256 !== manifest.bundleSha256 || generated.manifest.input?.sha256 !== startup.runtimeSha256)
+      throw new Error('Generated sources do not match the verified SH-10 runtime bundle.');
+    const directory = mkdtempSync(join(tmpdir(), 'wasm2cs-sh10-hello-'));
+    try {
+      for (const entry of generated.manifest.entries)
+        writeFileSync(join(directory, entry.path), readFileSync(join(generated.generatedRoot, entry.path)));
+      writeFileSync(join(directory, 'Program.cs'), helloRunnerSource(startup));
+      writeFileSync(join(directory, 'Hello.csproj'), `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="*.g.cs" />
+    <Compile Include="Program.cs" />
+    <ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.Runtime', 'Wasm2Cs.Runtime.csproj'))}" />
+    <ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.DotnetHost', 'Wasm2Cs.DotnetHost.csproj'))}" />
+  </ItemGroup>
+</Project>
+`);
+      const project = join(directory, 'Hello.csproj');
+      run('dotnet', ['build', project, '--configuration', 'Release', '-p:UseSharedCompilation=false', '--nologo']);
+      const runner = join(directory, 'bin', 'Release', 'net10.0', 'Hello.dll');
+      const execute = scenario => {
+        const result = run('dotnet', [runner], {
+          env: { ...process.env, SH10_SCENARIO: scenario },
+          allowFailure: true
+        });
+        const line = result.output.trim().split(/\r?\n/).reverse().find(value => value.startsWith('SH10_RESULT:'));
+        if (!line) throw new Error(`SH-10 ${scenario} runner did not emit SH10_RESULT.\n${result.output}`);
+        return { processExit: result.status, result: JSON.parse(line.slice('SH10_RESULT:'.length)) };
+      };
+      const positiveRun = execute('positive');
+      const actual = positiveRun.result;
+      if (positiveRun.processExit !== 0 || actual.failure !== null || actual.stdout !== reference.managedMain.stdout ||
+          actual.managedReturn !== 0 || actual.exitCode !== 0 || actual.state !== 'Exited')
+        throw new Error(`SH-10 managed result differs. Expected ${JSON.stringify(reference.managedMain)}, actual ${JSON.stringify(actual)}`);
+      const assemblyPhases = actual.phases.filter(value => value.startsWith('add-assembly:'));
+      const tail = ['load-runtime', 'configure-args', 'invoke-main', 'exit'];
+      if (actual.phases[0] !== 'constructors' || assemblyPhases.length !== startup.assemblies.length ||
+          actual.phases.slice(actual.phases.length - tail.length).join(',') !== tail.join(','))
+        throw new Error(`SH-10 startup phases differ: ${JSON.stringify(actual.phases)}`);
+      const negativeScenarios = {};
+      for (const scenario of ['missing-corelib', 'missing-selfhosting', 'corrupt-selfhosting', 'missing-import', 'native-exit']) {
+        const execution = execute(scenario);
+        const failure = execution.result;
+        if (execution.processExit !== 0 || failure.failure === null || failure.state !== 'Failed')
+          throw new Error(`SH-10 negative scenario ${scenario} was not detected: ${JSON.stringify(execution)}`);
+        if (scenario === 'native-exit' && failure.requestedExit !== 9)
+          throw new Error(`SH-10 native exit scenario lost its exit code: ${JSON.stringify(failure)}`);
+        negativeScenarios[scenario] = execution;
+      }
+      const record = {
+        schemaVersion: 1,
+        milestone: 'SH-10',
+        bundleSha256: manifest.bundleSha256,
+        runtimeSha256: startup.runtimeSha256,
+        mainAssemblyName: startup.profile.mainAssemblyName,
+        assemblyCount: startup.assemblies.length,
+        results: actual,
+        negativeScenarios,
+        reference: reference.managedMain,
+        outerEngine: false
+      };
+      json(join(artifactRoot, 'hello-results.json'), record);
+      rmSync(failurePath, { force: true });
+      console.log(`SH-10 hello passed: ${startup.assemblies.length} assemblies registered, managed Main matched, exit 0.`);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  } catch (error) {
+    json(failurePath, { schemaVersion: 1, milestone: 'SH-10', status: 'blocked', reason: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -829,7 +1265,7 @@ function generate() {
     renameSync(staging, join(artifactRoot, 'generated'));
     json(join(artifactRoot, 'generated-manifest.json'), generated);
     rmSync(failurePath, { force: true });
-    console.log(`Generated ${sources.length} C# source file(s) for ${className}; ${entries.reduce((sum, item) => sum + item.bytes, 0)} bytes.`);
+    console.log(`Generated ${sources.length} C# source file(s) for ${className}; ${entries.reduce((sum, item) => sum + item.bytes, 0)} bytes at ${join(artifactRoot, 'generated')}.`);
   } catch (error) {
     json(failurePath, { schemaVersion: 1, milestone: 'SH-08', status: 'blocked', reason: error instanceof Error ? error.message : String(error) });
     throw error;
@@ -858,35 +1294,38 @@ function xml(value) {
 
 function compile() {
   const failurePath = join(artifactRoot, 'compile-failure.json');
+  const compiledRoot = join(artifactRoot, 'compiled');
   try {
     const { manifest, generatedRoot } = generatedManifest();
-    const directory = mkdtempSync(join(tmpdir(), 'wasm2cs-sh08-compile-'));
-    try {
-      for (const entry of manifest.entries) writeFileSync(join(directory, entry.path), readFileSync(join(generatedRoot, entry.path)));
-      const runtimeProject = join(root, 'src', 'Wasm2Cs.Runtime', 'Wasm2Cs.Runtime.csproj');
-      run('dotnet', ['build', runtimeProject, '--configuration', 'Release', '--framework', 'netstandard2.0', '--nologo']);
-      const runtimeDll = join(root, 'src', 'Wasm2Cs.Runtime', 'bin', 'Release', 'netstandard2.0', 'Wasm2Cs.Runtime.dll');
-      if (!existsSync(runtimeDll)) throw new Error(`Runtime assembly is missing: ${runtimeDll}`);
-      writeFileSync(join(directory, 'Generated.csproj'), `<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><TargetFramework>net10.0</TargetFramework><LangVersion>9.0</LangVersion>
+    rmSync(compiledRoot, { recursive: true, force: true });
+    mkdirSync(compiledRoot, { recursive: true });
+    const runtimeProject = join(root, 'src', 'Wasm2Cs.Runtime', 'Wasm2Cs.Runtime.csproj');
+    run('dotnet', ['build', runtimeProject, '--configuration', 'Release', '--framework', 'netstandard2.0', '--nologo']);
+    const runtimeDll = join(root, 'src', 'Wasm2Cs.Runtime', 'bin', 'Release', 'netstandard2.0', 'Wasm2Cs.Runtime.dll');
+    if (!existsSync(runtimeDll)) throw new Error(`Runtime assembly is missing: ${runtimeDll}`);
+    const projectPath = join(compiledRoot, 'Generated.csproj');
+    writeFileSync(projectPath, `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><LangVersion>9.0</LangVersion><ImplicitUsings>disable</ImplicitUsings>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems><TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <OutputType>Library</OutputType></PropertyGroup>
-  <ItemGroup><Compile Include="*.g.cs" /><Reference Include="Wasm2Cs.Runtime"><HintPath>${xml(runtimeDll)}</HintPath></Reference></ItemGroup>
+  <ItemGroup><Compile Include="${xml(join(generatedRoot, '*.g.cs'))}" /><Reference Include="Wasm2Cs.Runtime"><HintPath>${xml(runtimeDll)}</HintPath></Reference></ItemGroup>
 </Project>
 `);
-      const started = process.hrtime.bigint();
-      const result = run('dotnet', ['build', join(directory, 'Generated.csproj'), '--configuration', 'Release', '-m:1', '-p:UseSharedCompilation=false', '--nologo']);
-      json(join(artifactRoot, 'compile-results.json'), {
-        schemaVersion: 1, milestone: 'SH-08', bundleSha256: manifest.bundleSha256,
-        className: manifest.className, sourceCount: manifest.entries.length,
-        durationMs: Number(process.hrtime.bigint() - started) / 1e6,
-        output: result.output
-      });
-      rmSync(failurePath, { force: true });
-      console.log(`Compiled ${manifest.entries.length} generated C# source file(s) for ${manifest.className}.`);
-    } finally {
-      rmSync(directory, { recursive: true, force: true });
-    }
+    const started = process.hrtime.bigint();
+    const result = run('dotnet', ['build', projectPath, '--configuration', 'Release', '-m:1', '-p:UseSharedCompilation=false', '--nologo']);
+    const assemblyPath = join(compiledRoot, 'bin', 'Release', 'net10.0', 'Generated.dll');
+    if (!existsSync(assemblyPath)) throw new Error(`Compiled assembly is missing: ${assemblyPath}`);
+    json(join(artifactRoot, 'compile-results.json'), {
+      schemaVersion: 1, milestone: 'SH-08', bundleSha256: manifest.bundleSha256,
+      className: manifest.className, sourceCount: manifest.entries.length,
+      sourceManifest: 'generated-manifest.json', sourceDirectory: 'generated',
+      projectPath: 'compiled/Generated.csproj', assemblyPath: 'compiled/bin/Release/net10.0/Generated.dll',
+      assemblySha256: sha256File(assemblyPath), retained: true,
+      durationMs: Number(process.hrtime.bigint() - started) / 1e6,
+      output: result.output
+    });
+    rmSync(failurePath, { force: true });
+    console.log(`Compiled ${manifest.entries.length} generated C# source file(s) for ${manifest.className}; assembly saved at ${assemblyPath}.`);
   } catch (error) {
     json(failurePath, { schemaVersion: 1, milestone: 'SH-08', status: 'blocked', reason: error instanceof Error ? error.message : String(error) });
     throw error;
@@ -1031,6 +1470,8 @@ try {
     compile();
   } else if (command === 'host') {
     host();
+  } else if (command === 'hello') {
+    hello();
   } else {
     console.error(help);
     process.exitCode = 2;

@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "milestone": "SH-10",
+  "runtimePath": "_framework/dotnet.native.wasm",
+  "runtimeWasmSha256": "d531922c75237648c1f643077c13ba0da8f9583ecfa3304476ab196984c3efe4",
+  "bootConfigPath": "_framework/dotnet.boot.js",
+  "mainAssemblyName": "SelfHosting.dll",
+  "managedEntryWrapper": "__Wrapper_RunManagedMain_610878",
+  "assemblyOrderSource": "dotnet.boot.js resources.coreAssembly then resources.assembly",
+  "debugLevel": 0,
+  "globalizationMode": "invariant",
+  "runtimePropertiesSource": "dotnet.boot.js runtimeConfig.runtimeOptions.configProperties",
+  "runtimeProperties": {
+    "System.Diagnostics.Debugger.IsSupported": false,
+    "System.Diagnostics.Metrics.Meter.IsSupported": false,
+    "System.Diagnostics.Tracing.EventSource.IsSupported": false,
+    "System.Globalization.Invariant": true,
+    "System.TimeZoneInfo.Invariant": false,
+    "System.Globalization.PredefinedCulturesOnly": true,
+    "System.Linq.Enumerable.IsSizeOptimized": true,
+    "System.Net.Http.EnableActivityPropagation": false,
+    "System.Net.Http.WasmEnableStreamingResponse": true,
+    "System.Net.SocketsHttpHandler.Http3Support": false,
+    "System.Reflection.Metadata.MetadataUpdater.IsSupported": false,
+    "System.Resources.UseSystemResourceKeys": true,
+    "System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization": false,
+    "System.Text.Encoding.EnableUnsafeUTF7Encoding": false
+  },
+  "requiredExports": {
+    "constructors": "__wasm_call_ctors",
+    "malloc": "malloc",
+    "free": "free",
+    "addAssembly": "mono_wasm_add_assembly",
+    "loadRuntime": "mono_wasm_load_runtime",
+    "setMainArgs": "mono_wasm_set_main_args",
+    "assemblyLoad": "mono_wasm_assembly_load",
+    "assemblyFindClass": "mono_wasm_assembly_find_class",
+    "assemblyFindMethod": "mono_wasm_assembly_find_method",
+    "invokeJsExport": "mono_wasm_invoke_jsexport",
+    "exit": "mono_wasm_exit"
+  },
+  "startupOrder": [
+    "verify-bundle-and-boot-config",
+    "constructors",
+    "add-assemblies-in-boot-config-order",
+    "load-runtime-with-boot-properties",
+    "set-main-args",
+    "resolve-managed-entry-point",
+    "invoke-managed-entry-point",
+    "record-exit"
+  ],
+  "notes": [
+    "The boot config is the source of truth for the complete 174-assembly order; it is not trimmed for SH-10.",
+    "Native export names and signatures are checked against the generated runtime inventory before hello runs.",
+    "The C# hello path does not instantiate WebAssembly, execute JavaScript, or load the guest through the outer CLR.",
+    "Imports not required by SH-10 remain unbound; the generated runtime must reject an unexpected call instead of returning a fake success."
+  ]
+}

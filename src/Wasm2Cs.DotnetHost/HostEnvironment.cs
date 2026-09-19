@@ -131,7 +131,9 @@ public sealed class HostEnvironment
     {
         if (destination == null) throw new ArgumentNullException(nameof(destination));
         if (offset < 0 || count < 0 || (long)offset + count > destination.Length) throw new ArgumentOutOfRangeException(nameof(offset));
-        FileEntry file = GetFile(fd);
+        FileEntry file;
+        try { file = GetFile(fd); }
+        catch (InvalidOperationException) { return -9; }
         int available = file.Bytes.Length - file.Position;
         int amount = Math.Min(count, Math.Max(0, available));
         Buffer.BlockCopy(file.Bytes, file.Position, destination, offset, amount);
@@ -145,7 +147,9 @@ public sealed class HostEnvironment
         if (offset < 0 || count < 0 || (long)offset + count > source.Length) throw new ArgumentOutOfRangeException(nameof(offset));
         if (fd == 1) { Stdout(Copy(source, offset, count)); return count; }
         if (fd == 2) { Stderr(Copy(source, offset, count)); return count; }
-        FileEntry file = GetFile(fd);
+        FileEntry file;
+        try { file = GetFile(fd); }
+        catch (InvalidOperationException) { return -9; }
         if (!file.Writable) return -1;
         if (file.Position + count > file.Bytes.Length) Array.Resize(ref file.Bytes, checked(file.Position + count));
         Buffer.BlockCopy(source, offset, file.Bytes, file.Position, count);
@@ -159,7 +163,7 @@ public sealed class HostEnvironment
         if (count < 0) throw new ArgumentOutOfRangeException(nameof(count));
         var buffer = new byte[count];
         int read = Read(fd, buffer, 0, count);
-        memory.WriteMemory(address, buffer, 0, read);
+        if (read > 0) memory.WriteMemory(address, buffer, 0, read);
         return read;
     }
 
@@ -259,10 +263,10 @@ public sealed class HostEnvironment
 
     public static void WriteUInt32(WasmMemory memory, uint address, uint value)
     {
-        memory.WriteByte(address, (byte)value);
-        memory.WriteByte(checked(address + 1), (byte)(value >> 8));
-        memory.WriteByte(checked(address + 2), (byte)(value >> 16));
-        memory.WriteByte(checked(address + 3), (byte)(value >> 24));
+        memory.WriteByte(address, unchecked((byte)value));
+        memory.WriteByte(checked(address + 1), unchecked((byte)(value >> 8)));
+        memory.WriteByte(checked(address + 2), unchecked((byte)(value >> 16)));
+        memory.WriteByte(checked(address + 3), unchecked((byte)(value >> 24)));
     }
 
     private static byte[] Copy(byte[] source, int offset, int count)

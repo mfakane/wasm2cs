@@ -173,6 +173,7 @@ await FloatChecks.Verify();
 await TableChecks.Verify();
 await ExceptionChecks.Verify();
 HostChecks.Verify();
+MonoBootChecks.Verify();
 
 record Call(string Name, int[] Args);
 sealed class Input(string path, string content) : AdditionalText

@@ -14,7 +14,7 @@ import {
 } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { tmpdir } from 'node:os';
+import { arch, cpus, platform, release, tmpdir } from 'node:os';
 import { dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -766,6 +766,7 @@ if (${condition}) assemblies.Add(new MonoAssembly(${JSON.stringify(name)}, selfH
   const fcntl64 = csharpIdentifier('env', '__syscall_fcntl64');
   const openat = csharpIdentifier('env', '__syscall_openat');
   const scheduleBackground = csharpIdentifier('env', 'schedule_background_exec');
+  const traceLogger = csharpIdentifier('env', 'mono_wasm_trace_logger');
   const assignments = `    ${now} = () => environment.WallClock().ToUnixTimeMilliseconds(),
     ${dateNow} = () => environment.WallClock().ToUnixTimeMilliseconds(),
     ${nowRes} = () => 1.0,
@@ -791,6 +792,13 @@ if (${condition}) assemblies.Add(new MonoAssembly(${JSON.stringify(name)}, selfH
     ${exit} = code => requestedExit = code,
      ${forceExit} = code => requestedExit = code,
      ${scheduleBackground} = () => { },
+     ${traceLogger} = (domain, level, message, fatal, userData) => runtimeTrace.Add(new
+     {
+         domain = HostEnvironment.ReadString(RequireMemory(), unchecked((uint)domain)),
+         level = HostEnvironment.ReadString(RequireMemory(), unchecked((uint)level)),
+         message = HostEnvironment.ReadString(RequireMemory(), unchecked((uint)message)),
+         fatal
+     }),
     ${envSizes} = (count, bufferSize) =>
     {
         var memory = RequireMemory();
@@ -883,6 +891,7 @@ using Wasm2Cs;
 using Wasm2Cs.DotnetHost;
 using Wasm2Cs.Generated;
 
+ var instanceNumber = 1;
  var stdout = new List<byte>();
  var stderr = new List<byte>();
  var environment = new HostEnvironment(
@@ -891,6 +900,18 @@ using Wasm2Cs.Generated;
      stdout: bytes => stdout.AddRange(bytes),
      stderr: bytes => stderr.AddRange(bytes));
  var scenario = Environment.GetEnvironmentVariable("SH10_SCENARIO") ?? "positive";
+ var hostFileMarker = false;
+ var hostCallbacks = 0;
+ if (scenario == "managed")
+ {
+     if (instanceNumber == 1)
+     {
+         environment.SetFile("/sh11-instance-one", new byte[] { 1, 2, 3 });
+         environment.Enqueue(() => { });
+     }
+     hostFileMarker = environment.OpenFile("/sh11-instance-one") >= 3;
+     hostCallbacks = environment.Pump();
+ }
  var requestedExit = (int?)null;
  var requestedAbort = false;
  var reentryArmed = false;
@@ -898,6 +919,7 @@ using Wasm2Cs.Generated;
  var reentryStatus = 0;
  Func<int>? reentry = null;
  var managedProbeResults = new List<object>();
+ var runtimeTrace = new List<object>();
  object? managedThrow = null;
  WasmMemory? attachedMemory = null;
  DotnetRuntime? runtime = null;
@@ -1094,6 +1116,7 @@ using Wasm2Cs.Generated;
       executionDurationMs = (Stopwatch.GetTimestamp() - executionStarted) * 1000.0 / Stopwatch.Frequency;
       globalFinal = ReadGlobals();
       boot.Exit(managedReturn.Value);
+      if (scenario == "managed" && instanceNumber == 1) environment.Exit(17);
  }
  catch (Exception exception)
  {
@@ -1116,11 +1139,15 @@ using Wasm2Cs.Generated;
       runtimeIdentity = runtime == null ? 0 : RuntimeHelpers.GetHashCode(runtime),
       globalInitial,
       globalFinal,
+      hostState = new { fileMarker = hostFileMarker, callbacks = hostCallbacks, exited = environment.HasExited, exitCode = environment.ExitCode },
+      runtimeTrace,
       linearPages = runtime?.memory.CurrentPages ?? 0,
       linearMaximumBytes = runtime == null ? 0 : runtime.memory.HostMaximumPages * 65536,
       declaredMaximumPages = runtime?.memory.DeclaredMaximumPages,
-      guestHeap = GC.GetTotalMemory(false),
+      outerGcHeap = GC.GetTotalMemory(false),
+      outerGcAvailable = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes,
       outerWorkingSet = Process.GetCurrentProcess().WorkingSet64,
+      outerPeakWorkingSet = Process.GetCurrentProcess().PeakWorkingSet64,
       startupDurationMs,
       executionDurationMs,
        state = boot?.State.ToString() ?? (failure == null ? null : "Failed"),
@@ -1135,12 +1162,12 @@ using Wasm2Cs.Generated;
 
 function managedRunnerSource(boot, managed) {
   const source = helloRunnerSource(boot, managed);
-  const marker = ' var stdout = new List<byte>();';
+  const marker = ' var instanceNumber = 1;';
   const bodyStart = source.indexOf(marker);
   if (bodyStart < 0) throw new Error('Managed runner source did not contain its instance body.');
   const prefix = source.slice(0, bodyStart);
-  const body = source.slice(bodyStart);
-  return `${prefix}{\n${body}\n}\n{\n${body}\n}`;
+  const body = source.slice(bodyStart).replace(marker, ' var instanceNumber = ++sh11Instance;');
+  return `${prefix}var sh11Instance = 0;\nRunInstance();\nGC.Collect();\nGC.WaitForPendingFinalizers();\nGC.Collect();\nRunInstance();\nvoid RunInstance()\n{\n${body}\n}`;
 }
 
 function taggedJsonLines(output, tag) {
@@ -1273,7 +1300,7 @@ function translatedManagedResults(boot, generated, wrappers, timeoutMs, gcHeapLi
     const execution = run('dotnet', [assembly], {
       allowFailure: true,
       timeoutMs,
-      env: { ...process.env, SH10_SCENARIO: 'managed', DOTNET_GCHeapHardLimit: String(gcHeapLimit) }
+      env: { ...process.env, SH10_SCENARIO: 'managed', DOTNET_GCHeapHardLimit: `0x${gcHeapLimit.toString(16)}` }
     });
     if (execution.status === null) throw new Error(`Translated Mono managed probe timed out: ${execution.error?.message ?? 'unknown timeout'}`);
     const records = taggedJsonLines(execution.output, 'SH10_RESULT:');
@@ -1467,8 +1494,10 @@ function managed() {
       throw new Error('SH-11 profile has unsupported fixed iteration or instance conditions.');
     const timeoutMs = Number(contract.timeoutMs);
     const gcHeapLimit = Number(contract.gcHeapLimitBytes);
-    if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || !Number.isSafeInteger(gcHeapLimit) || gcHeapLimit <= 0)
-      throw new Error('SH-11 profile contains invalid timeout or GC heap limits.');
+    const processMemoryLimit = Number(contract.outerProcessMemoryBytes);
+    if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || !Number.isSafeInteger(gcHeapLimit) || gcHeapLimit <= 0 ||
+        !Number.isSafeInteger(processMemoryLimit) || processMemoryLimit <= 0)
+      throw new Error('SH-11 profile contains invalid timeout or memory limits.');
     const manifest = verifyBundle();
     const startup = bootConfig(manifest);
     if (contract.runtimeSha256 !== startup.runtimeSha256)
@@ -1493,14 +1522,19 @@ function managed() {
     const instanceRuns = translated.instances.map((instance, index) => {
       if (instance.failure !== null || instance.state !== 'Exited' || instance.managedReturn !== 0 || instance.exitCode !== 0)
         throw new Error(`Translated Mono instance ${index + 1} did not exit successfully: ${JSON.stringify(instance)}.`);
-      if (instance.stderr.indexOf('SH11_STDERR') < 0)
+      if (instance.stderr.split('SH11_STDERR').length - 1 !== contract.invocationsPerInstance)
         throw new Error(`Translated Mono instance ${index + 1} did not capture stderr.`);
-      if (!instance.managedThrow?.thrown)
+      if (!instance.managedThrow?.thrown || instance.managedThrow.type !== 'System.InvalidOperationException' ||
+          !instance.managedThrow.message.includes(contract.managedThrowWrapper))
         throw new Error(`Translated Mono instance ${index + 1} did not propagate the deliberate managed exception.`);
       if (instance.reentryStatus !== 3)
         throw new Error(`Translated Mono instance ${index + 1} did not complete host re-entry: ${instance.reentryStatus}.`);
       if (instance.linearMaximumBytes !== contract.linearMemoryBytes)
         throw new Error(`Translated Mono instance ${index + 1} has linear-memory limit ${instance.linearMaximumBytes}; expected ${contract.linearMemoryBytes}.`);
+      if (instance.outerGcAvailable <= 0 || instance.outerGcAvailable > gcHeapLimit)
+        throw new Error(`Translated Mono instance ${index + 1} did not apply the outer GC heap limit: ${instance.outerGcAvailable}.`);
+      if (instance.outerPeakWorkingSet <= 0 || instance.outerPeakWorkingSet > processMemoryLimit)
+        throw new Error(`Translated Mono instance ${index + 1} exceeded the outer process memory limit: ${instance.outerPeakWorkingSet}.`);
       return verifyProbeRuns(`translated Mono instance ${index + 1}`, instance.managedProbeResults.map(item => ({
         status: item.status,
         result: item.payload ? JSON.parse(item.payload) : null
@@ -1516,10 +1550,24 @@ function managed() {
         !Array.isArray(first.globalFinal) || !Array.isArray(second.globalFinal) ||
         first.globalInitial.length !== second.globalInitial.length)
       throw new Error('Translated Mono global storage snapshots are incomplete or inconsistent.');
+    if (JSON.stringify(first.globalInitial) !== JSON.stringify(second.globalInitial) ||
+        JSON.stringify(first.globalFinal) !== JSON.stringify(second.globalFinal))
+      throw new Error('Translated Mono global state differs between independent instances.');
+    if (first.globalInitial.length === 0 || first.globalFinal.length === 0 ||
+        JSON.stringify(first.globalInitial) === JSON.stringify(first.globalFinal))
+      throw new Error('Translated Mono global snapshots did not observe mutable global state.');
+    if (!first.hostState?.fileMarker || first.hostState.callbacks !== 1 || !first.hostState.exited || first.hostState.exitCode !== 17 ||
+        second.hostState?.fileMarker || second.hostState?.callbacks !== 0 || second.hostState?.exited || second.hostState?.exitCode !== 0)
+      throw new Error('Translated Mono host file, callback, or exit state leaked between instances.');
     if (JSON.parse(first.managedProbeResults[0].payload).Invocation !== 1)
       throw new Error('First translated Mono instance did not start with a fresh managed static state.');
     if (JSON.parse(second.managedProbeResults[0].payload).Invocation !== 1)
       throw new Error('Second translated Mono instance did not start with isolated managed static state.');
+    const toolchainPath = join(artifactRoot, 'toolchain.json');
+    if (!existsSync(toolchainPath)) throw new Error(`Toolchain evidence is missing: ${toolchainPath}`);
+    const toolchain = JSON.parse(readFileSync(toolchainPath, 'utf8'));
+    const info = dotnetInfo();
+    const cpuList = cpus();
     const result = {
       schemaVersion: 1,
       milestone: 'SH-11',
@@ -1528,6 +1576,19 @@ function managed() {
       profile: contract,
       wrappers: official.wrappers,
       probes: contract.probes,
+      environment: {
+        platform: platform(),
+        release: release(),
+        architecture: arch(),
+        cpuModel: cpuList[0]?.model ?? null,
+        cpuCount: cpuList.length,
+        node: process.version,
+        dotnetSdk: info.version,
+        runtimePack: toolchain.runtimePack ?? null,
+        emscripten: toolchain.emscripten?.version ?? null,
+        toolchainPath: 'toolchain.json',
+        toolchainSha256: sha256File(toolchainPath)
+      },
       normalDotnet: { probes: normalRuns, guestHeap: normal.probes.map(run => run.result.GuestHeap), durationMs: normal.durationMs },
       officialBrowserWasm: { probes: officialRuns, guestHeap: official.probes.map(run => run.result.GuestHeap), throwing: official.throwing },
       translatedMono: {
@@ -1538,7 +1599,7 @@ function managed() {
         memoryIsolated: first.memoryIdentity !== second.memoryIdentity,
         tableIsolated: first.tableIdentity !== second.tableIdentity
       },
-      limits: { timeoutMs, gcHeapLimit, linearMemoryBytes: contract.linearMemoryBytes },
+      limits: { timeoutMs, gcHeapLimit, outerProcessMemoryBytes: processMemoryLimit, linearMemoryBytes: contract.linearMemoryBytes },
       outerEngine: false
     };
     json(join(artifactRoot, 'managed-results.json'), result);
@@ -1809,9 +1870,10 @@ function prepare() {
       runtimeOptions: profile.runtimeOptions,
       sourceProject: 'samples/SelfHosting/SelfHosting.csproj',
       evidence: ['build-evidence/wasm-props.json', 'build-evidence/SelfHosting.deps.json']
-    });
-    const manifest = writeManifest();
-    console.log(`Prepared bundle at ${bundleRoot}; bundle SHA-256: ${manifest.bundleSha256}`);
+     });
+     const manifest = writeManifest();
+     rmSync(join(artifactRoot, 'prepare-failure.json'), { force: true });
+     console.log(`Prepared bundle at ${bundleRoot}; bundle SHA-256: ${manifest.bundleSha256}`);
   } catch (error) {
     json(join(artifactRoot, 'prepare-failure.json'), {
       schemaVersion: 1,

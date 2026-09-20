@@ -47,7 +47,7 @@ public static class ManagedProbes
             result.Recursion == "720" &&
             result.Delegate == "15" &&
             result.Json == "Wasm2Cs|3|True" &&
-            result.GarbageCollection == "survivor:16|checksum:2016|seed:24301";
+            result.GarbageCollection == "bytes:survivor-content|string:survivor-string|record:survivor:18|checksum:2016|seed:24301";
         result.Fingerprint = string.Join(";", new[]
         {
             result.Utf8, result.Collections, result.Dictionary, result.Generics,
@@ -171,7 +171,9 @@ public static class ManagedProbes
 
     private static string GarbageCollectionProbe()
     {
-        var survivor = Encoding.UTF8.GetBytes("survivor-content");
+        var survivorBytes = Encoding.UTF8.GetBytes("survivor-content");
+        var survivorString = new string("survivor-string".ToCharArray());
+        var survivorRecord = new ProbeRecord("survivor", survivorBytes.Length + 2);
         var checksum = 0;
         var state = Seed;
         for (var i = 0; i < 64; i++)
@@ -184,8 +186,12 @@ public static class ManagedProbes
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-        GC.KeepAlive(survivor);
-        return $"survivor:{survivor.Length}|checksum:{checksum}|seed:{Seed}";
+        var result = $"bytes:{Encoding.UTF8.GetString(survivorBytes)}|string:{survivorString}|" +
+            $"record:{survivorRecord.Name}:{survivorRecord.Value}|checksum:{checksum}|seed:{Seed}";
+        GC.KeepAlive(survivorBytes);
+        GC.KeepAlive(survivorString);
+        GC.KeepAlive(survivorRecord);
+        return result;
     }
 
     private sealed record ProbeRecord(string Name, int Value);

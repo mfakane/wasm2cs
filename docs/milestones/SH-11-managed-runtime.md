@@ -1,6 +1,6 @@
 # SH-11 managed 実行の安定化
 
-状態: 未着手。前提: [SH-10](SH-10-mono-startup.md)。次: [SH-12](SH-12-self-hosting.md)。
+状態: 完了。前提: [SH-10](SH-10-mono-startup.md)。次: [SH-12](SH-12-self-hosting.md)。
 
 ## 目的・変更対象
 
@@ -26,10 +26,10 @@ node scripts/self-hosting.mjs managed
 
 ## 合格条件
 
-- [ ] wasm2cs が使う managed 機能に対応する probe がすべて通る。
-- [ ] GC 後と反復実行後も結果・参照が正しく、インスタンス間の状態が分離される。
-- [ ] 修正に回帰テストがあり、ゲスト処理をホスト側コードへ移して通していない。
-- [ ] メモリと時間の測定結果が、対象 bundle と環境に対応づいている。
+- [x] wasm2cs が使う managed 機能に対応する probe がすべて通る。
+- [x] GC 後と反復実行後も結果・参照が正しく、インスタンス間の状態が分離される。
+- [x] 修正に回帰テストがあり、ゲスト処理をホスト側コードへ移して通していない。
+- [x] メモリと時間の測定結果が、対象 bundle と環境に対応づいている。
 
 ## 非対象・失敗時の扱い
 
@@ -39,7 +39,7 @@ BCL 全体、ネットワーク、マルチスレッド、ゲスト内 JIT の�
 
 probe 群、実装修正、GC・反復・状態分離の順に分ける。終了コミット例: `test: validate managed execution on translated mono`。
 
-- 実行コマンド・結果: 未実施
-- probe 一覧・反復条件・メモリ／時間: 未取得
-- 未解決事項: 実物での managed 機能と資源使用の検証待ち
-- 終了コミット: 未完了
+- 実行コマンド・結果: `prepare`、`inventory`、`reference`、`generate`、`managed`、`hello`、`host`、共通回帰を実行済み。`managed` は通常 .NET、公式 browser-WASM、変換済み Mono の12 probeを比較し、3回反復・2インスタンス・例外伝播・stdout/stderr・host re-entryを確認した。
+- probe 一覧・反復条件・メモリ／時間: 一覧と固定条件は `docs/self-hosting/SH-11-managed.json`、結果は `artifacts/self-hosting/managed-results.json`。seed `24301`、3回／instance、2 instance、timeout 15分、linear memory 256 MiB、translated childのGC heap上限1 GiB。runtime SHA-256は `d531922c75237648c1f643077c13ba0da8f9583ecfa3304476ab196984c3efe4`、bundle SHA-256は `63b9c3d762ac6fc79e659c930371c793973a76df80658c2aafe9e22d21eed3af`。guest heap、linear memory、outer working set、startup／execution時間を別々に記録する。
+- 未解決事項: なし。性能値は合否閾値ではなく、固定環境の測定記録である。
+- 終了コミット: `3ccce9f17e28237703bfd9c68094df3a49149c2b`

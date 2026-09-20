@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "milestone": "SH-11",
+  "runtimePath": "_framework/dotnet.native.wasm",
+  "runtimeSha256": "d531922c75237648c1f643077c13ba0da8f9583ecfa3304476ab196984c3efe4",
+  "bundleSha256": "63b9c3d762ac6fc79e659c930371c793973a76df80658c2aafe9e22d21eed3af",
+  "invocationsPerInstance": 3,
+  "instances": 2,
+  "seed": 24301,
+  "timeoutMs": 900000,
+  "linearMemoryBytes": 268435456,
+  "gcHeapLimitBytes": 1073741824,
+  "probes": [
+    "utf8-string",
+    "collections-and-buffer-copy",
+    "dictionary",
+    "generics",
+    "linq",
+    "record-equality",
+    "invariant-numeric-formatting",
+    "caught-exception-and-finally",
+    "recursion",
+    "delegate",
+    "json",
+    "gc-survival-and-content"
+  ],
+  "managedEntryWrapper": "__Wrapper_RunManagedMain_610878",
+  "managedProbeWrapper": "__Wrapper_RunManagedProbe_610878",
+  "managedReentryWrapper": "__Wrapper_ReenterManagedProbe_610878",
+  "managedThrowWrapper": "__Wrapper_ThrowManagedProbe_610878"
+}

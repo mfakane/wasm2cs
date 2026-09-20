@@ -14,11 +14,37 @@ return SelfHostingDriver.RunManagedEntry();
 public static partial class SelfHostingDriver
 {
     private static IEnumerator<GeneratedSource>? sourceEnumerator;
+    private static string lastManagedProbe = "";
 
     // SH-10 invokes this managed method through Mono's exported method bridge.
     // The top-level entry point and the bridge share the same managed body.
     [JSExport]
     internal static int RunManagedMain() => RunManagedEntry();
+
+    [JSExport]
+    internal static int RunManagedProbe()
+    {
+        try
+        {
+            lastManagedProbe = ManagedProbes.Run();
+            Console.WriteLine("SH11_PROBE:" + lastManagedProbe);
+            Console.Error.WriteLine("SH11_STDERR");
+            return 0;
+        }
+        catch
+        {
+            return -1;
+        }
+    }
+
+    [JSExport]
+    internal static string GetManagedProbeResult() => lastManagedProbe;
+
+    [JSExport]
+    internal static int ReenterManagedProbe() => ManagedProbes.Reenter();
+
+    [JSExport]
+    internal static int ThrowManagedProbe() => throw new InvalidOperationException("SH-11 deliberate uncaught exception");
 
     internal static int RunManagedEntry()
     {

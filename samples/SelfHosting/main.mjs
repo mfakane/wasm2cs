@@ -25,6 +25,31 @@ const results = request.scenarios.map(scenario => {
   if (scenario.operation === 'hello') {
     return { id: scenario.id, operation: scenario.operation, output: driver.Hello() };
   }
+  if (scenario.operation === 'managed-probe') {
+    const runs = [];
+    for (let invocation = 0; invocation < (scenario.invocations ?? 3); invocation++) {
+      const status = driver.RunManagedProbe();
+      runs.push({ status, result: JSON.parse(driver.GetManagedProbeResult()) });
+    }
+    return { id: scenario.id, operation: scenario.operation, runs };
+  }
+  if (scenario.operation === 'managed-exports') {
+    return { id: scenario.id, operation: scenario.operation, exports: Object.keys(driver).sort() };
+  }
+  if (scenario.operation === 'managed-throw') {
+    try {
+      driver.ThrowManagedProbe();
+      return { id: scenario.id, operation: scenario.operation, thrown: false };
+    } catch (error) {
+      return {
+        id: scenario.id,
+        operation: scenario.operation,
+        thrown: true,
+        type: error?.name ?? 'Error',
+        message: String(error?.message ?? error)
+      };
+    }
+  }
   if (scenario.operation === 'translate') {
     return {
       id: scenario.id,

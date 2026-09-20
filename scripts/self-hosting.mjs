@@ -25,11 +25,12 @@ const bundleRoot = join(artifactRoot, 'bundle');
 const manifestPath = join(artifactRoot, 'bundle-manifest.json');
 const profilePath = join(root, 'docs', 'self-hosting', 'SH-01-profile.json');
 const startupProfilePath = join(root, 'docs', 'self-hosting', 'SH-10-startup.json');
+const managedProfilePath = join(root, 'docs', 'self-hosting', 'SH-11-managed.json');
 const profile = JSON.parse(readFileSync(profilePath, 'utf8'));
 const args = process.argv.slice(2);
 const command = args[0];
 
-const help = `Usage: node scripts/self-hosting.mjs <prepare|inventory|reference|generate|compile|host|hello>
+const help = `Usage: node scripts/self-hosting.mjs <prepare|inventory|reference|generate|compile|host|hello|managed>
 
 prepare    install/check the isolated workload and publish the guest bundle
 inventory  validate the bundle and record a full WABT inventory
@@ -38,6 +39,7 @@ generate   translate dotnet.native.wasm into deterministic C# source files
 compile    compile the generated C# files against the runtime ABI
 host       run the C# SH-09 ABI fixture and construct the full generated runtime
 hello      start the generated Mono runtime and run managed Hello World
+managed    compare managed probes across .NET, official WASM, and translated Mono
 
 prepare flags:
   --skip-workload-install  report a missing workload without attempting install
@@ -61,7 +63,8 @@ function run(program, programArgs, options = {}) {
     cwd: options.cwd ?? root,
     env: options.env ?? process.env,
     encoding: 'utf8',
-    maxBuffer: 512 * 1024 * 1024
+    maxBuffer: 512 * 1024 * 1024,
+    timeout: options.timeoutMs
   });
   const output = (result.stdout ?? '') + (result.stderr ?? '');
   if (result.error) {
@@ -721,7 +724,10 @@ Console.WriteLine("HOST_ABI_RESULT:" + JsonSerializer.Serialize(actual));
 `;
 }
 
-function helloRunnerSource(boot) {
+function helloRunnerSource(boot, managed = null) {
+  const managedProbeWrapper = JSON.stringify(managed?.probeWrapper ?? '');
+  const managedReentryWrapper = JSON.stringify(managed?.reentryWrapper ?? '');
+  const managedThrowWrapper = JSON.stringify(managed?.throwWrapper ?? '');
   const assemblyLines = boot.assemblies.map(assembly => {
     const name = assembly.virtualPath ?? assembly.name;
     const path = JSON.stringify(join(bundleRoot, '_framework', name));
@@ -759,6 +765,7 @@ if (${condition}) assemblies.Add(new MonoAssembly(${JSON.stringify(name)}, selfH
   const getcwd = csharpIdentifier('env', '__syscall_getcwd');
   const fcntl64 = csharpIdentifier('env', '__syscall_fcntl64');
   const openat = csharpIdentifier('env', '__syscall_openat');
+  const scheduleBackground = csharpIdentifier('env', 'schedule_background_exec');
   const assignments = `    ${now} = () => environment.WallClock().ToUnixTimeMilliseconds(),
     ${dateNow} = () => environment.WallClock().ToUnixTimeMilliseconds(),
     ${nowRes} = () => 1.0,
@@ -782,7 +789,8 @@ if (${condition}) assemblies.Add(new MonoAssembly(${JSON.stringify(name)}, selfH
      ${assertFail} = (message, file, line, functionName) => throw new InvalidOperationException($"WASM assertion failed: {HostEnvironment.ReadString(RequireMemory(), unchecked((uint)message))} at {HostEnvironment.ReadString(RequireMemory(), unchecked((uint)file))}:{line}"),
      ${abort} = () => { requestedAbort = true; throw new InvalidOperationException("WASM abort requested."); },
     ${exit} = code => requestedExit = code,
-    ${forceExit} = code => requestedExit = code,
+     ${forceExit} = code => requestedExit = code,
+     ${scheduleBackground} = () => { },
     ${envSizes} = (count, bufferSize) =>
     {
         var memory = RequireMemory();
@@ -823,15 +831,20 @@ if (${condition}) assemblies.Add(new MonoAssembly(${JSON.stringify(name)}, selfH
         if (value.EndsWith("stderr", StringComparison.Ordinal)) return 2;
         return -2;
     },
-    ${fdWrite} = (fd, iovs, count, result) =>
-    {
-        var memory = RequireMemory();
-        var bytes = new byte[4096];
-        var length = HostEnvironment.ReadIovecs(memory, unchecked((uint)iovs), count, bytes);
-        var written = environment.Write(fd, bytes, 0, length);
-        HostEnvironment.WriteUInt32(memory, unchecked((uint)result), unchecked((uint)written));
-        return 0;
-    },
+     ${fdWrite} = (fd, iovs, count, result) =>
+     {
+         var memory = RequireMemory();
+         var bytes = new byte[4096];
+         var length = HostEnvironment.ReadIovecs(memory, unchecked((uint)iovs), count, bytes);
+         var written = environment.Write(fd, bytes, 0, length);
+         HostEnvironment.WriteUInt32(memory, unchecked((uint)result), unchecked((uint)written));
+         if (reentryArmed && !reentryTriggered && reentry != null)
+         {
+             reentryTriggered = true;
+             reentryStatus = reentry();
+         }
+         return 0;
+     },
     ${fdRead} = (fd, iovs, count, result) =>
     {
         var memory = RequireMemory();
@@ -859,8 +872,11 @@ if (${condition}) assemblies.Add(new MonoAssembly(${JSON.stringify(name)}, selfH
      ${fdClose} = fd => fd < 3 || environment.Close(fd) ? 0 : 8`;
   return `using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+ using System.IO;
+ using System.Diagnostics;
+ using System.Linq;
+ using System.Reflection;
+ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using Wasm2Cs;
@@ -868,17 +884,32 @@ using Wasm2Cs.DotnetHost;
 using Wasm2Cs.Generated;
 
  var stdout = new List<byte>();
+ var stderr = new List<byte>();
  var environment = new HostEnvironment(
      wallClock: () => DateTimeOffset.FromUnixTimeMilliseconds(1234),
      entropy: bytes => { for (int i = 0; i < bytes.Length; i++) bytes[i] = (byte)(i + 1); },
-     stdout: bytes => stdout.AddRange(bytes));
+     stdout: bytes => stdout.AddRange(bytes),
+     stderr: bytes => stderr.AddRange(bytes));
  var scenario = Environment.GetEnvironmentVariable("SH10_SCENARIO") ?? "positive";
  var requestedExit = (int?)null;
  var requestedAbort = false;
+ var reentryArmed = false;
+ var reentryTriggered = false;
+ var reentryStatus = 0;
+ Func<int>? reentry = null;
+ var managedProbeResults = new List<object>();
+ object? managedThrow = null;
  WasmMemory? attachedMemory = null;
  DotnetRuntime? runtime = null;
+ object[] globalInitial = Array.Empty<object>();
+ object[] globalFinal = Array.Empty<object>();
  WasmMemory RequireMemory() => attachedMemory ?? throw new InvalidOperationException("WASM memory was not attached.");
- DotnetRuntime RequireRuntime() => runtime ?? throw new InvalidOperationException("runtime was not constructed");
+  DotnetRuntime RequireRuntime() => runtime ?? throw new InvalidOperationException("runtime was not constructed");
+  object[] ReadGlobals() => typeof(DotnetRuntime).GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
+      .Where(field => field.Name.StartsWith("__wasm_G", StringComparison.Ordinal))
+      .OrderBy(field => field.Name)
+      .Select(field => field.GetValue(RequireRuntime()) ?? "null")
+      .ToArray();
  // Unassigned imports stay null so the generated runtime rejects unexpected calls.
  var bindings = new DotnetRuntime.Bindings
  {
@@ -886,14 +917,17 @@ using Wasm2Cs.Generated;
  };
  if (scenario == "missing-import") bindings.${fdWrite} = null!;
  runtime = new DotnetRuntime(bindings);
-attachedMemory = runtime.memory;
-var exports = new MonoBoot.NativeExports
+ attachedMemory = runtime.memory;
+ globalInitial = ReadGlobals();
+ reentry = () => InvokeManagedWrapper(${managedReentryWrapper});
+ var exports = new MonoBoot.NativeExports
 {
     CallConstructors = () => { RequireRuntime().wasm_export___wasm_call_ctors(); return 0; },
     Malloc = length => unchecked((uint)RequireRuntime().malloc(length)),
     Free = address => RequireRuntime().free(unchecked((int)address)),
-    AddAssembly = (name, data, size) => RequireRuntime().mono_wasm_add_assembly(unchecked((int)name), unchecked((int)data), size),
-    LoadRuntime = (debug, count, keys, values) => RequireRuntime().mono_wasm_load_runtime(debug, count, unchecked((int)keys), unchecked((int)values)),
+     AddAssembly = (name, data, size) => RequireRuntime().mono_wasm_add_assembly(unchecked((int)name), unchecked((int)data), size),
+     ParseRuntimeOptions = (count, options) => RequireRuntime().mono_wasm_parse_runtime_options(count, unchecked((int)options)),
+     LoadRuntime = (debug, count, keys, values) => RequireRuntime().mono_wasm_load_runtime(debug, count, unchecked((int)keys), unchecked((int)values)),
     ConfigureArgs = (argc, argv) => RequireRuntime().mono_wasm_set_main_args(argc, unchecked((int)argv)),
      InvokeMain = () =>
      {
@@ -964,13 +998,59 @@ var exports = new MonoBoot.NativeExports
      var address = AllocateNative(bytes.Length);
     RequireMemory().WriteMemory(address, bytes);
     return address;
-}
- uint ReadUInt32Unchecked(uint address) => BitConverter.ToUInt32(RequireMemory().ReadMemory(address, 4), 0);
- var assemblies = new List<MonoAssembly>();
+  }
+  uint ReadUInt32Unchecked(uint address) => BitConverter.ToUInt32(RequireMemory().ReadMemory(address, 4), 0);
+  int InvokeManagedWrapper(string wrapper)
+  {
+      uint assemblyName = 0;
+      uint namespaceName = 0;
+      uint className = 0;
+      uint methodName = 0;
+      uint arguments = 0;
+      try
+      {
+          assemblyName = MonoPtr("${boot.profile.mainAssemblyName}");
+          namespaceName = MonoPtr("");
+          className = MonoPtr("SelfHostingDriver");
+          methodName = MonoPtr(wrapper);
+          var assembly = RequireRuntime().mono_wasm_assembly_load(unchecked((int)assemblyName));
+          if (assembly == 0) throw new InvalidOperationException("managed export assembly was not found.");
+          var klass = RequireRuntime().mono_wasm_assembly_find_class(assembly, unchecked((int)namespaceName), unchecked((int)className));
+          if (klass == 0) throw new InvalidOperationException("managed export class was not found.");
+          var method = RequireRuntime().mono_wasm_assembly_find_method(klass, unchecked((int)methodName), -1);
+          if (method == 0) throw new InvalidOperationException("managed export method was not found: " + wrapper);
+          arguments = AllocateNative(64);
+          RequireMemory().WriteMemory(arguments, new byte[64]);
+          RequireRuntime().mono_wasm_invoke_jsexport(method, unchecked((int)arguments));
+          var exceptionType = ReadUInt32Unchecked(unchecked(arguments + 12));
+          if (exceptionType != 0) throw new InvalidOperationException($"managed export '{wrapper}' raised marshaled exception type {exceptionType}");
+          var resultType = ReadUInt32Unchecked(unchecked(arguments + 44));
+          if (resultType != 7) throw new InvalidOperationException($"managed export '{wrapper}' returned marshaled type {resultType}, expected Int32");
+          return unchecked((int)ReadUInt32Unchecked(unchecked(arguments + 32)));
+      }
+      finally
+      {
+          if (arguments != 0) RequireRuntime().free(unchecked((int)arguments));
+          if (methodName != 0) RequireRuntime().free(unchecked((int)methodName));
+          if (className != 0) RequireRuntime().free(unchecked((int)className));
+          if (namespaceName != 0) RequireRuntime().free(unchecked((int)namespaceName));
+          if (assemblyName != 0) RequireRuntime().free(unchecked((int)assemblyName));
+      }
+  }
+  string? ReadProbePayload()
+  {
+      var lines = Encoding.UTF8.GetString(stdout.ToArray()).Split(new[] { "\\r\\n", "\\n" }, StringSplitOptions.None);
+      for (var index = lines.Length - 1; index >= 0; index--)
+          if (lines[index].StartsWith("SH11_PROBE:", StringComparison.Ordinal)) return lines[index].Substring("SH11_PROBE:".Length);
+      return null;
+  }
+  var assemblies = new List<MonoAssembly>();
  ${assemblyLines}
  MonoBoot? boot = null;
  int? managedReturn = null;
  Exception? failure = null;
+ double startupDurationMs = 0;
+ double executionDurationMs = 0;
  try
  {
      if (assemblies.Count != ${boot.assemblies.length})
@@ -978,16 +1058,42 @@ var exports = new MonoBoot.NativeExports
      var request = new MonoBootRequest(
          assemblies,
          Array.Empty<string>(),
-         ${JSON.stringify(boot.profile.mainAssemblyName)},
-         ${Number(boot.profile.debugLevel)},
-         new KeyValuePair<string, string>[]
-         {
- ${propertyLines}
-         });
-     boot = new MonoBoot(RequireMemory(), exports, request);
-     boot.Start();
-     managedReturn = boot.Run();
-     boot.Exit(managedReturn.Value);
+          ${JSON.stringify(boot.profile.mainAssemblyName)},
+          ${Number(boot.profile.debugLevel)},
+          new KeyValuePair<string, string>[]
+          {
+  ${propertyLines}
+          },
+          new[] { "--no-jiterpreter-traces-enabled" });
+      var startupStarted = Stopwatch.GetTimestamp();
+      boot = new MonoBoot(RequireMemory(), exports, request);
+      boot.Start();
+      startupDurationMs = (Stopwatch.GetTimestamp() - startupStarted) * 1000.0 / Stopwatch.Frequency;
+      var executionStarted = Stopwatch.GetTimestamp();
+      managedReturn = boot.Run();
+      if (scenario == "managed")
+      {
+          for (var invocation = 0; invocation < 3; invocation++)
+          {
+              reentryArmed = true;
+              reentryTriggered = false;
+              var status = InvokeManagedWrapper(${managedProbeWrapper});
+              reentryArmed = false;
+              managedProbeResults.Add(new { status, payload = ReadProbePayload() });
+          }
+          try
+          {
+              InvokeManagedWrapper(${managedThrowWrapper});
+              managedThrow = new { thrown = false, type = "", message = "" };
+          }
+          catch (Exception exception)
+          {
+              managedThrow = new { thrown = true, type = exception.GetType().FullName, message = exception.Message };
+          }
+      }
+      executionDurationMs = (Stopwatch.GetTimestamp() - executionStarted) * 1000.0 / Stopwatch.Frequency;
+      globalFinal = ReadGlobals();
+      boot.Exit(managedReturn.Value);
  }
  catch (Exception exception)
  {
@@ -995,20 +1101,188 @@ var exports = new MonoBoot.NativeExports
  }
  Console.WriteLine("SH10_RESULT:" + JsonSerializer.Serialize(new
  {
-     scenario,
-     stdout = Encoding.UTF8.GetString(stdout.ToArray()),
-     managedReturn,
+      scenario,
+      stdout = Encoding.UTF8.GetString(stdout.ToArray()),
+      stderr = Encoding.UTF8.GetString(stderr.ToArray()),
+      managedReturn,
      exitCode = boot?.ExitCode,
-     requestedExit,
-     requestedAbort,
-      state = boot?.State.ToString() ?? (failure == null ? null : "Failed"),
+      requestedExit,
+      requestedAbort,
+      managedProbeResults,
+      managedThrow,
+      reentryStatus,
+      memoryIdentity = runtime == null ? 0 : RuntimeHelpers.GetHashCode(runtime.memory),
+      tableIdentity = runtime == null ? 0 : RuntimeHelpers.GetHashCode(runtime.__indirect_function_table),
+      runtimeIdentity = runtime == null ? 0 : RuntimeHelpers.GetHashCode(runtime),
+      globalInitial,
+      globalFinal,
+      linearPages = runtime?.memory.CurrentPages ?? 0,
+      linearMaximumBytes = runtime == null ? 0 : runtime.memory.HostMaximumPages * 65536,
+      declaredMaximumPages = runtime?.memory.DeclaredMaximumPages,
+      guestHeap = GC.GetTotalMemory(false),
+      outerWorkingSet = Process.GetCurrentProcess().WorkingSet64,
+      startupDurationMs,
+      executionDurationMs,
+       state = boot?.State.ToString() ?? (failure == null ? null : "Failed"),
      failure = failure == null ? null : new { type = failure.GetType().FullName, message = failure.Message },
      phases = boot?.PhaseLog.ToArray() ?? Array.Empty<string>()
  }));
- Environment.ExitCode = scenario == "positive"
-     ? failure == null && managedReturn == 0 && boot?.ExitCode == 0 ? 0 : 1
-     : failure == null ? 1 : 0;
- `;
+  Environment.ExitCode = scenario == "positive" || scenario == "managed"
+      ? failure == null && managedReturn == 0 && boot?.ExitCode == 0 ? 0 : 1
+      : failure == null ? 1 : 0;
+  `;
+}
+
+function managedRunnerSource(boot, managed) {
+  const source = helloRunnerSource(boot, managed);
+  const marker = ' var stdout = new List<byte>();';
+  const bodyStart = source.indexOf(marker);
+  if (bodyStart < 0) throw new Error('Managed runner source did not contain its instance body.');
+  const prefix = source.slice(0, bodyStart);
+  const body = source.slice(bodyStart);
+  return `${prefix}{\n${body}\n}\n{\n${body}\n}`;
+}
+
+function taggedJsonLines(output, tag) {
+  return output.split(/\r?\n/).filter(line => line.startsWith(tag)).map(line => JSON.parse(line.slice(tag.length)));
+}
+
+function wrapperName(exports, method) {
+  const key = exports.find(value => value.startsWith(method + '.'));
+  const suffix = key?.slice(method.length + 1);
+  if (!suffix) throw new Error(`Official WASM exports did not contain ${method}.<signature>.`);
+  return `__Wrapper_${method}_${suffix}`;
+}
+
+function normalizeProbe(result) {
+  if (!result || typeof result !== 'object') throw new Error('Managed probe returned a non-object result.');
+  const normalized = { ...result };
+  delete normalized.GuestHeap;
+  return normalized;
+}
+
+function verifyProbeRuns(label, runs) {
+  if (!Array.isArray(runs) || runs.length !== 3) throw new Error(`${label} returned ${runs?.length ?? 0} probe runs; expected 3.`);
+  for (let index = 0; index < runs.length; index++) {
+    const run = runs[index];
+    if (run.status !== 0) throw new Error(`${label} probe ${index + 1} returned status ${run.status}.`);
+    if (typeof run.result === 'string') run.result = JSON.parse(run.result);
+    if (!run.result?.Passed) throw new Error(`${label} probe ${index + 1} reported failure: ${JSON.stringify(run.result)}.`);
+    if (run.result.Invocation !== index + 1) throw new Error(`${label} probe invocation counter is ${run.result.Invocation}; expected ${index + 1}.`);
+  }
+  return runs.map(run => normalizeProbe(run.result));
+}
+
+function compareProbeRuns(normal, official, translated) {
+  const expected = JSON.stringify(normal);
+  if (JSON.stringify(official) !== expected) throw new Error('Official browser-WASM managed probes differ from normal .NET.');
+  if (JSON.stringify(translated) !== expected) throw new Error('Translated Mono managed probes differ from normal .NET.');
+}
+
+function normalManagedResults(timeoutMs) {
+  const directory = mkdtempSync(join(tmpdir(), 'wasm2cs-sh11-dotnet-'));
+  try {
+    writeFileSync(join(directory, 'ManagedProbes.cs'), readFileSync(join(root, 'samples', 'SelfHosting', 'ManagedProbes.cs')));
+    writeFileSync(join(directory, 'Program.cs'), `using System;\n\nfor (var i = 0; i < 3; i++) Console.WriteLine("SH11_PROBE:" + ManagedProbes.Run());\n`);
+    const project = join(directory, 'ManagedReference.csproj');
+    writeFileSync(project, `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup><Compile Include="ManagedProbes.cs" /><Compile Include="Program.cs" /></ItemGroup>
+</Project>
+`);
+    run('dotnet', ['build', project, '--configuration', 'Release', '-m:1', '-p:UseSharedCompilation=false', '--nologo']);
+    const assembly = join(directory, 'bin', 'Release', 'net10.0', 'ManagedReference.dll');
+    const started = process.hrtime.bigint();
+    const execution = run('dotnet', [assembly], { allowFailure: true, timeoutMs });
+    if (execution.status === null) throw new Error(`Normal .NET managed probe timed out: ${execution.error?.message ?? 'unknown timeout'}`);
+    if (execution.status !== 0) throw new Error(`Normal .NET managed probe failed (exit ${execution.status}).\n${execution.output}`);
+    const probes = taggedJsonLines(execution.output, 'SH11_PROBE:').map(result => ({ status: 0, result }));
+    return { probes, durationMs: Number(process.hrtime.bigint() - started) / 1e6, output: execution.output };
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
+function officialManagedResults(timeoutMs) {
+  const invoked = invokeBundle({
+    protocol: 1,
+    scenarios: [
+      { id: 'exports', operation: 'managed-exports' },
+      { id: 'probe', operation: 'managed-probe', invocations: 3 },
+      { id: 'throw', operation: 'managed-throw' }
+    ]
+  }, { timeoutMs });
+  const exports = invoked.response.results?.find(item => item.id === 'exports')?.exports ?? [];
+  const probe = invoked.response.results?.find(item => item.id === 'probe');
+  const throwing = invoked.response.results?.find(item => item.id === 'throw');
+  if (!probe || !throwing) throw new Error('Official browser-WASM managed probe response is incomplete.');
+  return {
+    exports,
+    wrappers: {
+      probe: wrapperName(exports, 'RunManagedProbe'),
+      reentry: wrapperName(exports, 'ReenterManagedProbe'),
+      throw: wrapperName(exports, 'ThrowManagedProbe')
+    },
+    probes: probe.runs,
+    throwing,
+    output: invoked.response
+  };
+}
+
+function translatedManagedResults(boot, generated, wrappers, timeoutMs, gcHeapLimit) {
+  const directory = mkdtempSync(join(tmpdir(), 'wasm2cs-sh11-managed-'));
+  try {
+    for (const entry of generated.manifest.entries)
+      writeFileSync(join(directory, entry.path), readFileSync(join(generated.generatedRoot, entry.path)));
+    writeFileSync(join(directory, 'Program.cs'), managedRunnerSource(boot, {
+      probeWrapper: wrappers.probe ?? wrappers.probeWrapper,
+      reentryWrapper: wrappers.reentry ?? wrappers.reentryWrapper,
+      throwWrapper: wrappers.throw ?? wrappers.throwWrapper
+    }));
+    const project = join(directory, 'Managed.csproj');
+    writeFileSync(project, `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="*.g.cs" />
+    <Compile Include="Program.cs" />
+    <ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.Runtime', 'Wasm2Cs.Runtime.csproj'))}" />
+    <ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.DotnetHost', 'Wasm2Cs.DotnetHost.csproj'))}" />
+  </ItemGroup>
+</Project>
+`);
+    run('dotnet', ['build', project, '--configuration', 'Release', '-m:1', '-p:UseSharedCompilation=false', '--nologo']);
+    const assembly = join(directory, 'bin', 'Release', 'net10.0', 'Managed.dll');
+    const started = process.hrtime.bigint();
+    const execution = run('dotnet', [assembly], {
+      allowFailure: true,
+      timeoutMs,
+      env: { ...process.env, SH10_SCENARIO: 'managed', DOTNET_GCHeapHardLimit: String(gcHeapLimit) }
+    });
+    if (execution.status === null) throw new Error(`Translated Mono managed probe timed out: ${execution.error?.message ?? 'unknown timeout'}`);
+    const records = taggedJsonLines(execution.output, 'SH10_RESULT:');
+    if (records.length !== 2) throw new Error(`Translated Mono runner emitted ${records.length} instance record(s); expected 2.\n${execution.output}`);
+    if (execution.status !== 0) throw new Error(`Translated Mono managed probe failed (exit ${execution.status}).\n${execution.output}`);
+    return { instances: records, durationMs: Number(process.hrtime.bigint() - started) / 1e6, output: execution.output };
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 }
 
 function host() {
@@ -1184,6 +1458,103 @@ function hello() {
   }
 }
 
+function managed() {
+  const failurePath = join(artifactRoot, 'managed-failure.json');
+  try {
+    if (!existsSync(managedProfilePath)) throw new Error(`SH-11 profile is missing: ${managedProfilePath}`);
+    const contract = JSON.parse(readFileSync(managedProfilePath, 'utf8'));
+    if (contract.schemaVersion !== 1 || contract.invocationsPerInstance !== 3 || contract.instances !== 2)
+      throw new Error('SH-11 profile has unsupported fixed iteration or instance conditions.');
+    const timeoutMs = Number(contract.timeoutMs);
+    const gcHeapLimit = Number(contract.gcHeapLimitBytes);
+    if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0 || !Number.isSafeInteger(gcHeapLimit) || gcHeapLimit <= 0)
+      throw new Error('SH-11 profile contains invalid timeout or GC heap limits.');
+    const manifest = verifyBundle();
+    const startup = bootConfig(manifest);
+    if (contract.runtimeSha256 !== startup.runtimeSha256)
+      throw new Error(`SH-11 runtime hash differs from ${managedProfilePath}.`);
+    if (contract.bundleSha256 && contract.bundleSha256 !== manifest.bundleSha256)
+      throw new Error(`SH-11 bundle hash differs from ${managedProfilePath}; rerun prepare and update the pinned profile.`);
+    const generated = generatedManifest();
+    if (generated.manifest.bundleSha256 !== manifest.bundleSha256)
+      throw new Error('Generated sources do not match the verified SH-11 bundle; run generate first.');
+
+    const normal = normalManagedResults(timeoutMs);
+    const official = officialManagedResults(timeoutMs);
+    if (contract.managedProbeWrapper !== official.wrappers.probe ||
+        contract.managedReentryWrapper !== official.wrappers.reentry ||
+        contract.managedThrowWrapper !== official.wrappers.throw)
+      throw new Error('SH-11 managed export wrappers differ from the pinned profile.');
+    const translated = translatedManagedResults(startup, generated, official.wrappers, timeoutMs, gcHeapLimit);
+    const normalRuns = verifyProbeRuns('normal .NET', normal.probes);
+    const officialRuns = verifyProbeRuns('official browser-WASM', official.probes);
+    if (!official.throwing.thrown || official.throwing.message !== 'SH-11 deliberate uncaught exception')
+      throw new Error(`Official browser-WASM did not propagate the deliberate managed exception: ${JSON.stringify(official.throwing)}.`);
+    const instanceRuns = translated.instances.map((instance, index) => {
+      if (instance.failure !== null || instance.state !== 'Exited' || instance.managedReturn !== 0 || instance.exitCode !== 0)
+        throw new Error(`Translated Mono instance ${index + 1} did not exit successfully: ${JSON.stringify(instance)}.`);
+      if (instance.stderr.indexOf('SH11_STDERR') < 0)
+        throw new Error(`Translated Mono instance ${index + 1} did not capture stderr.`);
+      if (!instance.managedThrow?.thrown)
+        throw new Error(`Translated Mono instance ${index + 1} did not propagate the deliberate managed exception.`);
+      if (instance.reentryStatus !== 3)
+        throw new Error(`Translated Mono instance ${index + 1} did not complete host re-entry: ${instance.reentryStatus}.`);
+      if (instance.linearMaximumBytes !== contract.linearMemoryBytes)
+        throw new Error(`Translated Mono instance ${index + 1} has linear-memory limit ${instance.linearMaximumBytes}; expected ${contract.linearMemoryBytes}.`);
+      return verifyProbeRuns(`translated Mono instance ${index + 1}`, instance.managedProbeResults.map(item => ({
+        status: item.status,
+        result: item.payload ? JSON.parse(item.payload) : null
+      })));
+    });
+    compareProbeRuns(normalRuns, officialRuns, instanceRuns[0]);
+    compareProbeRuns(normalRuns, normalRuns, instanceRuns[1]);
+    const first = translated.instances[0];
+    const second = translated.instances[1];
+    if (first.memoryIdentity === second.memoryIdentity || first.tableIdentity === second.tableIdentity || first.runtimeIdentity === second.runtimeIdentity)
+      throw new Error('Translated Mono instances share runtime, memory, or indirect table identity.');
+    if (!Array.isArray(first.globalInitial) || !Array.isArray(second.globalInitial) ||
+        !Array.isArray(first.globalFinal) || !Array.isArray(second.globalFinal) ||
+        first.globalInitial.length !== second.globalInitial.length)
+      throw new Error('Translated Mono global storage snapshots are incomplete or inconsistent.');
+    if (JSON.parse(first.managedProbeResults[0].payload).Invocation !== 1)
+      throw new Error('First translated Mono instance did not start with a fresh managed static state.');
+    if (JSON.parse(second.managedProbeResults[0].payload).Invocation !== 1)
+      throw new Error('Second translated Mono instance did not start with isolated managed static state.');
+    const result = {
+      schemaVersion: 1,
+      milestone: 'SH-11',
+      bundleSha256: manifest.bundleSha256,
+      runtimeSha256: startup.runtimeSha256,
+      profile: contract,
+      wrappers: official.wrappers,
+      probes: contract.probes,
+      normalDotnet: { probes: normalRuns, guestHeap: normal.probes.map(run => run.result.GuestHeap), durationMs: normal.durationMs },
+      officialBrowserWasm: { probes: officialRuns, guestHeap: official.probes.map(run => run.result.GuestHeap), throwing: official.throwing },
+      translatedMono: {
+        instances: translated.instances,
+        durationMs: translated.durationMs,
+        globalSnapshots: translated.instances.map(instance => ({ initial: instance.globalInitial, final: instance.globalFinal })),
+        runtimeIsolated: first.runtimeIdentity !== second.runtimeIdentity,
+        memoryIsolated: first.memoryIdentity !== second.memoryIdentity,
+        tableIsolated: first.tableIdentity !== second.tableIdentity
+      },
+      limits: { timeoutMs, gcHeapLimit, linearMemoryBytes: contract.linearMemoryBytes },
+      outerEngine: false
+    };
+    json(join(artifactRoot, 'managed-results.json'), result);
+    rmSync(failurePath, { force: true });
+    console.log(`SH-11 managed passed: ${contract.probes.length} probes, 3 invocations, 2 isolated translated instances.`);
+  } catch (error) {
+    json(failurePath, {
+      schemaVersion: 1,
+      milestone: 'SH-11',
+      status: 'blocked',
+      reason: error instanceof Error ? error.message : String(error)
+    });
+    throw error;
+  }
+}
+
 function optionValue(name, fallback) {
   const index = args.indexOf(name);
   if (index < 0) return fallback;
@@ -1198,7 +1569,7 @@ function runtimeEntry(manifest) {
   return entry;
 }
 
-function invokeBundle(request) {
+function invokeBundle(request, options = {}) {
   const manifest = verifyBundle();
   const main = join(bundleRoot, 'main.mjs');
   if (!existsSync(main)) throw new Error('Bundle is missing main.mjs.');
@@ -1209,7 +1580,8 @@ function invokeBundle(request) {
   try {
     const result = run(process.execPath, [main], {
       cwd: bundleRoot,
-      env: { ...process.env, SELF_HOSTING_REQUEST_FILE: requestPath }
+      env: { ...process.env, SELF_HOSTING_REQUEST_FILE: requestPath },
+      timeoutMs: options.timeoutMs
     });
     const stream = request.scenarios.find(scenario => scenario.operation === 'translate-sources-stream');
     const parsed = stream ? parseBundleOutput(result.output, stream.id) : { response: parseReferenceOutput(result.output), sources: [] };
@@ -1472,6 +1844,8 @@ try {
     host();
   } else if (command === 'hello') {
     hello();
+  } else if (command === 'managed') {
+    managed();
   } else {
     console.error(help);
     process.exitCode = 2;

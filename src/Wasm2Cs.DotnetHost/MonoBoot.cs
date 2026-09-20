@@ -34,7 +34,8 @@ public sealed class MonoBootRequest
 {
     public MonoBootRequest(IEnumerable<MonoAssembly> assemblies, IEnumerable<string>? arguments = null,
         string mainAssemblyName = "SelfHosting.dll", int debugLevel = 0,
-        IEnumerable<KeyValuePair<string, string>>? runtimeProperties = null)
+        IEnumerable<KeyValuePair<string, string>>? runtimeProperties = null,
+        IEnumerable<string>? runtimeOptions = null)
     {
         if (assemblies == null) throw new ArgumentNullException(nameof(assemblies));
         if (string.IsNullOrEmpty(mainAssemblyName) || mainAssemblyName.IndexOf('\0') >= 0)
@@ -61,6 +62,11 @@ public sealed class MonoBootRequest
                 properties[property.Key] = property.Value;
             }
         RuntimeProperties = properties;
+        var optionList = new List<string>();
+        if (runtimeOptions != null)
+            foreach (var option in runtimeOptions)
+                optionList.Add(option ?? throw new ArgumentException("Runtime option cannot be null.", nameof(runtimeOptions)));
+        RuntimeOptions = optionList.AsReadOnly();
     }
 
     public IReadOnlyList<MonoAssembly> Assemblies { get; }
@@ -68,6 +74,7 @@ public sealed class MonoBootRequest
     public string MainAssemblyName { get; }
     public int DebugLevel { get; }
     public IReadOnlyDictionary<string, string> RuntimeProperties { get; }
+    public IReadOnlyList<string> RuntimeOptions { get; }
 }
 
 public sealed class MonoBoot
@@ -79,6 +86,7 @@ public sealed class MonoBoot
         public Action<uint> Free { get; set; } = null!;
         public Func<uint, uint, int, int> AddAssembly { get; set; } = null!;
         public Action<int, int, uint, uint> LoadRuntime { get; set; } = null!;
+        public Action<int, uint>? ParseRuntimeOptions { get; set; }
         public Action<int, uint>? ConfigureArgs { get; set; }
         public Func<int> InvokeMain { get; set; } = null!;
         public Action<int> Exit { get; set; } = null!;
@@ -235,6 +243,26 @@ public sealed class MonoBoot
                 {
                     HostEnvironment.WriteUInt32(memory, checked(keyVector + (uint)(i * 4)), keys[i]);
                     HostEnvironment.WriteUInt32(memory, checked(valueVector + (uint)(i * 4)), values[i]);
+                }
+            }
+            if (request.RuntimeOptions.Count != 0)
+            {
+                if (exports.ParseRuntimeOptions == null)
+                    throw new InvalidOperationException("Runtime options were requested but the native export is unavailable.");
+                var optionAddresses = new List<uint>();
+                uint optionVector = 0;
+                try
+                {
+                    foreach (var option in request.RuntimeOptions) optionAddresses.Add(AllocateUtf8(option));
+                    optionVector = Allocate(checked(optionAddresses.Count * 4));
+                    for (int i = 0; i < optionAddresses.Count; i++)
+                        HostEnvironment.WriteUInt32(memory, checked(optionVector + (uint)(i * 4)), optionAddresses[i]);
+                    exports.ParseRuntimeOptions(optionAddresses.Count, optionVector);
+                }
+                finally
+                {
+                    if (optionVector != 0) exports.Free(optionVector);
+                    for (int i = optionAddresses.Count - 1; i >= 0; i--) exports.Free(optionAddresses[i]);
                 }
             }
             exports.LoadRuntime(request.DebugLevel, keys.Count, keyVector, valueVector);

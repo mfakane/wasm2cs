@@ -13,6 +13,7 @@ public static class MonoBootChecks
         VerifySuccess(17);
         VerifyFailures();
         VerifyStateRejections();
+        VerifyRuntimeOptions();
     }
 
     private static void VerifySuccess(int returnCode)
@@ -82,6 +83,16 @@ public static class MonoBootChecks
         VerifyRejected(CreateBoot(new FakeNativeExports()), boot => { boot.Start(); boot.Run(); boot.Exit(0); }, "duplicate exit", boot => boot.Exit(0));
     }
 
+    private static void VerifyRuntimeOptions()
+    {
+        var fake = new FakeNativeExports();
+        var boot = CreateBoot(fake, new[] { "--no-jiterpreter-traces-enabled", "--second" });
+        boot.Start();
+        Check(fake.RuntimeOptions.SequenceEqual(new[] { "--no-jiterpreter-traces-enabled", "--second" }),
+            "runtime options were not forwarded");
+        Check(fake.Outstanding.Count == 0, "runtime option forwarding leaked an allocation");
+    }
+
     private static void VerifyRejected(MonoBoot boot, Action<MonoBoot> setup, string message, Action<MonoBoot> rejected)
     {
         setup(boot);
@@ -95,12 +106,13 @@ public static class MonoBootChecks
         catch (InvalidOperationException) { }
     }
 
-    private static MonoBoot CreateBoot(FakeNativeExports fake)
+    private static MonoBoot CreateBoot(FakeNativeExports fake, IEnumerable<string>? runtimeOptions = null)
     {
         return new MonoBoot(fake.memory, fake.Exports, new MonoBootRequest(
             new[] { new MonoAssembly("Main.dll", new byte[] { 1, 2, 3 }), new MonoAssembly("Support.dll", new byte[] { 4, 5 }) },
             new[] { "--one", "two" }, "Main.dll", 3,
-            new[] { new KeyValuePair<string, string>("A", "one"), new KeyValuePair<string, string>("B", "two") }));
+            new[] { new KeyValuePair<string, string>("A", "one"), new KeyValuePair<string, string>("B", "two") },
+            runtimeOptions));
     }
 
     private static void Check(bool condition, string message)
@@ -117,6 +129,7 @@ public static class MonoBootChecks
         public readonly List<string> Assemblies = new List<string>();
         public readonly List<string> Arguments = new List<string>();
         public readonly List<string> Properties = new List<string>();
+        public readonly List<string> RuntimeOptions = new List<string>();
         public int ConstructorResult;
         public int AddAssemblyResult = 1;
         public int ManagedReturnCode;
@@ -160,6 +173,10 @@ public static class MonoBootChecks
                 DebugLevel = debug;
                 for (int i = 0; i < count; i++) Properties.Add(ReadString(ReadUInt32(keys, i)) + "=" + ReadString(ReadUInt32(values, i)));
                 if (LoadFailure) throw new Exception("load failed");
+            },
+            ParseRuntimeOptions = (count, vector) =>
+            {
+                for (int i = 0; i < count; i++) RuntimeOptions.Add(ReadString(HostEnvironment.ReadUInt32(memory, vector + (uint)(i * 4))));
             },
             ConfigureArgs = (count, vector) =>
             {

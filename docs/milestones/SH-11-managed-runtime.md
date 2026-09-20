@@ -39,7 +39,7 @@ BCL 全体、ネットワーク、マルチスレッド、ゲスト内 JIT の�
 
 probe 群、実装修正、GC・反復・状態分離の順に分ける。終了コミット例: `test: validate managed execution on translated mono`。
 
-- 実行コマンド・結果: `prepare`、`inventory`、`reference`、`generate`、`managed`、`hello`、`host`、共通回帰を実行済み。`managed` は通常 .NET、公式 browser-WASM、変換済み Mono の12 probeを比較し、3回反復・2インスタンス・例外伝播・stdout/stderr・host re-entryを確認した。
-- probe 一覧・反復条件・メモリ／時間: 一覧と固定条件は `docs/self-hosting/SH-11-managed.json`、結果は `artifacts/self-hosting/managed-results.json`。seed `24301`、3回／instance、2 instance、timeout 15分、linear memory 256 MiB、translated childのGC heap上限1 GiB。runtime SHA-256は `d531922c75237648c1f643077c13ba0da8f9583ecfa3304476ab196984c3efe4`、bundle SHA-256は `63b9c3d762ac6fc79e659c930371c793973a76df80658c2aafe9e22d21eed3af`。guest heap、linear memory、outer working set、startup／execution時間を別々に記録する。
+- 実行コマンド・結果: `prepare`、`inventory`、`reference`、`generate`、`managed`、`hello`、`host`、共通回帰を実行済み。`managed` は通常 .NET、公式 browser-WASM、変換済み Mono の12 probeを比較し、GC後のbyte配列・文字列・record内容、3回反復、2インスタンスのglobal値とhost file/callback/exit状態、例外伝播、stdout/stderr、host re-entryを確認した。
+- probe 一覧・反復条件・メモリ／時間: 一覧と固定条件は `docs/self-hosting/SH-11-managed.json`、結果は `artifacts/self-hosting/managed-results.json`。seed `24301`、3回／instance、2 instance、timeout 15分、linear memory 256 MiB、translated childのGC heap上限2 GiB、outer process測定上限3 GiB。runtime SHA-256は `d531922c75237648c1f643077c13ba0da8f9583ecfa3304476ab196984c3efe4`、bundle SHA-256は `a00695da11c3383f4990d938dab120e47816b8ab1dc7927eb0c2210909015bba`。guest heap、linear memory、outer GC heap・working set、startup／execution時間を別々に記録し、SDK・Node・OS・CPU・toolchain hashを対応づける。
 - 未解決事項: なし。性能値は合否閾値ではなく、固定環境の測定記録である。
-- 終了コミット: `3ccce9f17e28237703bfd9c68094df3a49149c2b`
+- 終了コミット: `a41058f21c5ff1e11f3d007670b2797f2e2a1154`

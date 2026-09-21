@@ -1,6 +1,6 @@
 # SH-12 wasm2cs 自己実行
 
-状態: 未着手。前提: [SH-11](SH-11-managed-runtime.md)。次: [SH-13](SH-13-unity.md)。
+状態: 完了。前提: [SH-11](SH-11-managed-runtime.md)。次: [SH-13](SH-13-unity.md)。
 
 ## 目的・変更対象
 
@@ -18,7 +18,7 @@
 
 ## 検証
 
-この段階で追加する予定コマンド。
+この段階で追加したコマンド。
 
 ```sh
 node scripts/self-hosting.mjs translate
@@ -26,13 +26,15 @@ node scripts/self-hosting.mjs translate
 
 [共通回帰](../self-hosting-design.md) を実行し、同一インスタンスでの複数入力、入力の破損、変換例外、出力バッファ境界、ゲスト DLL 欠落を確認する。固定出力、外側の変換器への委譲、参照 WASM エンジンによる代行では通らない構成にする。
 
+実測結果は [SH-12 translate 記録](../self-hosting/SH-12-translate.json) と `artifacts/self-hosting/translate-results.json` に保存する。ゲストの string JSExport は .NET 10 の by-reference marshaling (`mono_wasm_register_root`、`mono_wasm_string_from_utf16_ref`、`mono_wasm_string_get_data_ref`) を使い、WASM engine や外側の `Transpiler` は使用しない。
+
 ## 合格条件
 
-- [ ] ゲストの wasm2cs が起動後の入力を変換し、通常実行と生成テキストが一致する。
-- [ ] ゲスト生成 C# をコンパイル・実行した結果が参照 WASM と一致する。
-- [ ] 不正入力の診断が一致し、DLL 欠落・破損は変換成功にならない。
-- [ ] 入力変更・反復実行・出力転送のテストが通る。
-- [ ] 外側での代替変換を行わない実行構成とログを保存している。
+- [x] ゲストの wasm2cs が起動後の入力を変換し、通常実行と生成テキストが一致する。
+- [x] ゲスト生成 C# をコンパイル・実行した結果が参照 WASM と一致する。Arithmetic、Clang Algorithms、HostAbi を別工程で実行した。
+- [x] 不正入力の診断が一致し、DLL 欠落・破損は変換成功にならない。
+- [x] 入力変更・反復実行・出力転送のテストが通る。
+- [x] 外側での代替変換を行わない実行構成とログを保存している。
 
 ## 非対象・失敗時の扱い
 
@@ -42,7 +44,8 @@ node scripts/self-hosting.mjs translate
 
 ゲスト接続と転送、差分検証、代替実行を防ぐ負のテストに分ける。終了コミット例: `feat: run wasm2cs inside translated dotnet wasm`。
 
-- 実行コマンド・結果: 未実施
-- runtime／guest／入力ハッシュ・生成結果・実行ログ: 未取得
-- 未解決事項: ゲストによる実変換と大きなテキスト転送の検証待ち
-- 終了コミット: 未完了
+- 実行コマンド・結果: `node scripts/self-hosting.mjs translate` — 6入力、ゲスト出力一致、Arithmetic／Clang／HostAbi生成C#実行成功
+- 共通回帰: `node scripts/self-hosting.mjs hello` — SH-10成功、`node scripts/self-hosting.mjs managed` — SH-11成功
+- runtime／guest／入力ハッシュ・生成結果・実行ログ: [SH-12 translate 記録](../self-hosting/SH-12-translate.json)、`artifacts/self-hosting/translate-results.json`
+- 未解決事項: なし
+- 終了コミット: `cc41a6f` (`feat: run wasm2cs inside translated dotnet wasm`)

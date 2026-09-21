@@ -30,7 +30,7 @@ const profile = JSON.parse(readFileSync(profilePath, 'utf8'));
 const args = process.argv.slice(2);
 const command = args[0];
 
-const help = `Usage: node scripts/self-hosting.mjs <prepare|inventory|reference|generate|compile|host|hello|managed>
+const help = `Usage: node scripts/self-hosting.mjs <prepare|inventory|reference|generate|compile|host|hello|managed|translate>
 
 prepare    install/check the isolated workload and publish the guest bundle
 inventory  validate the bundle and record a full WABT inventory
@@ -40,6 +40,7 @@ compile    compile the generated C# files against the runtime ABI
 host       run the C# SH-09 ABI fixture and construct the full generated runtime
 hello      start the generated Mono runtime and run managed Hello World
 managed    compare managed probes across .NET, official WASM, and translated Mono
+translate  run wasm2cs inside translated Mono and verify generated C#
 
 prepare flags:
   --skip-workload-install  report a missing workload without attempting install
@@ -464,6 +465,23 @@ function requestScenarios() {
   ];
 }
 
+function translateScenarios() {
+  const arithmetic = readFileSync(join(root, 'samples', 'Smoke', 'Arithmetic.wasm'));
+  const clang = readFileSync(join(root, 'samples', 'CAlgorithms', 'Algorithms.wasm'));
+  const host = readFileSync(hostAbiWasm());
+  const invalid = Buffer.from([0, 97, 115, 109, 1, 0, 0, 0, 255]);
+  const scenario = (id, bytes, className) => ({ id, operation: 'translate-sources', className,
+    wasmBase64: bytes.toString('base64'), inputBytes: bytes.length, inputSha256: sha256(bytes) });
+  return [
+    scenario('arithmetic-repeat-1', arithmetic, 'Arithmetic'),
+    scenario('arithmetic-repeat-2', arithmetic, 'Arithmetic'),
+    scenario('arithmetic-changed-class', arithmetic, 'ArithmeticChanged'),
+    scenario('clang', clang, 'Algorithms'),
+    scenario('host', host, 'HostAbi'),
+    scenario('invalid', invalid, 'Invalid')
+  ];
+}
+
 function parseReferenceOutput(output) {
   for (const line of output.trim().split(/\r?\n/).reverse()) {
     try {
@@ -663,10 +681,13 @@ function csharpIdentifier(module, name) {
   return `wasm_export_${Buffer.from(candidate, 'utf8').toString('hex')}`;
 }
 
-function hostRunnerSource() {
+function hostRunnerSource(includeFullRuntime = true) {
   const now = csharpIdentifier('env', 'emscripten_get_now');
   const entropy = csharpIdentifier('env', 'mono_wasm_browser_entropy');
   const write = csharpIdentifier('wasi_snapshot_preview1', 'fd_write');
+  const fullRuntimeSource = includeFullRuntime
+    ? 'var fullRuntime = new DotnetRuntime(new DotnetRuntime.Bindings());\n_ = fullRuntime.memory;\n_ = fullRuntime.__indirect_function_table;'
+    : '';
   return `using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -717,27 +738,38 @@ var actual = new
     stdout = Encoding.UTF8.GetString(stdout.ToArray()),
     written = (int)HostEnvironment.ReadUInt32(memory, 12)
 };
-var fullRuntime = new DotnetRuntime(new DotnetRuntime.Bindings());
-_ = fullRuntime.memory;
-_ = fullRuntime.__indirect_function_table;
+${fullRuntimeSource}
 Console.WriteLine("HOST_ABI_RESULT:" + JsonSerializer.Serialize(actual));
 `;
 }
 
-function helloRunnerSource(boot, managed = null) {
+function helloRunnerSource(boot, managed = null, translate = null) {
   const managedProbeWrapper = JSON.stringify(managed?.probeWrapper ?? '');
   const managedReentryWrapper = JSON.stringify(managed?.reentryWrapper ?? '');
   const managedThrowWrapper = JSON.stringify(managed?.throwWrapper ?? '');
+  const translateWrapper = JSON.stringify(translate?.wrapper ?? '');
+  const translationRequests = translate?.requests ?? [{ id: '', operation: '', wasmBase64: '', className: '' }];
+  const translationRequestSource = `var translationRequests = new[] { ${translationRequests.map(request =>
+    `new { id = ${JSON.stringify(request.id)}, wasmBase64 = ${JSON.stringify(request.wasmBase64)}, className = ${JSON.stringify(request.className)} }`).join(', ')} };`;
   const assemblyLines = boot.assemblies.map(assembly => {
     const name = assembly.virtualPath ?? assembly.name;
     const path = JSON.stringify(join(bundleRoot, '_framework', name));
     const condition = name === 'System.Private.CoreLib.dll'
       ? 'scenario != "missing-corelib"'
-      : name === boot.profile.mainAssemblyName ? 'scenario != "missing-selfhosting"' : 'true';
+      : name === boot.profile.mainAssemblyName
+        ? 'scenario != "missing-selfhosting" && scenario != "translate-missing-selfhosting"'
+        : name === 'Wasm2Cs.dll'
+          ? 'scenario != "missing-wasm2cs" && scenario != "translate-missing-wasm2cs"'
+          : 'true';
     if (name === boot.profile.mainAssemblyName) {
       return `var selfHostingData = File.ReadAllBytes(${path});
-if (scenario == "corrupt-selfhosting") selfHostingData[0] ^= 0xff;
-if (${condition}) assemblies.Add(new MonoAssembly(${JSON.stringify(name)}, selfHostingData));`;
+ if (scenario == "corrupt-selfhosting") selfHostingData[0] ^= 0xff;
+ if (${condition}) assemblies.Add(new MonoAssembly(${JSON.stringify(name)}, selfHostingData));`;
+    }
+    if (name === 'Wasm2Cs.dll') {
+      return `var wasm2csData = File.ReadAllBytes(${path});
+ if (scenario == "corrupt-wasm2cs" || scenario == "translate-corrupt-wasm2cs") wasm2csData[0] ^= 0xff;
+ if (${condition}) assemblies.Add(new MonoAssembly(${JSON.stringify(name)}, wasm2csData));`;
     }
     return `if (${condition}) assemblies.Add(new MonoAssembly(${JSON.stringify(name)}, File.ReadAllBytes(${path})));`;
   }).join('\n');
@@ -918,9 +950,10 @@ using Wasm2Cs.Generated;
  var reentryTriggered = false;
  var reentryStatus = 0;
  Func<int>? reentry = null;
- var managedProbeResults = new List<object>();
- var runtimeTrace = new List<object>();
- object? managedThrow = null;
+  var managedProbeResults = new List<object>();
+  var runtimeTrace = new List<object>();
+  var translatedResults = new List<object>();
+  object? managedThrow = null;
  WasmMemory? attachedMemory = null;
  DotnetRuntime? runtime = null;
  object[] globalInitial = Array.Empty<object>();
@@ -1059,6 +1092,88 @@ using Wasm2Cs.Generated;
           if (assemblyName != 0) RequireRuntime().free(unchecked((int)assemblyName));
       }
   }
+  uint WriteUtf16(string value)
+  {
+      var bytes = Encoding.Unicode.GetBytes(value);
+      var address = AllocateNative(checked(bytes.Length + 2));
+      RequireMemory().WriteMemory(address, bytes);
+      return address;
+  }
+  string ReadManagedString(uint rootAddress)
+  {
+      var scratch = AllocateNative(12);
+      try
+      {
+          RequireMemory().WriteMemory(scratch, new byte[12]);
+          RequireRuntime().mono_wasm_string_get_data_ref(unchecked((int)rootAddress), unchecked((int)scratch), unchecked((int)(scratch + 4u)), unchecked((int)(scratch + 8u)));
+          var chars = ReadUInt32Unchecked(scratch);
+          var byteLength = ReadUInt32Unchecked(scratch + 4u);
+          if (byteLength == 0) return string.Empty;
+          return Encoding.Unicode.GetString(RequireMemory().ReadMemory(chars, checked((int)byteLength)));
+      }
+      finally
+      {
+          RequireRuntime().free(unchecked((int)scratch));
+      }
+  }
+  string InvokeStringWrapper(string wrapper, string[] values)
+  {
+      var arguments = AllocateNative(checked((values.Length + 2) * 32));
+      var buffers = new List<uint>();
+      uint inputRootName = 0;
+      var inputRootRegistered = false;
+      var inputRootAddress = checked(arguments + 64u);
+      try
+      {
+          RequireMemory().WriteMemory(arguments, new byte[checked((values.Length + 2) * 32)]);
+          inputRootName = MonoPtr("SH-12 string arguments");
+          if (RequireRuntime().mono_wasm_register_root(unchecked((int)inputRootAddress), checked(values.Length * 32), unchecked((int)inputRootName)) == 0)
+              throw new InvalidOperationException("Could not register SH-12 string argument roots.");
+          inputRootRegistered = true;
+          for (var index = 0; index < values.Length; index++)
+          {
+              var buffer = WriteUtf16(values[index]);
+              buffers.Add(buffer);
+              var slot = checked(arguments + 64u + (uint)(index * 32));
+              RequireMemory().WriteByte(slot + 12, 15);
+              RequireRuntime().mono_wasm_string_from_utf16_ref(unchecked((int)buffer), values[index].Length, unchecked((int)slot));
+          }
+          var assemblyName = MonoPtr("${boot.profile.mainAssemblyName}");
+          var namespaceName = MonoPtr("");
+          var className = MonoPtr("SelfHostingDriver");
+          var methodName = MonoPtr(wrapper);
+          try
+          {
+              var assembly = RequireRuntime().mono_wasm_assembly_load(unchecked((int)assemblyName));
+              if (assembly == 0) throw new InvalidOperationException("managed export assembly was not found.");
+              var klass = RequireRuntime().mono_wasm_assembly_find_class(assembly, unchecked((int)namespaceName), unchecked((int)className));
+              if (klass == 0) throw new InvalidOperationException("managed export class was not found.");
+              var method = RequireRuntime().mono_wasm_assembly_find_method(klass, unchecked((int)methodName), -1);
+              if (method == 0) throw new InvalidOperationException("managed export method was not found: " + wrapper);
+              RequireRuntime().mono_wasm_invoke_jsexport(method, unchecked((int)arguments));
+              var exceptionType = ReadUInt32Unchecked(arguments + 12);
+              if (exceptionType != 0) throw new InvalidOperationException($"managed export '{wrapper}' raised marshaled exception type {exceptionType}");
+              var result = checked(arguments + 32u);
+              var resultType = RequireMemory().ReadByte(result + 12);
+              if (resultType != 15) throw new InvalidOperationException($"managed export '{wrapper}' returned marshaled type {resultType}, expected String");
+              return ReadManagedString(result);
+          }
+          finally
+          {
+              RequireRuntime().free(unchecked((int)methodName));
+              RequireRuntime().free(unchecked((int)className));
+              RequireRuntime().free(unchecked((int)namespaceName));
+              RequireRuntime().free(unchecked((int)assemblyName));
+          }
+      }
+      finally
+      {
+          if (inputRootRegistered) RequireRuntime().mono_wasm_deregister_root(unchecked((int)inputRootAddress));
+          if (inputRootName != 0) RequireRuntime().free(unchecked((int)inputRootName));
+          for (var index = buffers.Count - 1; index >= 0; index--) RequireRuntime().free(unchecked((int)buffers[index]));
+          RequireRuntime().free(unchecked((int)arguments));
+      }
+  }
   string? ReadProbePayload()
   {
       var lines = Encoding.UTF8.GetString(stdout.ToArray()).Split(new[] { "\\r\\n", "\\n" }, StringSplitOptions.None);
@@ -1068,6 +1183,7 @@ using Wasm2Cs.Generated;
   }
   var assemblies = new List<MonoAssembly>();
  ${assemblyLines}
+ ${translationRequestSource}
  MonoBoot? boot = null;
  int? managedReturn = null;
  Exception? failure = null;
@@ -1113,6 +1229,14 @@ using Wasm2Cs.Generated;
               managedThrow = new { thrown = true, type = exception.GetType().FullName, message = exception.Message };
           }
       }
+      if (scenario == "translate")
+      {
+          foreach (var translationRequest in translationRequests)
+          {
+              var output = InvokeStringWrapper(${translateWrapper}, new[] { translationRequest.wasmBase64, translationRequest.className });
+              translatedResults.Add(new { id = translationRequest.id, output });
+          }
+      }
       executionDurationMs = (Stopwatch.GetTimestamp() - executionStarted) * 1000.0 / Stopwatch.Frequency;
       globalFinal = ReadGlobals();
       boot.Exit(managedReturn.Value);
@@ -1132,8 +1256,9 @@ using Wasm2Cs.Generated;
       requestedExit,
       requestedAbort,
       managedProbeResults,
-      managedThrow,
-      reentryStatus,
+       managedThrow,
+       translatedResults,
+       reentryStatus,
       memoryIdentity = runtime == null ? 0 : RuntimeHelpers.GetHashCode(runtime.memory),
       tableIdentity = runtime == null ? 0 : RuntimeHelpers.GetHashCode(runtime.__indirect_function_table),
       runtimeIdentity = runtime == null ? 0 : RuntimeHelpers.GetHashCode(runtime),
@@ -1154,7 +1279,7 @@ using Wasm2Cs.Generated;
      failure = failure == null ? null : new { type = failure.GetType().FullName, message = failure.Message },
      phases = boot?.PhaseLog.ToArray() ?? Array.Empty<string>()
  }));
-  Environment.ExitCode = scenario == "positive" || scenario == "managed"
+  Environment.ExitCode = scenario == "positive" || scenario == "managed" || scenario == "translate"
       ? failure == null && managedReturn == 0 && boot?.ExitCode == 0 ? 0 : 1
       : failure == null ? 1 : 0;
   `;
@@ -1168,6 +1293,10 @@ function managedRunnerSource(boot, managed) {
   const prefix = source.slice(0, bodyStart);
   const body = source.slice(bodyStart).replace(marker, ' var instanceNumber = ++sh11Instance;');
   return `${prefix}var sh11Instance = 0;\nRunInstance();\nGC.Collect();\nGC.WaitForPendingFinalizers();\nGC.Collect();\nRunInstance();\nvoid RunInstance()\n{\n${body}\n}`;
+}
+
+function translateRunnerSource(boot, translate) {
+  return helloRunnerSource(boot, null, translate);
 }
 
 function taggedJsonLines(output, tag) {
@@ -1307,6 +1436,147 @@ function translatedManagedResults(boot, generated, wrappers, timeoutMs, gcHeapLi
     if (records.length !== 2) throw new Error(`Translated Mono runner emitted ${records.length} instance record(s); expected 2.\n${execution.output}`);
     if (execution.status !== 0) throw new Error(`Translated Mono managed probe failed (exit ${execution.status}).\n${execution.output}`);
     return { instances: records, durationMs: Number(process.hrtime.bigint() - started) / 1e6, output: execution.output };
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
+function parseTranslatedSources(output) {
+  if (typeof output !== 'string') throw new Error('Translation output was not a string.');
+  if (output.startsWith('ERROR:')) return { error: output };
+  let sources;
+  try { sources = JSON.parse(output); } catch (error) { throw new Error(`Translation output was not valid JSON: ${error.message}`); }
+  if (!Array.isArray(sources) || sources.length === 0) throw new Error('Translation returned no generated sources.');
+  for (const source of sources) {
+    if (!source || typeof source.Name !== 'string' || typeof source.Text !== 'string')
+      throw new Error('Translation returned an invalid generated source.');
+  }
+  return { sources };
+}
+
+function sourceSummary(sources) {
+  const text = Buffer.from(sources.map(source => source.Text).join(''), 'utf8');
+  return { files: sources.length, bytes: text.length, sha256: sha256(text) };
+}
+
+function normalTranslationResults(scenarios, timeoutMs) {
+  const cliProject = join(root, 'src', 'Wasm2Cs.Cli', 'Wasm2Cs.Cli.csproj');
+  run('dotnet', ['build', cliProject, '--configuration', 'Release', '-m:1', '-p:UseSharedCompilation=false', '--nologo']);
+  const cli = join(root, 'src', 'Wasm2Cs.Cli', 'bin', 'Release', 'net10.0', 'Wasm2Cs.Cli.dll');
+  const results = {};
+  for (const scenario of scenarios) {
+    const input = Buffer.from(scenario.wasmBase64, 'base64');
+    const path = join(tmpdir(), `wasm2cs-sh12-${process.pid}-${scenario.id}.wasm`);
+    writeFileSync(path, input);
+    try {
+      const execution = run('dotnet', [cli, path, '--class-name', scenario.className, '--target-profile', 'portable-netstandard2.0'], {
+        allowFailure: true,
+        timeoutMs
+      });
+      results[scenario.id] = execution.status === 0 ? { text: execution.output, status: 0 } : { error: execution.output, status: execution.status };
+    } finally {
+      rmSync(path, { force: true });
+    }
+  }
+  return results;
+}
+
+function officialTranslationResults(scenarios, timeoutMs) {
+  const invoked = invokeBundle({ protocol: 1, scenarios: [{ id: 'exports', operation: 'managed-exports' }, ...scenarios] }, { timeoutMs });
+  const exports = invoked.response.results?.find(item => item.id === 'exports')?.exports ?? [];
+  const results = Object.fromEntries((invoked.response.results ?? []).filter(item => item.id !== 'exports').map(item => [item.id, item]));
+  return { wrappers: { translate: wrapperName(exports, 'TranslateSourcesBase64') }, results, output: invoked.response };
+}
+
+function translatedTranslateResults(boot, generated, wrappers, scenarios, timeoutMs) {
+  const directory = mkdtempSync(join(tmpdir(), 'wasm2cs-sh12-translate-'));
+  try {
+    for (const entry of generated.manifest.entries)
+      writeFileSync(join(directory, entry.path), readFileSync(join(generated.generatedRoot, entry.path)));
+    const runnerSource = translateRunnerSource(boot, {
+      wrapper: wrappers.translate,
+      requests: scenarios
+    });
+    writeFileSync(join(directory, 'Program.cs'), runnerSource);
+    const project = join(directory, 'Translate.csproj');
+    const projectSource = `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="*.g.cs" />
+    <Compile Include="Program.cs" />
+    <ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.Runtime', 'Wasm2Cs.Runtime.csproj'))}" />
+    <ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.DotnetHost', 'Wasm2Cs.DotnetHost.csproj'))}" />
+  </ItemGroup>
+</Project>
+`;
+    const provenance = {
+      outerEngine: /\bWebAssembly\b/.test(runnerSource) || projectSource.includes('Wasm2Cs.Cli'),
+      outerTranslator: /\bTranspiler\b/.test(runnerSource) || projectSource.includes('Wasm2Cs.Cli')
+    };
+    if (provenance.outerEngine || provenance.outerTranslator)
+      throw new Error('Translated SH-12 runner references an outer WASM engine or translator.');
+    writeFileSync(project, projectSource);
+    run('dotnet', ['build', project, '--configuration', 'Release', '-m:1', '-p:UseSharedCompilation=false', '--nologo']);
+    const assembly = join(directory, 'bin', 'Release', 'net10.0', 'Translate.dll');
+    const execute = scenario => {
+      const result = run('dotnet', [assembly], {
+        allowFailure: true,
+        timeoutMs,
+        env: { ...process.env, SH10_SCENARIO: scenario }
+      });
+      const records = taggedJsonLines(result.output, 'SH10_RESULT:');
+      if (records.length !== 1) throw new Error(`Translated SH-12 runner emitted ${records.length} result records for ${scenario}.`);
+      return { processExit: result.status, output: result.output, result: records[0] };
+    };
+    return {
+      positive: execute('translate'),
+      missingWasm2cs: execute('translate-missing-wasm2cs'),
+      corruptWasm2cs: execute('translate-corrupt-wasm2cs'),
+      provenance
+    };
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
+function compileGeneratedModule(id, sources, reference) {
+  const directory = mkdtempSync(join(tmpdir(), `wasm2cs-sh12-compile-${id}-`));
+  try {
+    for (const source of sources) writeFileSync(join(directory, source.Name), source.Text);
+    const program = id === 'arithmetic'
+      ? 'using Wasm2Cs.Generated; var module = new Arithmetic(); if (module.add(20, 22) != 42 || module.square(7) != 49) throw new System.Exception("Arithmetic mismatch."); System.Console.WriteLine("GENERATED_OK");'
+        : id === 'clang'
+        ? 'using Wasm2Cs.Generated; var module = new Algorithms(); var buffer = unchecked((uint)module.buffer_ptr()); module.WriteMemory(buffer, System.Text.Encoding.ASCII.GetBytes("123456789")); if (unchecked((uint)module.crc32(unchecked((int)buffer), 9)) != 0xcbf43926u) throw new System.Exception("CRC mismatch."); System.Console.WriteLine("GENERATED_OK");'
+        : id === 'host' ? hostRunnerSource(false) : null;
+    if (!program) throw new Error(`No SH-12 generated-module runner exists for ${id}.`);
+    writeFileSync(join(directory, 'Program.cs'), program + '\n');
+    const hostProject = id === 'host';
+    const project = join(directory, 'Generated.csproj');
+    writeFileSync(project, `<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework><OutputType>Exe</OutputType><LangVersion>9.0</LangVersion><Nullable>enable</Nullable><ImplicitUsings>disable</ImplicitUsings><EnableDefaultCompileItems>false</EnableDefaultCompileItems><TreatWarningsAsErrors>true</TreatWarningsAsErrors></PropertyGroup>
+  <ItemGroup><Compile Include="*.g.cs" /><Compile Include="Program.cs" /><ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.Runtime', 'Wasm2Cs.Runtime.csproj'))}" />${hostProject ? `
+    <ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.DotnetHost', 'Wasm2Cs.DotnetHost.csproj'))}" />` : ''}</ItemGroup>
+</Project>
+`);
+    const execution = run('dotnet', ['run', '--project', project, '--configuration', 'Release', '-p:UseSharedCompilation=false', '--nologo']);
+    if (hostProject) {
+      const line = execution.output.trim().split(/\r?\n/).reverse().find(value => value.startsWith('HOST_ABI_RESULT:'));
+      if (!line) throw new Error(`Generated host runner did not emit HOST_ABI_RESULT.\n${execution.output}`);
+      const actual = JSON.parse(line.slice('HOST_ABI_RESULT:'.length));
+      const expected = JSON.parse(readFileSync(join(artifactRoot, 'host-reference.json'), 'utf8')).results;
+      if (JSON.stringify(actual) !== JSON.stringify(expected))
+        throw new Error(`Generated host ABI result differs for ${reference}.`);
+      return { passed: true, output: 'HOST_ABI_OK', reference };
+    }
+    return { passed: true, output: 'GENERATED_OK', reference };
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -1481,6 +1751,118 @@ function hello() {
     }
   } catch (error) {
     json(failurePath, { schemaVersion: 1, milestone: 'SH-10', status: 'blocked', reason: error instanceof Error ? error.message : String(error) });
+    throw error;
+  }
+}
+
+function translate() {
+  const failurePath = join(artifactRoot, 'translate-failure.json');
+  const timeoutMs = 15 * 60 * 1000;
+  const maxOutputBytes = 64 * 1024 * 1024;
+  try {
+    const manifest = verifyBundle();
+    const startup = bootConfig(manifest);
+    const generated = generatedManifest();
+    if (generated.manifest.bundleSha256 !== manifest.bundleSha256)
+      throw new Error('Generated sources do not match the verified SH-12 bundle; run generate first.');
+    const evidencePath = join(root, 'docs', 'self-hosting', 'SH-12-translate.json');
+    if (!existsSync(evidencePath)) throw new Error(`SH-12 evidence is missing: ${evidencePath}`);
+    const evidence = JSON.parse(readFileSync(evidencePath, 'utf8'));
+    if (evidence.schemaVersion !== 1 || evidence.milestone !== 'SH-12' || evidence.bundleSha256 !== manifest.bundleSha256 || evidence.runtimeSha256 !== startup.runtimeSha256)
+      throw new Error('SH-12 evidence does not match the verified bundle or runtime.');
+    if (evidence.guestAssemblyCount !== startup.assemblies.length)
+      throw new Error('SH-12 evidence has a different guest assembly count.');
+    for (const [name, expectedHash] of Object.entries(evidence.guestAssemblyHashes ?? {})) {
+      const assembly = startup.assemblies.find(value => value.name === name);
+      const actualHash = assembly && manifest.entries.find(entry => entry.path === `_framework/${assembly.virtualPath ?? assembly.name}`)?.sha256;
+      if (actualHash !== expectedHash) throw new Error(`SH-12 evidence hash differs for ${name}.`);
+    }
+    const scenarios = translateScenarios();
+    const evidenceScenarios = Object.fromEntries((evidence.inputScenarios ?? []).map(scenario => [scenario.id, scenario]));
+    for (const scenario of scenarios) {
+      const recorded = evidenceScenarios[scenario.id];
+      if (!recorded || recorded.className !== scenario.className || recorded.bytes !== scenario.inputBytes || recorded.sha256 !== scenario.inputSha256)
+        throw new Error(`SH-12 evidence input differs for ${scenario.id}.`);
+    }
+    const official = officialTranslationResults(scenarios, timeoutMs);
+    if (evidence.wrapper !== official.wrappers.translate) throw new Error('SH-12 evidence wrapper differs from the guest export.');
+    const normal = normalTranslationResults(scenarios, timeoutMs);
+    const translated = translatedTranslateResults(startup, generated, official.wrappers, scenarios, timeoutMs);
+    const positive = translated.positive.result;
+    if (translated.positive.processExit !== 0 || positive.failure !== null || positive.state !== 'Exited' || positive.managedReturn !== 0)
+      throw new Error(`Translated SH-12 runner failed: ${JSON.stringify(positive)}.`);
+    if (translated.missingWasm2cs.processExit !== 0 || translated.missingWasm2cs.result.failure?.message !== 'Managed assembly supply is incomplete: expected 174, received 173.' || translated.missingWasm2cs.result.state !== 'Failed')
+      throw new Error('Missing Wasm2Cs.dll did not fail translated startup/translation.');
+    if (translated.corruptWasm2cs.processExit !== 0 || translated.corruptWasm2cs.result.failure?.message !== 'assembly Wasm2Cs.dll was rejected.' || translated.corruptWasm2cs.result.state !== 'Failed')
+      throw new Error('Corrupt Wasm2Cs.dll did not fail translated startup/translation.');
+    const translatedById = Object.fromEntries(positive.translatedResults.map(item => [item.id, item.output]));
+    const sourceRecords = {};
+    const generatedSourceSummaries = {};
+    for (const scenario of scenarios) {
+      const expected = official.results[scenario.id]?.output;
+      const actual = translatedById[scenario.id];
+      if (typeof expected !== 'string' || typeof actual !== 'string') throw new Error(`Missing translated result for ${scenario.id}.`);
+      if (expected !== actual) throw new Error(`Guest translated output differs from official browser-WASM for ${scenario.id}.`);
+      if (Buffer.byteLength(actual, 'utf8') > maxOutputBytes) throw new Error(`Translation output exceeds ${maxOutputBytes} bytes for ${scenario.id}.`);
+      const expectedSources = parseTranslatedSources(expected);
+      const actualSources = parseTranslatedSources(actual);
+      if (expectedSources.error || actualSources.error) {
+        if (expectedSources.error !== actualSources.error) throw new Error(`Translation diagnostic differs for ${scenario.id}.`);
+        const normalError = normal[scenario.id];
+        const expectedMessage = expectedSources.error.replace(/^ERROR:\s+[^:]+:\s*/, '');
+        if (!normalError || normalError.status === 0 || !normalError.error.includes(expectedMessage))
+          throw new Error(`Normal translation diagnostic differs for ${scenario.id}.`);
+        continue;
+      }
+      const expectedText = expectedSources.sources.map(source => source.Text).join('');
+      if (scenario.id === 'arithmetic-repeat-1' || scenario.id === 'arithmetic-repeat-2' || scenario.id === 'arithmetic-changed-class' || scenario.id === 'clang' || scenario.id === 'host') {
+        const normalText = normal[scenario.id === 'arithmetic-repeat-2' ? 'arithmetic-repeat-1' : scenario.id].text;
+        if (normalText !== expectedText) throw new Error(`Normal wasm2cs output differs for ${scenario.id}.`);
+      }
+      sourceRecords[scenario.id] = expectedSources.sources.map(source => ({ name: source.Name, bytes: Buffer.byteLength(source.Text, 'utf8'), sha256: sha256(Buffer.from(source.Text, 'utf8')) }));
+      const summaryId = scenario.id === 'arithmetic-repeat-1' ? 'arithmetic' : scenario.id === 'arithmetic-changed-class' ? 'arithmeticChanged' : scenario.id;
+      generatedSourceSummaries[summaryId] = sourceSummary(expectedSources.sources);
+    }
+    for (const [id, expectedSummary] of Object.entries(evidence.generatedSources ?? {}))
+      if (JSON.stringify(generatedSourceSummaries[id]) !== JSON.stringify(expectedSummary)) throw new Error(`SH-12 evidence generated-source summary differs for ${id}.`);
+    if (translatedById['arithmetic-repeat-1'] !== translatedById['arithmetic-repeat-2']) throw new Error('Repeated identical input produced different generated text.');
+    if (translatedById['arithmetic-repeat-1'] === translatedById['arithmetic-changed-class']) throw new Error('Changed class input did not change generated text.');
+    const arithmeticSources = parseTranslatedSources(translatedById['arithmetic-repeat-1']).sources;
+    const clangSources = parseTranslatedSources(translatedById.clang).sources;
+    const generatedExecution = {
+      arithmetic: compileGeneratedModule('arithmetic', arithmeticSources, 'arithmetic-repeat-1'),
+      clang: compileGeneratedModule('clang', clangSources, 'clang'),
+      host: compileGeneratedModule('host', parseTranslatedSources(translatedById.host).sources, 'host')
+    };
+    const toolchainPath = join(artifactRoot, 'toolchain.json');
+    const toolchain = JSON.parse(readFileSync(toolchainPath, 'utf8'));
+    const info = dotnetInfo();
+    const record = {
+      schemaVersion: 1,
+      milestone: 'SH-12',
+      bundleSha256: manifest.bundleSha256,
+      runtimeSha256: startup.runtimeSha256,
+      guestAssemblyHashes: Object.fromEntries(startup.assemblies.map(assembly => [assembly.name, manifest.entries.find(entry => entry.path === `_framework/${assembly.virtualPath ?? assembly.name}`)?.sha256 ?? null])),
+      inputScenarios: scenarios.map(({ id, className, inputBytes, inputSha256 }) => ({ id, className, inputBytes, inputSha256 })),
+      wrappers: official.wrappers,
+      sourceRecords,
+      generatedSourceSummaries,
+      generatedExecution,
+      negativeScenarios: {
+        missingWasm2cs: translated.missingWasm2cs.result,
+        corruptWasm2cs: translated.corruptWasm2cs.result
+      },
+      translated: positive,
+      environment: { platform: platform(), release: release(), architecture: arch(), node: process.version, dotnetSdk: info.version, runtimePack: toolchain.runtimePack, toolchainSha256: sha256File(toolchainPath) },
+      limits: { timeoutMs, maxOutputBytes },
+      outerEngine: translated.provenance.outerEngine,
+      outerTranslator: translated.provenance.outerTranslator
+    };
+    json(join(artifactRoot, 'translate-results.json'), record);
+    rmSync(failurePath, { force: true });
+    console.log(`SH-12 translate passed: ${scenarios.length} inputs, guest output matched, generated Arithmetic, Clang, and HostAbi C# executed.`);
+  } catch (error) {
+    json(failurePath, { schemaVersion: 1, milestone: 'SH-12', status: 'blocked', reason: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }
@@ -1908,6 +2290,8 @@ try {
     hello();
   } else if (command === 'managed') {
     managed();
+  } else if (command === 'translate') {
+    translate();
   } else {
     console.error(help);
     process.exitCode = 2;

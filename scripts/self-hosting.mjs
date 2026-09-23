@@ -30,7 +30,7 @@ const profile = JSON.parse(readFileSync(profilePath, 'utf8'));
 const args = process.argv.slice(2);
 const command = args[0];
 
-const help = `Usage: node scripts/self-hosting.mjs <prepare|inventory|reference|generate|compile|host|hello|managed|translate>
+const help = `Usage: node scripts/self-hosting.mjs <prepare|inventory|reference|generate|compile|host|hello|managed|translate|audit>
 
 prepare    install/check the isolated workload and publish the guest bundle
 inventory  validate the bundle and record a full WABT inventory
@@ -41,6 +41,7 @@ host       run the C# SH-09 ABI fixture and construct the full generated runtime
 hello      start the generated Mono runtime and run managed Hello World
 managed    compare managed probes across .NET, official WASM, and translated Mono
 translate  run wasm2cs inside translated Mono and verify generated C#
+audit      verify canonical bundle provenance and SH-01 through SH-12 records
 
 prepare flags:
   --skip-workload-install  report a missing workload without attempting install
@@ -191,6 +192,17 @@ function writeManifest() {
   return JSON.parse(readFileSync(manifestPath, 'utf8'));
 }
 
+function verifyCanonicalBundle(manifest) {
+  const canonical = profile.canonicalBundle;
+  if (!canonical?.sha256 || !canonical.runtimeSha256)
+    throw new Error(`Canonical bundle hashes are missing from ${profilePath}.`);
+  if (manifest.bundleSha256 !== canonical.sha256)
+    throw new Error(`Bundle ${manifest.bundleSha256} differs from canonical bundle ${canonical.sha256}.`);
+  const runtime = runtimeEntry(manifest);
+  if (runtime.sha256 !== canonical.runtimeSha256)
+    throw new Error(`Runtime ${runtime.sha256} differs from canonical runtime ${canonical.runtimeSha256}.`);
+}
+
 function verifyBundle() {
   if (!existsSync(manifestPath) || !existsSync(bundleRoot)) {
     throw new Error(`Bundle is missing. Run prepare first: ${manifestPath}`);
@@ -205,6 +217,7 @@ function verifyBundle() {
   if (JSON.stringify(actualEntries) !== JSON.stringify(manifest.entries)) {
     throw new Error('Bundle contents differ from bundle-manifest.json; refusing mixed artifacts.');
   }
+  verifyCanonicalBundle(manifest);
   const effectivePath = join(bundleRoot, 'effective-build.json');
   if (!existsSync(effectivePath)) throw new Error('Bundle is missing effective-build.json.');
   const effective = JSON.parse(readFileSync(effectivePath, 'utf8'));
@@ -467,6 +480,12 @@ function requestScenarios() {
 
 function translateScenarios() {
   const arithmetic = readFileSync(join(root, 'samples', 'Smoke', 'Arithmetic.wasm'));
+  const changedArithmetic = Buffer.from(arithmetic);
+  const constant = Buffer.from([0x41, 0x80, 0x80, 0x80, 0x80, 0x78]);
+  const constantOffset = changedArithmetic.indexOf(constant);
+  if (constantOffset < 0 || changedArithmetic.indexOf(constant, constantOffset + 1) >= 0)
+    throw new Error('Arithmetic fixture does not contain one unique i32.const -2147483648 encoding.');
+  Buffer.from([0x41, 0xab, 0x80, 0x80, 0x80, 0x00]).copy(changedArithmetic, constantOffset);
   const clang = readFileSync(join(root, 'samples', 'CAlgorithms', 'Algorithms.wasm'));
   const host = readFileSync(hostAbiWasm());
   const invalid = Buffer.from([0, 97, 115, 109, 1, 0, 0, 0, 255]);
@@ -476,6 +495,7 @@ function translateScenarios() {
     scenario('arithmetic-repeat-1', arithmetic, 'Arithmetic'),
     scenario('arithmetic-repeat-2', arithmetic, 'Arithmetic'),
     scenario('arithmetic-changed-class', arithmetic, 'ArithmeticChanged'),
+    scenario('arithmetic-changed-bytes', changedArithmetic, 'ArithmeticChangedBytes'),
     scenario('clang', clang, 'Algorithms'),
     scenario('host', host, 'HostAbi'),
     scenario('invalid', invalid, 'Invalid')
@@ -1551,8 +1571,14 @@ function compileGeneratedModule(id, sources, reference) {
   const directory = mkdtempSync(join(tmpdir(), `wasm2cs-sh12-compile-${id}-`));
   try {
     for (const source of sources) writeFileSync(join(directory, source.Name), source.Text);
+    if (id === 'arithmetic-changed-bytes') {
+      const sourceText = sources.map(source => source.Text).join('');
+      if (!sourceText.includes('= 43;')) throw new Error('Changed arithmetic source did not contain the changed constant.');
+    }
     const program = id === 'arithmetic'
       ? 'using Wasm2Cs.Generated; var module = new Arithmetic(); if (module.add(20, 22) != 42 || module.square(7) != 49) throw new System.Exception("Arithmetic mismatch."); System.Console.WriteLine("GENERATED_OK");'
+        : id === 'arithmetic-changed-bytes'
+        ? 'using Wasm2Cs.Generated; var module = new ArithmeticChangedBytes(); var actual = module.minimum(); if (actual != 43) throw new System.Exception("Changed arithmetic mismatch: " + actual); System.Console.WriteLine("GENERATED_OK");'
         : id === 'clang'
         ? 'using Wasm2Cs.Generated; var module = new Algorithms(); var buffer = unchecked((uint)module.buffer_ptr()); module.WriteMemory(buffer, System.Text.Encoding.ASCII.GetBytes("123456789")); if (unchecked((uint)module.crc32(unchecked((int)buffer), 9)) != 0xcbf43926u) throw new System.Exception("CRC mismatch."); System.Console.WriteLine("GENERATED_OK");'
         : id === 'host' ? hostRunnerSource(false) : null;
@@ -1815,7 +1841,7 @@ function translate() {
         continue;
       }
       const expectedText = expectedSources.sources.map(source => source.Text).join('');
-      if (scenario.id === 'arithmetic-repeat-1' || scenario.id === 'arithmetic-repeat-2' || scenario.id === 'arithmetic-changed-class' || scenario.id === 'clang' || scenario.id === 'host') {
+      if (scenario.id === 'arithmetic-repeat-1' || scenario.id === 'arithmetic-repeat-2' || scenario.id === 'arithmetic-changed-class' || scenario.id === 'arithmetic-changed-bytes' || scenario.id === 'clang' || scenario.id === 'host') {
         const normalText = normal[scenario.id === 'arithmetic-repeat-2' ? 'arithmetic-repeat-1' : scenario.id].text;
         if (normalText !== expectedText) throw new Error(`Normal wasm2cs output differs for ${scenario.id}.`);
       }
@@ -1827,10 +1853,13 @@ function translate() {
       if (JSON.stringify(generatedSourceSummaries[id]) !== JSON.stringify(expectedSummary)) throw new Error(`SH-12 evidence generated-source summary differs for ${id}.`);
     if (translatedById['arithmetic-repeat-1'] !== translatedById['arithmetic-repeat-2']) throw new Error('Repeated identical input produced different generated text.');
     if (translatedById['arithmetic-repeat-1'] === translatedById['arithmetic-changed-class']) throw new Error('Changed class input did not change generated text.');
+    if (translatedById['arithmetic-repeat-1'] === translatedById['arithmetic-changed-bytes']) throw new Error('Changed WASM bytes did not change generated text.');
     const arithmeticSources = parseTranslatedSources(translatedById['arithmetic-repeat-1']).sources;
+    const changedArithmeticSources = parseTranslatedSources(translatedById['arithmetic-changed-bytes']).sources;
     const clangSources = parseTranslatedSources(translatedById.clang).sources;
     const generatedExecution = {
       arithmetic: compileGeneratedModule('arithmetic', arithmeticSources, 'arithmetic-repeat-1'),
+      arithmeticChangedBytes: compileGeneratedModule('arithmetic-changed-bytes', changedArithmeticSources, 'arithmetic-changed-bytes'),
       clang: compileGeneratedModule('clang', clangSources, 'clang'),
       host: compileGeneratedModule('host', parseTranslatedSources(translatedById.host).sources, 'host')
     };
@@ -1996,6 +2025,92 @@ function managed() {
     });
     throw error;
   }
+}
+
+function audit() {
+  const manifest = verifyBundle();
+  const canonical = profile.canonicalBundle;
+  if (profile.inventory?.bundleSha256 !== canonical.sha256)
+    throw new Error('SH-01 inventory does not identify the canonical bundle.');
+  const lineage = new Set((profile.bundleLineage ?? []).map(item => item.sha256));
+  if (!lineage.has(canonical.sha256)) throw new Error('Canonical bundle is absent from the bundle lineage.');
+  for (const hash of [
+    '10e2f5cee5fecd86681ef9e043082a04df131a0d7eb76855ac895ea0cbf3c9e6',
+    '95ca67de55675a09b263777eea0a33e298bfd0bb0d006decb5f68a8e2cab6773',
+    '01edf9ec336605992764326157649e4e6f555e91243f52aa1801a859c9471523',
+    '2b89bf1bd90a650fe81dad2de5ebcd4a8dd339b21f0b7d465895287251bf3d1a'
+  ]) if (!lineage.has(hash)) throw new Error(`Historical bundle ${hash} is absent from the bundle lineage.`);
+
+  for (const path of [
+    join(root, 'docs', 'self-hosting', 'SH-03-integer-coverage.json'),
+    join(root, 'docs', 'self-hosting', 'SH-04-floating-coverage.json')
+  ]) {
+    const record = JSON.parse(readFileSync(path, 'utf8'));
+    if (!lineage.has(record.bundleSha256)) throw new Error(`${path} refers to a bundle outside the recorded lineage.`);
+  }
+
+  const runtimeSha256 = runtimeEntry(manifest).sha256;
+  for (const path of [managedProfilePath, join(root, 'docs', 'self-hosting', 'SH-12-translate.json')]) {
+    const record = JSON.parse(readFileSync(path, 'utf8'));
+    if (record.bundleSha256 !== canonical.sha256 || record.runtimeSha256 !== runtimeSha256)
+      throw new Error(`${path} does not match the canonical bundle and runtime.`);
+  }
+  const translation = JSON.parse(readFileSync(join(root, 'docs', 'self-hosting', 'SH-12-translate.json'), 'utf8'));
+  if (!(translation.inputScenarios ?? []).some(item => item.id === 'arithmetic-changed-bytes') ||
+      translation.checks?.changedWasmChangesOutputAndResult !== true)
+    throw new Error('SH-12 evidence does not include the changed-WASM behavior check.');
+
+  for (const name of ['reference-results.json', 'generated-manifest.json', 'compile-results.json', 'host-results.json', 'hello-results.json', 'managed-results.json', 'translate-results.json']) {
+    const path = join(artifactRoot, name);
+    if (!existsSync(path)) throw new Error(`Required self-hosting evidence is missing: ${path}`);
+    const record = JSON.parse(readFileSync(path, 'utf8'));
+    if (record.bundleSha256 !== canonical.sha256) throw new Error(`${name} does not match the canonical bundle.`);
+  }
+  const translated = JSON.parse(readFileSync(join(artifactRoot, 'translate-results.json'), 'utf8'));
+  if (!translated.sourceRecords?.['arithmetic-changed-bytes'] || translated.generatedExecution?.arithmeticChangedBytes?.output !== 'GENERATED_OK')
+    throw new Error('Translated SH-12 evidence does not prove changed-WASM generated behavior.');
+  const unityEvidence = JSON.parse(readFileSync(join(root, 'docs', 'self-hosting', 'SH-12.5-unity.json'), 'utf8'));
+  const packagePath = join(root, 'artifacts', 'com.mfakane.wasm2cs-0.1.0-preview.1.tgz');
+  if (unityEvidence.status !== 'verified' || !existsSync(packagePath) || sha256File(packagePath) !== unityEvidence.packageSha256)
+    throw new Error('SH-12.5 Unity evidence does not match the current package.');
+
+  const completions = [
+    ['SH-01-runtime-profile.md', '38b7afe'],
+    ['SH-02-typed-ir.md', 'b4ac1d7'],
+    ['SH-03-i64.md', '51b7603'],
+    ['SH-04-floating-point.md', 'f2f97a1'],
+    ['SH-05-memory-data.md', '8d15d70'],
+    ['SH-05.5-lowering.md', 'aa20b45'],
+    ['SH-06-tables.md', '37946f3'],
+    ['SH-07-exceptions.md', '13e386b'],
+    ['SH-08-large-codegen.md', 'bf279a2'],
+    ['SH-09-host.md', '555cf67'],
+    ['SH-10-mono-startup.md', '2e6913a'],
+    ['SH-11-managed-runtime.md', 'a41058f'],
+    ['SH-12-self-hosting.md', 'cc41a6f']
+  ];
+  for (const [name, commit] of completions) {
+    const text = readFileSync(join(root, 'docs', 'milestones', name), 'utf8');
+    if (!new RegExp('`' + commit + '[0-9a-f]*`').test(text))
+      throw new Error(`${name} does not record completion commit ${commit}.`);
+    const result = run('git', ['cat-file', '-e', `${commit}^{commit}`], { allowFailure: true });
+    if (result.status !== 0) throw new Error(`${name} refers to missing commit ${commit}.`);
+  }
+  const readme = readFileSync(join(root, 'README.md'), 'utf8');
+  const implementation = readFileSync(join(root, 'IMPLEMENTATION.md'), 'utf8');
+  if (readme.includes('This goal is planned, not yet implemented.') || implementation.includes('remaining unimplemented sequence\nis [SH-10 through SH-14]'))
+    throw new Error('Top-level implementation status is stale.');
+
+  json(join(artifactRoot, 'audit-results.json'), {
+    schemaVersion: 1,
+    milestone: 'SH-12.5',
+    bundleSha256: canonical.sha256,
+    runtimeSha256,
+    bundleLineage: [...lineage],
+    completionCommits: Object.fromEntries(completions),
+    status: 'passed'
+  });
+  console.log(`SH-12.5 audit passed: canonical bundle ${canonical.sha256}, ${completions.length} completion records checked.`);
 }
 
 function optionValue(name, fallback) {
@@ -2254,6 +2369,7 @@ function prepare() {
       evidence: ['build-evidence/wasm-props.json', 'build-evidence/SelfHosting.deps.json']
      });
      const manifest = writeManifest();
+     verifyCanonicalBundle(manifest);
      rmSync(join(artifactRoot, 'prepare-failure.json'), { force: true });
      console.log(`Prepared bundle at ${bundleRoot}; bundle SHA-256: ${manifest.bundleSha256}`);
   } catch (error) {
@@ -2292,6 +2408,8 @@ try {
     managed();
   } else if (command === 'translate') {
     translate();
+  } else if (command === 'audit') {
+    audit();
   } else {
     console.error(help);
     process.exitCode = 2;

@@ -3,10 +3,11 @@
 Baseline: `8818947`. Work branch: `feat/unity-wasm-pipeline`.
 Each milestone is committed separately after its checks pass. No registry publishing.
 
-This file records the completed initial scope. The remaining unimplemented sequence
-is [SH-10 through SH-14](docs/README.md): run `Wasm2Cs.dll` inside a translated
-.NET WASM runtime, then repeat on Unity IL2CPP. Its design explicitly allows the
-guest Mono IL interpreter while retaining ahead-of-time WASM-to-C# translation.
+This file records the completed initial scope. The [self-hosting roadmap](docs/README.md)
+records the later work. SH-10 through SH-12 run `Wasm2Cs.dll` inside a translated
+.NET WASM runtime; SH-12.5 reconciles its evidence before the Unity IL2CPP work.
+The design allows the guest Mono IL interpreter while retaining ahead-of-time
+WASM-to-C# translation.
 
 1. Complete (`fd9e980`): separate decoding, module IR, validation, and C# emission.
 2. Complete (`a7aad72`): portable netstandard2.0 generator (Roslyn 4.3.0) and instance API.

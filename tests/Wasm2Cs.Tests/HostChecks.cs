@@ -16,7 +16,12 @@ public static class HostChecks
             entropy: bytes => Array.Copy(random, bytes, Math.Min(random.Length, bytes.Length)),
             stdout: bytes => output.AddRange(bytes),
             stderr: bytes => errorOutput.AddRange(bytes),
-            virtualFiles: new Dictionary<string, byte[]> { ["/input"] = new byte[] { 1, 2, 3 } });
+            virtualFiles: new Dictionary<string, byte[]>
+            {
+                ["/input"] = new byte[] { 1, 2, 3 },
+                ["/rw"] = Array.Empty<byte>(),
+                ["/ro"] = new byte[] { 1, 2, 3 }
+            });
         var memory = new WasmMemory(1);
 
         int fd = host.OpenFile("input");
@@ -26,11 +31,26 @@ public static class HostChecks
         Check(memory.ReadMemory(32, 3).AsSpan().SequenceEqual(new byte[] { 1, 2, 3 }), "file bytes differ");
         Check(host.OpenFile("/missing") == -1, "missing file did not fail");
 
+        int writeFd = host.OpenFile("/rw", writable: true);
+        Check(host.Write(writeFd, new byte[] { 7, 8, 9 }, 0, 3) == 3, "writable file write length differs");
+        int readBackFd = host.OpenFile("/rw");
+        var readBack = new byte[3];
+        Check(host.Read(readBackFd, readBack, 0, 3) == 3 && readBack.AsSpan().SequenceEqual(new byte[] { 7, 8, 9 }), "writable file read-back differs");
+        int readOnlyFd = host.OpenFile("/ro");
+        Check(host.Write(readOnlyFd, new byte[] { 9 }, 0, 1) == -1, "read-only file write did not fail");
+        Check(host.Read(999, new byte[1], 0, 1) == -9 && host.Write(999, new byte[1], 0, 1) == -9, "invalid file descriptor did not fail");
+
         HostEnvironment.WriteUInt32(memory, 64, 32);
         HostEnvironment.WriteUInt32(memory, 68, 3);
         var iov = new byte[3];
         Check(HostEnvironment.ReadIovecs(memory, 64, 1, iov) == 3, "iovec read length differs");
         Check(iov.AsSpan().SequenceEqual(new byte[] { 1, 2, 3 }), "iovec bytes differ");
+        try { HostEnvironment.ReadIovecs(memory, 65535, 1, new byte[1]); throw new Exception("out-of-range iovec pointer accepted"); }
+        catch (ArgumentOutOfRangeException) { }
+        HostEnvironment.WriteUInt32(memory, 64, 65535);
+        HostEnvironment.WriteUInt32(memory, 68, 2);
+        try { HostEnvironment.ReadIovecs(memory, 64, 1, new byte[2]); throw new Exception("out-of-range iovec payload accepted"); }
+        catch (ArgumentOutOfRangeException) { }
         host.Write(1, new byte[] { (byte)'o', (byte)'k' }, 0, 2);
         Check(System.Text.Encoding.UTF8.GetString(output.ToArray()) == "ok", "stdout differs");
         host.Write(2, new byte[] { (byte)'e', (byte)'r', (byte)'r' }, 0, 3);

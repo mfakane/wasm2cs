@@ -43,12 +43,14 @@ public sealed class HostEnvironment
 {
     private sealed class FileEntry
     {
+        public readonly string Path;
         public byte[] Bytes;
         public int Position;
         public readonly bool Writable;
 
-        public FileEntry(byte[] bytes, bool writable)
+        public FileEntry(string path, byte[] bytes, bool writable)
         {
+            Path = path;
             Bytes = bytes;
             Writable = writable;
         }
@@ -119,9 +121,10 @@ public sealed class HostEnvironment
     public int OpenFile(string path, bool writable = false)
     {
         byte[] content;
-        if (!files.TryGetValue(NormalizePath(path), out content)) return -1;
+        string normalized = NormalizePath(path);
+        if (!files.TryGetValue(normalized, out content)) return -1;
         int fd = nextFd++;
-        descriptors[fd] = new FileEntry(content, writable);
+        descriptors[fd] = new FileEntry(normalized, content, writable);
         return fd;
     }
 
@@ -151,7 +154,13 @@ public sealed class HostEnvironment
         try { file = GetFile(fd); }
         catch (InvalidOperationException) { return -9; }
         if (!file.Writable) return -1;
-        if (file.Position + count > file.Bytes.Length) Array.Resize(ref file.Bytes, checked(file.Position + count));
+        if (file.Position + count > file.Bytes.Length)
+        {
+            Array.Resize(ref file.Bytes, checked(file.Position + count));
+            files[file.Path] = file.Bytes;
+            foreach (var descriptor in descriptors.Values)
+                if (descriptor.Path == file.Path) descriptor.Bytes = file.Bytes;
+        }
         Buffer.BlockCopy(source, offset, file.Bytes, file.Position, count);
         file.Position += count;
         return count;

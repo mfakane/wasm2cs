@@ -46,4 +46,4 @@ API と分割生成、各入力経路の統合、実物のコンパイル検証�
 - 実行コマンド・結果: `dotnet build Wasm2Cs.slnx --nologo`、`dotnet tests/Wasm2Cs.Tests/bin/Debug/net10.0/Wasm2Cs.Tests.dll`、`node scripts/self-hosting.mjs prepare --skip-workload-install`、`node scripts/self-hosting.mjs generate`、`node scripts/self-hosting.mjs compile` が成功。`TranslateSources` の deterministic な scaffold／関数 source 分割、chunked source の再結合、partial class の同時コンパイル、Source Generator の複数出力、入力変更時の再分割、事前キャンセルを検証した。
 - bundle ハッシュ・生成サイズ・時間・メモリ: bundle `95ca67de55675a09b263777eea0a33e298bfd0bb0d006decb5f68a8e2cab6773`、入力 `2,970,056` bytes、生成 `12,374` source／`59,483,823` bytes、生成 `19,939.5` ms、hostMaxRss `437,176` KB、外側 compile `48,441.3` ms。
 - 解決事項: 固定 256 MiB heap 内で metadata-only decode、関数単位の on-demand decode、typed slot／local arrays、初期化 source 分割、巨大関数の chunked source streaming を実装した。生成結果は外側の .NET で全体 compile できた。
-- 終了コミット: `feat: complete SH-08 large module generation`
+- 終了コミット: `bf279a2` (`feat: complete SH-08 large module generation`)

@@ -23,6 +23,28 @@ internal static class ExecutionChecks
         if (calls != 1) throw new Exception("Imported start function did not run.");
         type.GetMethod("f")!.Invoke(instance,null);
         if (calls != 2) throw new Exception("Imported function export did not run.");
+        byte[] unsupported = [0,97,115,109,1,0,0,0,
+            ..Section(1,[2,0x60,2,0x7f,0x7f,1,0x7f,0x60,0,1,0x7f]),
+            ..Section(2,[1,3,(byte)'e',(byte)'n',(byte)'v',7,(byte)'m',(byte)'i',(byte)'s',(byte)'s',(byte)'i',(byte)'n',(byte)'g',0,0]),
+            ..Section(3,[1,1]), ..Section(7,[1,1,(byte)'f',0,1]),
+            ..Section(10,[1,8,0,0x41,11,0x41,22,0x10,0,0x0b])];
+        var unsupportedType = Compile(unsupported).GetType("Wasm2Cs.Generated.Subject")!;
+        var bindingsType = unsupportedType.GetNestedType("Bindings")!;
+        var unsupportedInstance = unsupportedType.GetConstructor([bindingsType])!.Invoke([Activator.CreateInstance(bindingsType)]);
+        try
+        {
+            unsupportedType.GetMethod("f")!.Invoke(unsupportedInstance, null);
+            throw new Exception("Unsupported generated import did not fail.");
+        }
+        catch (TargetInvocationException error) when (error.InnerException is WasmImportException unsupportedImport)
+        {
+            if (unsupportedImport.ModuleName != "env" || unsupportedImport.ImportName != "missing" ||
+                !unsupportedImport.Arguments.SequenceEqual(new object[] { 11, 22 }) ||
+                !unsupportedImport.Message.Contains("env.missing", StringComparison.Ordinal) ||
+                !unsupportedImport.Message.Contains("11", StringComparison.Ordinal) ||
+                !unsupportedImport.Message.Contains("22", StringComparison.Ordinal))
+                throw new Exception("Unsupported generated import diagnostic differs.");
+        }
         foreach (byte[] invalid in new byte[][] {
             [0,97,115,109,1,0,0,0,..Section(2,[1,0,0,0,0])],
             [0,97,115,109,1,0,0,0,..Section(2,[1,0,0,2,2,0,0])],

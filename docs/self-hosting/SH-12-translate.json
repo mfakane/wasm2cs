@@ -14,6 +14,7 @@
     { "id": "arithmetic-repeat-1", "className": "Arithmetic", "bytes": 201, "sha256": "3935bb078508e090b57b04fae91fe0d91706fcec8417a8005648540c9d490bbe" },
     { "id": "arithmetic-repeat-2", "className": "Arithmetic", "bytes": 201, "sha256": "3935bb078508e090b57b04fae91fe0d91706fcec8417a8005648540c9d490bbe" },
     { "id": "arithmetic-changed-class", "className": "ArithmeticChanged", "bytes": 201, "sha256": "3935bb078508e090b57b04fae91fe0d91706fcec8417a8005648540c9d490bbe" },
+    { "id": "arithmetic-changed-bytes", "className": "ArithmeticChangedBytes", "bytes": 201, "sha256": "5835e6565730e7e1faa62f39839faa12c035518e900f81e173e71477123dd008" },
     { "id": "clang", "className": "Algorithms", "bytes": 799, "sha256": "12ea81a5c81b17d983245cb8c6dc88e1a1621da3d5abe7c23ce8d173815f7057" },
     { "id": "host", "className": "HostAbi", "bytes": 235, "sha256": "7bf62f5ae938f562801e3918b4d7c0c213196424a7d0cbdffe2c157d5f27e460" },
     { "id": "invalid", "className": "Invalid", "bytes": 9, "sha256": "8054086594640e141b6b2f65bd4dbb182058df7573d999ba62b492f3d33b57f4" }
@@ -21,6 +22,7 @@
   "generatedSources": {
     "arithmetic": { "files": 10, "bytes": 10362, "sha256": "b82df2a21f67c97ad10f2969cc8bdc6a807f2dbea4f2d04a3464204061b43dee" },
     "arithmeticChanged": { "files": 10, "bytes": 10446, "sha256": "16e9418f127d7cad1ffae08bdd550b32cf10352bce80c4f2e16213d896be0363" },
+    "arithmetic-changed-bytes": { "files": 10, "bytes": 10497, "sha256": "3250d34631326c717e05f3677e51a43d00ac95e5f5d396c7987113421fd0bda8" },
     "clang": { "files": 5, "bytes": 20673, "sha256": "a8bcbc27f90ce2513e58942eb89379b27f382b5ae5eb95f31234ce191049832a" },
     "host": { "files": 4, "bytes": 17675, "sha256": "bdb5762d1f8f212acd0d511351c112c3bedabeedb31a6240da1ffc1289d0871d" }
   },
@@ -29,6 +31,7 @@
     "normalOutputMatchesGuestOutput": true,
     "repeatedOutputMatches": true,
     "changedClassChangesOutput": true,
+    "changedWasmChangesOutputAndResult": true,
     "invalidDiagnostic": "ERROR: Wasm2Cs.WasmException: Unexpected end of WASM binary.",
     "normalInvalidDiagnosticContains": "Unexpected end of WASM binary.",
     "generatedArithmetic": "GENERATED_OK",

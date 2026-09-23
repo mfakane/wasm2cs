@@ -129,13 +129,13 @@ var generatedModule = Compile(generated).GetType("Wasm2Cs.Generated.Arithmetic")
 Assert((int)generatedModule.GetMethod("add")!.Invoke(Activator.CreateInstance(generatedModule), [20,22])! == 42, "Generator result differs.");
 
 // Same path, different content: exercise the incremental generator's content dependency.
-var updated = new Input(input.Path, Convert.ToBase64String(Module([0x41,42,0x0b])));
+var updated = new Input(input.Path, Convert.ToBase64String(Module([0x41,43,0x0b])));
 driver = driver.ReplaceAdditionalText(input, updated);
 driver = driver.RunGeneratorsAndUpdateCompilation(Compilation(""), out generated, out diagnostics);
 Assert(diagnostics.Length == 0, "Updated input failed.");
 Assert(generated.SyntaxTrees.Count() - 1 == 2, "Updated generator output was not repartitioned.");
 generatedModule = Compile(generated).GetType("Wasm2Cs.Generated.Arithmetic")!;
-Assert((int)generatedModule.GetMethod("f")!.Invoke(Activator.CreateInstance(generatedModule), null)! == 42, "Generator retained stale binary.");
+Assert((int)generatedModule.GetMethod("f")!.Invoke(Activator.CreateInstance(generatedModule), null)! == 43, "Changed WASM bytes did not change generated behavior.");
 Assert(generatedModule.GetMethod("add") is null, "Old export retained.");
 var broken = new Input(input.Path, Convert.ToBase64String(Module([0xff,0x0b])));
 driver = driver.ReplaceAdditionalText(updated, broken).RunGenerators(Compilation(""));

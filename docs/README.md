@@ -2,7 +2,7 @@
 
 最終目標は、wasm2cs が C# に変換した .NET WASM ランタイム上に `Wasm2Cs.dll` をロードし、別の WASM を C# に変換することである。まず通常の .NET で成立させ、次に Windows x64 の Unity IL2CPP で同じ検証を通す。
 
-このディレクトリは今後の実装手順であり、自己実行ができることを示す実績ではない。コードの基準点は `5d0de8d`。既存11段階の完了履歴は [IMPLEMENTATION.md](../IMPLEMENTATION.md) に残す。
+このディレクトリは実装手順と実績記録を兼ねる。SH-12 までの .NET 自己実行は完了しており、各段階の末尾に実行結果と終了コミットを記録する。コードの基準点は `5d0de8d`。既存11段階の完了履歴は [IMPLEMENTATION.md](../IMPLEMENTATION.md) に残す。
 
 ## 読む順序と現在地
 
@@ -25,7 +25,7 @@
 | [SH-10](milestones/SH-10-mono-startup.md) | Mono 起動と Hello World | SH-09 | 完了 |
 | [SH-11](milestones/SH-11-managed-runtime.md) | managed 実行の安定化 | SH-10 | 完了 |
 | [SH-12](milestones/SH-12-self-hosting.md) | wasm2cs 自己実行 | SH-11 | 完了 |
-| [SH-12.5](milestones/SH-12.5-audit-cleanup.md) | 完了段階の整合性と境界テスト | SH-12 | 未着手 |
+| [SH-12.5](milestones/SH-12.5-audit-cleanup.md) | 完了段階の整合性と境界テスト | SH-12 | 実施中 |
 | [SH-13](milestones/SH-13-unity.md) | Unity IL2CPP 自己実行 | SH-12.5 | 未着手 |
 | [SH-14](milestones/SH-14-reproducibility.md) | 再現性と継続検証 | SH-13 | 未着手 |
 

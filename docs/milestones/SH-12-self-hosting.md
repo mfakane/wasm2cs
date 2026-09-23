@@ -44,7 +44,7 @@ node scripts/self-hosting.mjs translate
 
 ゲスト接続と転送、差分検証、代替実行を防ぐ負のテストに分ける。終了コミット例: `feat: run wasm2cs inside translated dotnet wasm`。
 
-- 実行コマンド・結果: `node scripts/self-hosting.mjs translate` — 6入力、ゲスト出力一致、Arithmetic／Clang／HostAbi生成C#実行成功
+- 実行コマンド・結果: `node scripts/self-hosting.mjs translate` — 7入力、ゲスト出力一致、Arithmetic／変更WASM Arithmetic／Clang／HostAbi生成C#実行成功
 - 共通回帰: `node scripts/self-hosting.mjs hello` — SH-10成功、`node scripts/self-hosting.mjs managed` — SH-11成功
 - runtime／guest／入力ハッシュ・生成結果・実行ログ: [SH-12 translate 記録](../self-hosting/SH-12-translate.json)、`artifacts/self-hosting/translate-results.json`
 - 未解決事項: なし

@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "milestone": "SH-12.5",
+  "status": "verified",
+  "command": "pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/test-unity.ps1 -Editor C:\\Program Files\\Unity\\Hub\\Editor\\6000.6.0f1\\Editor\\Unity.exe -PackagePath <canonical-package> -WorkDirectory C:\\Users\\fumika\\AppData\\Local\\Temp\\wasm2cs-sh125",
+  "unity": "6000.6.0f1",
+  "target": "Windows x64 IL2CPP",
+  "packageSha256": "a8656b7acb1b352470228ca854fdd007c4124498531fbbbb6aea85834e7c7156",
+  "workDirectory": "C:\\Users\\fumika\\AppData\\Local\\Temp\\wasm2cs-sh125",
+  "markers": {
+    "editor": ["WASM2CS_TABLE_PASS", "WASM2CS_EXCEPTION_PASS", "WASM2CS_FLOATING_PASS", "WASM2CS_SMOKE_PASS"],
+    "build": ["WASM2CS_TABLE_PASS", "WASM2CS_EXCEPTION_PASS", "WASM2CS_FLOATING_PASS", "WASM2CS_SMOKE_PASS"],
+    "player": ["WASM2CS_TABLE_PASS", "WASM2CS_EXCEPTION_PASS", "WASM2CS_FLOATING_PASS", "WASM2CS_SMOKE_PASS"]
+  },
+  "logSha256": {
+    "create.log": "2b29e86a1c1f6a9aa7d2ee8393bb64311cc95711ee5bc51a3c238c16a5fab23e",
+    "install.log": "0d3ea022f6e0bf6bb6d8dbaa2e23ba50350b33575930b59143b959cc92c5495a",
+    "inputs.log": "39c71952080436d41d86cc3911e8e909213168c15b0d6e394bc2dfea79ec2236",
+    "bridge-present.log": "09d771c7332e4cbcf5501eb7b0f8d4a01063e305023df077fa7f06fa968d6aef",
+    "bridge-moved.log": "ae9857b1575b288cc08f77762f84f70976dbf9737ea56b4c6322767d9fc79894",
+    "bridge-update.log": "19869015c7f9354068a06a21a011da7b38b8bda440fabbc905cd6333a65655f9",
+    "bridge-changed.log": "85c3ac018f2e326864f9b587a6598667cb4d2e113ca2651c7317ad97d765d9f4",
+    "bridge-remove.log": "fd9a8f559d098f8311e4b6d3a04796a8b9eaed30790d8a54b845d5f132d57a9e",
+    "bridge-missing.log": "c4ffcf18a5152e88d0dfb708cc563b74cfefc94ccfb0862899ff63aab296ef75",
+    "bridge-restore.log": "2cd4ecfe2c6c1093b7fe0ea5040c960e0c2e9f59d8563badfffdbaa9a5c3b6f8",
+    "editor-test.log": "dcd3211497d0cfb5ddcc4d4d7004c50c44b288fc14c0ba24dd7a9dfeaa3cfdb9",
+    "build.log": "41e0320cc7e83da842520e15afe8cc5cd13616b8177ccfe910279228a214d63f",
+    "player.log": "4c0251df4e0bf197a38134cde893003e8f966f88bbdc147c879028fda088474c"
+  },
+  "note": "This is the refreshed existing Unity package smoke. SH-13 still owns Unity execution of the full SH-12 self-hosting path."
+}

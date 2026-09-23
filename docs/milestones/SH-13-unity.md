@@ -1,6 +1,6 @@
 # SH-13 Unity IL2CPP 自己実行
 
-状態: 未着手。前提: [SH-12](SH-12-self-hosting.md)。次: [SH-14](SH-14-reproducibility.md)。
+状態: 未着手。前提: [SH-12.5](SH-12.5-audit-cleanup.md)。次: [SH-14](SH-14-reproducibility.md)。
 
 ## 目的・変更対象
 
@@ -8,7 +8,7 @@
 
 ## 実施手順
 
-1. SH-12 と同じ runtime／BCL／guest bundle を新規 Unity プロジェクトへ供給する。Generator とホストライブラリを導入し、WASM からビルド時に生成したコードをコンパイルへ含める。
+1. SH-12.5 で正典とした runtime／BCL／guest bundle を新規 Unity プロジェクトへ供給する。Generator とホストライブラリを導入し、WASM からビルド時に生成したコードをコンパイルへ含める。
 2. ゲスト DLL は Mono に渡すデータ asset として格納する。Unity の通常のプラグイン DLL として import／実行しない。拡張子や importer 設定を明示し、バイト列のハッシュを確認する。
 3. ファイル、ログ、終了などの環境差だけを Unity アダプターへ実装する。変換器や Mono 起動の別実装を作らない。
 4. 型付き delegate、必要な静的参照、stripping、例外処理を確認する。生成クラスを指定 assembly に隔離し、参照 assembly へ重複生成しないことも確認する。

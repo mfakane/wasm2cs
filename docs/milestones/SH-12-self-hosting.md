@@ -1,6 +1,6 @@
 # SH-12 wasm2cs 自己実行
 
-状態: 完了。前提: [SH-11](SH-11-managed-runtime.md)。次: [SH-13](SH-13-unity.md)。
+状態: 完了。前提: [SH-11](SH-11-managed-runtime.md)。次: [SH-12.5](SH-12.5-audit-cleanup.md)。
 
 ## 目的・変更対象
 

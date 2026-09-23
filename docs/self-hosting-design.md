@@ -86,6 +86,7 @@ SH-01 の3コマンドは実装済みである。`prepare` が作成した bundl
 | SH-10 | `node scripts/self-hosting.mjs hello` | 生成ランタイム内での managed 起動 |
 | SH-11 | `node scripts/self-hosting.mjs managed` | BCL・GC・例外の検証 |
 | SH-12 | `node scripts/self-hosting.mjs translate` | ゲスト変換と生成結果の検証 |
+| SH-12.5 | `node scripts/self-hosting.mjs audit` | 固定情報・完了記録・境界テスト証拠の整合性検証 |
 | SH-13 | `scripts/test-unity-self-hosting.ps1` | Editor／Windows x64 IL2CPP の自己実行 |
 | SH-14 | `node scripts/self-hosting.mjs verify` | 準備済み成果物からの .NET 側の一括再検証 |
 

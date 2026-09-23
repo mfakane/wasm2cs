@@ -25,7 +25,7 @@
 | [SH-10](milestones/SH-10-mono-startup.md) | Mono 起動と Hello World | SH-09 | 完了 |
 | [SH-11](milestones/SH-11-managed-runtime.md) | managed 実行の安定化 | SH-10 | 完了 |
 | [SH-12](milestones/SH-12-self-hosting.md) | wasm2cs 自己実行 | SH-11 | 完了 |
-| [SH-12.5](milestones/SH-12.5-audit-cleanup.md) | 完了段階の整合性と境界テスト | SH-12 | 実施中 |
+| [SH-12.5](milestones/SH-12.5-audit-cleanup.md) | 完了段階の整合性と境界テスト | SH-12 | 完了 |
 | [SH-13](milestones/SH-13-unity.md) | Unity IL2CPP 自己実行 | SH-12.5 | 未着手 |
 | [SH-14](milestones/SH-14-reproducibility.md) | 再現性と継続検証 | SH-13 | 未着手 |
 

@@ -30,7 +30,7 @@ const profile = JSON.parse(readFileSync(profilePath, 'utf8'));
 const args = process.argv.slice(2);
 const command = args[0];
 
-const help = `Usage: node scripts/self-hosting.mjs <prepare|inventory|reference|generate|compile|host|hello|managed|translate|audit>
+const help = `Usage: node scripts/self-hosting.mjs <prepare|inventory|reference|generate|compile|host|hello|managed|translate|audit|unity-prepare|unity-check>
 
 prepare    install/check the isolated workload and publish the guest bundle
 inventory  validate the bundle and record a full WABT inventory
@@ -42,6 +42,8 @@ hello      start the generated Mono runtime and run managed Hello World
 managed    compare managed probes across .NET, official WASM, and translated Mono
 translate  run wasm2cs inside translated Mono and verify generated C#
 audit      verify canonical bundle provenance and SH-01 through SH-12 records
+unity-prepare  write the Unity self-host runner and guest hash manifest
+unity-check   compare Unity Editor/IL2CPP output with SH-12 and compile it outside Unity
 
 prepare flags:
   --skip-workload-install  report a missing workload without attempting install
@@ -629,7 +631,10 @@ function hostAbiWasm() {
   const output = join(artifactRoot, 'host-abi.wasm');
   const wat = join(root, 'samples', 'SelfHosting', 'HostAbi.wat');
   const wat2wasm = savedWabtTool('wat2wasm') ?? commandPath('wat2wasm');
-  if (!wat2wasm) throw new Error('Pinned wat2wasm is required for the SH-09 fixture.');
+  if (!wat2wasm) {
+    if (existsSync(output)) return output;
+    throw new Error('Pinned wat2wasm is required for the SH-09 fixture.');
+  }
   run(wat2wasm, [wat, '-o', output]);
   return output;
 }
@@ -763,7 +768,8 @@ Console.WriteLine("HOST_ABI_RESULT:" + JsonSerializer.Serialize(actual));
 `;
 }
 
-function helloRunnerSource(boot, managed = null, translate = null) {
+function helloRunnerSource(boot, managed = null, translate = null, options = null) {
+  const unity = options?.host === 'unity';
   const managedProbeWrapper = JSON.stringify(managed?.probeWrapper ?? '');
   const managedReentryWrapper = JSON.stringify(managed?.reentryWrapper ?? '');
   const managedThrowWrapper = JSON.stringify(managed?.throwWrapper ?? '');
@@ -774,6 +780,9 @@ function helloRunnerSource(boot, managed = null, translate = null) {
   const assemblyLines = boot.assemblies.map(assembly => {
     const name = assembly.virtualPath ?? assembly.name;
     const path = JSON.stringify(join(bundleRoot, '_framework', name));
+    const bytes = unity
+      ? `UnitySelfHostAdapter.LoadAssembly(${JSON.stringify(name)})`
+      : `File.ReadAllBytes(${path})`;
     const condition = name === 'System.Private.CoreLib.dll'
       ? 'scenario != "missing-corelib"'
       : name === boot.profile.mainAssemblyName
@@ -782,17 +791,68 @@ function helloRunnerSource(boot, managed = null, translate = null) {
           ? 'scenario != "missing-wasm2cs" && scenario != "translate-missing-wasm2cs"'
           : 'true';
     if (name === boot.profile.mainAssemblyName) {
-      return `var selfHostingData = File.ReadAllBytes(${path});
+      return `var selfHostingData = ${bytes};
  if (scenario == "corrupt-selfhosting") selfHostingData[0] ^= 0xff;
  if (${condition}) assemblies.Add(new MonoAssembly(${JSON.stringify(name)}, selfHostingData));`;
     }
     if (name === 'Wasm2Cs.dll') {
-      return `var wasm2csData = File.ReadAllBytes(${path});
+      return `var wasm2csData = ${bytes};
  if (scenario == "corrupt-wasm2cs" || scenario == "translate-corrupt-wasm2cs") wasm2csData[0] ^= 0xff;
  if (${condition}) assemblies.Add(new MonoAssembly(${JSON.stringify(name)}, wasm2csData));`;
     }
-    return `if (${condition}) assemblies.Add(new MonoAssembly(${JSON.stringify(name)}, File.ReadAllBytes(${path})));`;
+    return `if (${condition}) assemblies.Add(new MonoAssembly(${JSON.stringify(name)}, ${bytes}));`;
   }).join('\n');
+  const scenarioLine = unity
+    ? 'var scenario = UnitySelfHostAdapter.Scenario();'
+    : 'var scenario = Environment.GetEnvironmentVariable("SH10_SCENARIO") ?? "positive";';
+  const readGlobals = unity
+    ? 'object[] ReadGlobals() => Array.Empty<object>();'
+    : `object[] ReadGlobals() => typeof(DotnetRuntime).GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
+      .Where(field => field.Name.StartsWith("__wasm_G", StringComparison.Ordinal))
+      .OrderBy(field => field.Name)
+      .Select(field => field.GetValue(RequireRuntime()) ?? "null")
+      .ToArray();`;
+  const unityRecord = unity ? 'UnitySelfHostAdapter.WriteTranslation(translationRequest.id, output);' : '';
+  const exitCode = `scenario == "positive" || scenario == "managed" || scenario == "translate"
+       ? failure == null && managedReturn == 0 && boot?.ExitCode == 0 ? 0 : 1
+       : failure == null ? 1 : 0`;
+  const resultEmit = unity
+    ? `UnitySelfHostAdapter.WriteOutcome(scenario, managedReturn, boot?.ExitCode, boot?.State.ToString() ?? (failure == null ? null : "Failed"), failure == null ? null : failure.GetType().FullName, failure == null ? null : failure.Message, startupDurationMs, executionDurationMs, runtime == null ? 0 : runtime.memory.CurrentPages, GC.GetTotalMemory(false));
+   UnitySelfHostAdapter.Exit(${exitCode});`
+    : `Console.WriteLine("SH10_RESULT:" + JsonSerializer.Serialize(new
+  {
+       scenario,
+       stdout = Encoding.UTF8.GetString(stdout.ToArray()),
+       stderr = Encoding.UTF8.GetString(stderr.ToArray()),
+       managedReturn,
+      exitCode = boot?.ExitCode,
+       requestedExit,
+       requestedAbort,
+       managedProbeResults,
+        managedThrow,
+        translatedResults,
+        reentryStatus,
+       memoryIdentity = runtime == null ? 0 : RuntimeHelpers.GetHashCode(runtime.memory),
+       tableIdentity = runtime == null ? 0 : RuntimeHelpers.GetHashCode(runtime.__indirect_function_table),
+       runtimeIdentity = runtime == null ? 0 : RuntimeHelpers.GetHashCode(runtime),
+       globalInitial,
+       globalFinal,
+       hostState = new { fileMarker = hostFileMarker, callbacks = hostCallbacks, exited = environment.HasExited, exitCode = environment.ExitCode },
+       runtimeTrace,
+       linearPages = runtime?.memory.CurrentPages ?? 0,
+       linearMaximumBytes = runtime == null ? 0 : runtime.memory.HostMaximumPages * 65536,
+       declaredMaximumPages = runtime?.memory.DeclaredMaximumPages,
+       outerGcHeap = GC.GetTotalMemory(false),
+       outerGcAvailable = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes,
+       outerWorkingSet = Process.GetCurrentProcess().WorkingSet64,
+       outerPeakWorkingSet = Process.GetCurrentProcess().PeakWorkingSet64,
+       startupDurationMs,
+       executionDurationMs,
+        state = boot?.State.ToString() ?? (failure == null ? null : "Failed"),
+      failure = failure == null ? null : new { type = failure.GetType().FullName, message = failure.Message },
+      phases = boot?.PhaseLog.ToArray() ?? Array.Empty<string>()
+  }));
+   Environment.ExitCode = ${exitCode};`;
   const propertyLines = Object.entries(boot.properties).map(([key, value]) =>
     `    new KeyValuePair<string, string>(${JSON.stringify(key)}, ${JSON.stringify(String(value).toLowerCase())})`).join(',\n');
   const now = csharpIdentifier('env', 'emscripten_get_now');
@@ -929,8 +989,8 @@ function helloRunnerSource(boot, managed = null, translate = null) {
          return 0;
      },
      ${fdSync} = fd => fd < 3 ? 0 : 8,
-     ${fdClose} = fd => fd < 3 || environment.Close(fd) ? 0 : 8`;
-  return `using System;
+      ${fdClose} = fd => fd < 3 || environment.Close(fd) ? 0 : 8`;
+   let source = `using System;
 using System.Collections.Generic;
  using System.IO;
  using System.Diagnostics;
@@ -951,7 +1011,7 @@ using Wasm2Cs.Generated;
      entropy: bytes => { for (int i = 0; i < bytes.Length; i++) bytes[i] = (byte)(i + 1); },
      stdout: bytes => stdout.AddRange(bytes),
      stderr: bytes => stderr.AddRange(bytes));
- var scenario = Environment.GetEnvironmentVariable("SH10_SCENARIO") ?? "positive";
+  ${scenarioLine}
  var hostFileMarker = false;
  var hostCallbacks = 0;
  if (scenario == "managed")
@@ -980,11 +1040,7 @@ using Wasm2Cs.Generated;
  object[] globalFinal = Array.Empty<object>();
  WasmMemory RequireMemory() => attachedMemory ?? throw new InvalidOperationException("WASM memory was not attached.");
   DotnetRuntime RequireRuntime() => runtime ?? throw new InvalidOperationException("runtime was not constructed");
-  object[] ReadGlobals() => typeof(DotnetRuntime).GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
-      .Where(field => field.Name.StartsWith("__wasm_G", StringComparison.Ordinal))
-      .OrderBy(field => field.Name)
-      .Select(field => field.GetValue(RequireRuntime()) ?? "null")
-      .ToArray();
+   ${readGlobals}
  // Unassigned imports stay null so the generated runtime rejects unexpected calls.
  var bindings = new DotnetRuntime.Bindings
  {
@@ -1255,6 +1311,7 @@ using Wasm2Cs.Generated;
           {
               var output = InvokeStringWrapper(${translateWrapper}, new[] { translationRequest.wasmBase64, translationRequest.className });
               translatedResults.Add(new { id = translationRequest.id, output });
+              ${unityRecord}
           }
       }
       executionDurationMs = (Stopwatch.GetTimestamp() - executionStarted) * 1000.0 / Stopwatch.Frequency;
@@ -1266,43 +1323,24 @@ using Wasm2Cs.Generated;
  {
      failure = exception;
  }
- Console.WriteLine("SH10_RESULT:" + JsonSerializer.Serialize(new
- {
-      scenario,
-      stdout = Encoding.UTF8.GetString(stdout.ToArray()),
-      stderr = Encoding.UTF8.GetString(stderr.ToArray()),
-      managedReturn,
-     exitCode = boot?.ExitCode,
-      requestedExit,
-      requestedAbort,
-      managedProbeResults,
-       managedThrow,
-       translatedResults,
-       reentryStatus,
-      memoryIdentity = runtime == null ? 0 : RuntimeHelpers.GetHashCode(runtime.memory),
-      tableIdentity = runtime == null ? 0 : RuntimeHelpers.GetHashCode(runtime.__indirect_function_table),
-      runtimeIdentity = runtime == null ? 0 : RuntimeHelpers.GetHashCode(runtime),
-      globalInitial,
-      globalFinal,
-      hostState = new { fileMarker = hostFileMarker, callbacks = hostCallbacks, exited = environment.HasExited, exitCode = environment.ExitCode },
-      runtimeTrace,
-      linearPages = runtime?.memory.CurrentPages ?? 0,
-      linearMaximumBytes = runtime == null ? 0 : runtime.memory.HostMaximumPages * 65536,
-      declaredMaximumPages = runtime?.memory.DeclaredMaximumPages,
-      outerGcHeap = GC.GetTotalMemory(false),
-      outerGcAvailable = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes,
-      outerWorkingSet = Process.GetCurrentProcess().WorkingSet64,
-      outerPeakWorkingSet = Process.GetCurrentProcess().PeakWorkingSet64,
-      startupDurationMs,
-      executionDurationMs,
-       state = boot?.State.ToString() ?? (failure == null ? null : "Failed"),
-     failure = failure == null ? null : new { type = failure.GetType().FullName, message = failure.Message },
-     phases = boot?.PhaseLog.ToArray() ?? Array.Empty<string>()
- }));
-  Environment.ExitCode = scenario == "positive" || scenario == "managed" || scenario == "translate"
-      ? failure == null && managedReturn == 0 && boot?.ExitCode == 0 ? 0 : 1
-      : failure == null ? 1 : 0;
-  `;
+  ${resultEmit}
+   `;
+  if (!unity) return source;
+  source = source
+    .replace('using System.Reflection;\n', '')
+    .replace('using System.Runtime.CompilerServices;\n', '')
+    .replace('using System.Text.Json;\n', '');
+  const bodyStart = source.indexOf(' var instanceNumber = 1;');
+  if (bodyStart < 0) throw new Error('Unity runner source did not contain its instance body.');
+  source = '#nullable enable\n' + source.slice(0, bodyStart)
+    + '\npublic static class UnitySelfHostRunner\n{\n    public static void Run()\n    {'
+    + source.slice(bodyStart)
+    + '\n    }\n}\n';
+  for (const forbidden of ['Transpiler', 'DynamicInvoke', 'WebAssembly', 'JsonSerializer', 'GetGCMemoryInfo', 'File.ReadAllBytes'])
+    if (source.includes(forbidden)) throw new Error(`Unity runner must not reference ${forbidden}.`);
+  if (!source.includes('new MonoBoot(') || !source.includes('UnitySelfHostAdapter.LoadAssembly'))
+    throw new Error('Unity runner does not reuse MonoBoot and the file adapter.');
+  return source;
 }
 
 function managedRunnerSource(boot, managed) {
@@ -2113,6 +2151,153 @@ function audit() {
   console.log(`SH-12.5 audit passed: canonical bundle ${canonical.sha256}, ${completions.length} completion records checked.`);
 }
 
+function readSummary(directory) {
+  const text = readFileSync(join(directory, 'summary.txt'), 'utf8');
+  const summary = {};
+  for (const line of text.split(/\r?\n/)) {
+    const index = line.indexOf('=');
+    if (index > 0) summary[line.slice(0, index)] = line.slice(index + 1);
+  }
+  return summary;
+}
+
+function translationFiles(directory) {
+  const translations = join(directory, 'translations');
+  if (!existsSync(translations)) throw new Error(`Translation output is missing: ${translations}`);
+  return Object.fromEntries(readdirSync(translations).filter(name => name.endsWith('.txt')).map(name =>
+    [name.slice(0, -4), readFileSync(join(translations, name), 'utf8')]));
+}
+
+function requireMeasured(summary, label) {
+  for (const key of ['startupDurationMs', 'executionDurationMs', 'linearPages', 'outerGcHeap']) {
+    const value = Number(summary[key]);
+    if (!Number.isFinite(value) || value <= 0) throw new Error(`${label} did not record ${key}.`);
+  }
+  if (summary.unityVersion !== '6000.6.0f1')
+    throw new Error(`${label} Unity version is ${summary.unityVersion}; 6000.6.0f1 is required.`);
+}
+
+function unityPrepare() {
+  const output = optionValue('--output', '');
+  if (!output) throw new Error('unity-prepare requires --output.');
+  const manifest = verifyBundle();
+  const startup = bootConfig(manifest);
+  const generated = generatedManifest();
+  if (generated.manifest.bundleSha256 !== manifest.bundleSha256 || generated.manifest.input?.sha256 !== startup.runtimeSha256)
+    throw new Error('Generated sources do not match the canonical runtime. Run generate first.');
+  const evidence = JSON.parse(readFileSync(join(root, 'docs', 'self-hosting', 'SH-12-translate.json'), 'utf8'));
+  if (evidence.bundleSha256 !== manifest.bundleSha256 || evidence.runtimeSha256 !== startup.runtimeSha256 || !evidence.wrapper)
+    throw new Error('SH-12 evidence does not match the canonical bundle.');
+  const scenarios = translateScenarios();
+  const runner = helloRunnerSource(startup, null, { wrapper: evidence.wrapper, requests: scenarios }, { host: 'unity' });
+  mkdirSync(output, { recursive: true });
+  writeFileSync(join(output, 'UnitySelfHostRunner.cs'), runner);
+  const lines = startup.assemblies.map(assembly => {
+    const name = assembly.virtualPath ?? assembly.name;
+    return `${name} ${sha256File(join(bundleRoot, '_framework', name))}`;
+  }).sort();
+  if (lines.length !== evidence.guestAssemblyCount)
+    throw new Error(`Guest assembly count ${lines.length} differs from SH-12 evidence.`);
+  writeFileSync(join(output, 'guest-manifest.txt'), lines.join('\n') + '\n');
+  json(join(output, 'prepare.json'), {
+    schemaVersion: 1,
+    milestone: 'SH-13',
+    bundleSha256: manifest.bundleSha256,
+    runtimeSha256: startup.runtimeSha256,
+    guestAssemblyCount: lines.length,
+    wrapper: evidence.wrapper,
+    generatedEntries: generated.manifest.entries.length
+  });
+  console.log(`SH-13 Unity runner prepared: ${lines.length} guest assemblies, ${generated.manifest.entries.length} generated sources.`);
+}
+
+function unityCheck() {
+  const player = optionValue('--player', '');
+  const editor = optionValue('--editor', '');
+  const repeat = optionValue('--repeat', '');
+  const missing = optionValue('--missing', '');
+  const corrupt = optionValue('--corrupt', '');
+  const editorMissing = optionValue('--editor-missing', '');
+  const editorCorrupt = optionValue('--editor-corrupt', '');
+  const il2cppOut = optionValue('--il2cpp-out', '');
+  if (!player || !editor || !missing || !corrupt || !editorMissing || !editorCorrupt || !il2cppOut)
+    throw new Error('unity-check requires --player, --editor, --missing, --corrupt, --editor-missing, --editor-corrupt, and --il2cpp-out.');
+  const evidence = JSON.parse(readFileSync(join(root, 'docs', 'self-hosting', 'SH-12-translate.json'), 'utf8'));
+  const manifest = verifyBundle();
+  if (evidence.bundleSha256 !== manifest.bundleSha256) throw new Error('SH-12 evidence does not match the canonical bundle.');
+  const playerSummary = readSummary(player);
+  const editorSummary = readSummary(editor);
+  if (playerSummary.scenario !== 'translate' || editorSummary.scenario !== 'translate')
+    throw new Error('Unity self-host did not run the translate scenario.');
+  if (playerSummary.state !== 'Exited' || editorSummary.state !== 'Exited' || playerSummary.failureType || editorSummary.failureType)
+    throw new Error(`Unity self-host failed: player ${JSON.stringify(playerSummary)} editor ${JSON.stringify(editorSummary)}`);
+  if (playerSummary.managedReturn !== '0' || editorSummary.managedReturn !== '0')
+    throw new Error('Unity self-host managed return was not 0.');
+  requireMeasured(playerSummary, 'Player');
+  requireMeasured(editorSummary, 'Editor');
+  for (const directory of [player, editor, repeat, missing, corrupt, editorMissing, editorCorrupt].filter(Boolean)) {
+    const exit = readFileSync(join(directory, 'process-exit.txt'), 'utf8').trim();
+    if (exit !== '0') throw new Error(`${directory} process exit was ${exit}.`);
+  }
+  const playerOutputs = translationFiles(player);
+  const editorOutputs = translationFiles(editor);
+  const ids = ['arithmetic-repeat-1', 'arithmetic-repeat-2', 'arithmetic-changed-class', 'arithmetic-changed-bytes', 'clang', 'host', 'invalid'];
+  for (const id of ids) {
+    if (playerOutputs[id] !== editorOutputs[id]) throw new Error(`Editor and IL2CPP outputs differ for ${id}.`);
+    if (repeat && translationFiles(repeat)[id] !== playerOutputs[id]) throw new Error(`Repeated IL2CPP output differs for ${id}.`);
+  }
+  if (playerOutputs['arithmetic-repeat-1'] !== playerOutputs['arithmetic-repeat-2'])
+    throw new Error('Repeated identical input produced different generated text.');
+  if (playerOutputs['arithmetic-repeat-1'] === playerOutputs['arithmetic-changed-class'] ||
+      playerOutputs['arithmetic-repeat-1'] === playerOutputs['arithmetic-changed-bytes'])
+    throw new Error('Changed input did not change generated text.');
+  const parsed = Object.fromEntries(ids.map(id => [id, parseTranslatedSources(playerOutputs[id])]));
+  if (parsed.invalid.error !== evidence.checks.invalidDiagnostic)
+    throw new Error(`Invalid diagnostic differs: ${parsed.invalid.error}`);
+  const summaries = {
+    arithmetic: sourceSummary(parsed['arithmetic-repeat-1'].sources),
+    arithmeticChanged: sourceSummary(parsed['arithmetic-changed-class'].sources),
+    'arithmetic-changed-bytes': sourceSummary(parsed['arithmetic-changed-bytes'].sources),
+    clang: sourceSummary(parsed.clang.sources),
+    host: sourceSummary(parsed.host.sources)
+  };
+  for (const [id, expected] of Object.entries(evidence.generatedSources))
+    if (JSON.stringify(summaries[id]) !== JSON.stringify(expected))
+      throw new Error(`Unity generated-source summary differs from SH-12 for ${id}.`);
+  for (const [label, directory, expectedMessage] of [
+    ['Player missing', missing, evidence.checks.missingWasm2cs.message],
+    ['Editor missing', editorMissing, evidence.checks.missingWasm2cs.message],
+    ['Player corrupt', corrupt, evidence.checks.corruptWasm2cs.message],
+    ['Editor corrupt', editorCorrupt, evidence.checks.corruptWasm2cs.message]
+  ]) {
+    const summary = readSummary(directory);
+    if (summary.state !== 'Failed' || summary.failureMessage !== expectedMessage)
+      throw new Error(`${label} Wasm2Cs.dll failure was not detected: ${JSON.stringify(summary)}`);
+  }
+  const generatedExecution = {
+    arithmetic: compileGeneratedModule('arithmetic', parsed['arithmetic-repeat-1'].sources, 'arithmetic-repeat-1'),
+    arithmeticChangedBytes: compileGeneratedModule('arithmetic-changed-bytes', parsed['arithmetic-changed-bytes'].sources, 'arithmetic-changed-bytes'),
+    clang: compileGeneratedModule('clang', parsed.clang.sources, 'clang'),
+    host: compileGeneratedModule('host', parsed.host.sources, 'host')
+  };
+  rmSync(il2cppOut, { recursive: true, force: true });
+  mkdirSync(il2cppOut, { recursive: true });
+  for (const source of [...parsed['arithmetic-repeat-1'].sources, ...parsed['arithmetic-changed-bytes'].sources, ...parsed.clang.sources])
+    writeFileSync(join(il2cppOut, source.Name), source.Text);
+  json(join(player, 'unity-check.json'), {
+    schemaVersion: 1,
+    milestone: 'SH-13',
+    bundleSha256: manifest.bundleSha256,
+    player: playerSummary,
+    editor: editorSummary,
+    summaries,
+    generatedExecution,
+    outerEngine: false,
+    outerTranslator: false
+  });
+  console.log('SH-13 Unity output matches SH-12 and the obtained sources compiled outside Unity.');
+}
+
 function optionValue(name, fallback) {
   const index = args.indexOf(name);
   if (index < 0) return fallback;
@@ -2410,6 +2595,10 @@ try {
     translate();
   } else if (command === 'audit') {
     audit();
+  } else if (command === 'unity-prepare') {
+    unityPrepare();
+  } else if (command === 'unity-check') {
+    unityCheck();
   } else {
     console.error(help);
     process.exitCode = 2;

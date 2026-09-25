@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "milestone": "SH-13",
+  "status": "verified",
+  "unity": "6000.6.0f1",
+  "target": "Windows x64 IL2CPP",
+  "bundleSha256": "a00695da11c3383f4990d938dab120e47816b8ab1dc7927eb0c2210909015bba",
+  "workDirectory": "C:\\Users\\fumika\\AppData\\Local\\Temp\\wasm2cs-sh13-0f429b22d0e04323a1589cbc2aa22f79",
+  "guestImporter": "UnityEditor.TextScriptImporter",
+  "stackReserveBytes": 33554432,
+  "measurements": {
+    "editor": { "startupDurationMs": 330967.1737, "executionDurationMs": 5437558.5972, "linearPages": 782, "outerGcHeap": 268795904 },
+    "player": { "startupDurationMs": 68287.6989, "executionDurationMs": 1071111.769, "linearPages": 782, "outerGcHeap": 750338048 },
+    "playerRepeat": { "startupDurationMs": 70609.492, "executionDurationMs": 1052080.363, "linearPages": 782, "outerGcHeap": 343969792 }
+  },
+  "markers": {
+    "guestData": ["WASM2CS_GUEST_DATA_PASS", "WASM2CS_ISOLATION_PASS"],
+    "editor": ["WASM2CS_SELFHOST_RESULT translate Exited"],
+    "player": ["WASM2CS_SELFHOST_RESULT translate Exited", "WASM2CS_SELFHOST_EXIT 0"],
+    "obtainedSource": ["WASM2CS_GENERATED_PASS"]
+  },
+  "negative": {
+    "missingWasm2cs": "Managed assembly supply is incomplete: expected 174, received 173.",
+    "corruptWasm2cs": "assembly Wasm2Cs.dll was rejected."
+  },
+  "logSha256": {
+    "guest-data.log": "2339480f0fdb9bc88e9d2b78941f4c5b81181add944baa8c199f5d9d694ceea6",
+    "editor-translate.log": "f81769e8cbc05e757cc66ca5d0bf171e01f3bd5e5245d45244fd7e158c224dea",
+    "build.log": "3873bb3ee0fa7de2af60f54ed220c0cb7edbeb4681aa333157d0488c671b29aa",
+    "player-translate-retry.log": "c89626c1aa89b0badb9b85af7d0538c4140ca6d21c7f899fa42d68a414cab4d1",
+    "player-translate-repeat.log": "e5ca13568c1150a7ed9317da0950fd5c7ec1896a286ca32470f59b7dd1858c5e",
+    "editor-missing.log": "41e05f334c74592b7ecd8ee3d598ddf3747327dc0e492e6c0dbb729013ce2a15",
+    "editor-corrupt.log": "343c02da45a939ac9552204331a3729a395ad0bd515edcc6f66015751de2f835",
+    "player-missing.log": "1f2321c064baa0571849f90bb62031cd6f7170bd301f8cbf8346dd27c370a843",
+    "player-corrupt.log": "f721c05dfc3c44c1d650b2ada77bef674aac08aeddbf59e0b01be93ed0e4cc03",
+    "generated-player.log": "cc697b6aff1b8c6194b8a177b8651aba368fc2373c29d3ae236ce5b46d085acc"
+  },
+  "note": "The first IL2CPP player used the 1MB default stack and exited 0xC00000FD during mono_wasm_load_runtime. The successful player log is player-translate-retry.log after raising SizeOfStackReserve to 32MB. The script now applies that patch before the first player launch. Unity deletes Assets/*.g.cs after the first domain reload, so the script renames generated sources to .cs before import."
+}

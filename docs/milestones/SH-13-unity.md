@@ -1,6 +1,6 @@
 # SH-13 Unity IL2CPP 自己実行
 
-状態: 未着手。前提: [SH-12.5](SH-12.5-audit-cleanup.md)。次: [SH-14](SH-14-reproducibility.md)。
+状態: 完了。前提: [SH-12.5](SH-12.5-audit-cleanup.md)。次: [SH-14](SH-14-reproducibility.md)。
 
 ## 目的・変更対象
 
@@ -28,11 +28,11 @@
 
 ## 合格条件
 
-- [ ] 同じ bundle を使い、Editor と IL2CPP Player の自己実行が SH-12 と一致する。
-- [ ] ゲスト DLL が Unity 側の assembly として実行されていない。
-- [ ] Player 内で WASM／JavaScript エンジン、動的 C# コンパイル、reflection dispatch を必要としない。
-- [ ] 生成したテキストを取り出し、別のビルド工程で動作検証できる。
-- [ ] ログ、Player の終了コード、成果物ハッシュ、測定結果、実際の Unity 版を保存している。
+- [x] 同じ bundle を使い、Editor と IL2CPP Player の自己実行が SH-12 と一致する。
+- [x] ゲスト DLL が Unity 側の assembly として実行されていない。
+- [x] Player 内で WASM／JavaScript エンジン、動的 C# コンパイル、reflection dispatch を必要としない。
+- [x] 生成したテキストを取り出し、別のビルド工程で動作検証できる。
+- [x] ログ、Player の終了コード、成果物ハッシュ、測定結果、実際の Unity 版を保存している。
 
 ## 非対象・失敗時の扱い
 
@@ -42,7 +42,7 @@
 
 Unity 供給・アダプター、Editor smoke、IL2CPP と出力の再ビルド検証に分ける。終了コミット例: `feat: verify self-hosting on Unity IL2CPP`。
 
-- 実行コマンド・結果: 未実施
-- Unity 版・bundle ハッシュ・Editor／build／Player ログ: 未取得
-- 未解決事項: 巨大生成コードとゲスト DLL データ供給の IL2CPP 検証待ち
-- 終了コミット: 未完了
+- 実行コマンド・結果: `scripts/test-unity-self-hosting.ps1`。Editor と Windows x64 IL2CPP Player の自己実行が SH-12 と一致し、欠落・破損 DLL は失敗し、反復実行は一致した。取得したソースは外側の .NET と別の IL2CPP Player で動作した。
+- Unity 版・bundle ハッシュ・Editor／build／Player ログ: Unity `6000.6.0f1`。bundle `a00695da11c3383f4990d938dab120e47816b8ab1dc7927eb0c2210909015bba`。記録は [SH-13 Unity 記録](../self-hosting/SH-13-unity.json)。作業ディレクトリ `C:\Users\fumika\AppData\Local\Temp\wasm2cs-sh13-0f429b22d0e04323a1589cbc2aa22f79`。
+- 未解決事項: なし。IL2CPP の既定 1MB スタックでは `mono_wasm_load_runtime` が `0xC00000FD` になるため、Player 実行前にスタック予約を 32MB にしている。
+- 終了コミット: 次の文書更新で追記

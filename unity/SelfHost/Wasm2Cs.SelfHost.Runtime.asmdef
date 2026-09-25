@@ -1,0 +1,7 @@
+{
+  "name": "Wasm2Cs.SelfHost.Runtime",
+  "autoReferenced": false,
+  "overrideReferences": true,
+  "references": ["Wasm2Cs.Runtime"],
+  "precompiledReferences": ["Wasm2Cs.Runtime.dll"]
+}

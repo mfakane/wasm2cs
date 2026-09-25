@@ -1,0 +1,6 @@
+{
+  "name": "Wasm2Cs.GeneratedModule",
+  "references": ["Wasm2Cs.Runtime"],
+  "overrideReferences": true,
+  "precompiledReferences": ["Wasm2Cs.Runtime.dll"]
+}

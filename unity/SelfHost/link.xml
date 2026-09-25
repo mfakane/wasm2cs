@@ -1,0 +1,5 @@
+<linker>
+  <!-- ponytail: indirect table entries are not static call sites. Low stripping can drop them; narrow this if a run shows a smaller set is enough. -->
+  <assembly fullname="Wasm2Cs.SelfHost.Runtime" preserve="all"/>
+  <assembly fullname="Wasm2Cs.DotnetHost" preserve="all"/>
+</linker>

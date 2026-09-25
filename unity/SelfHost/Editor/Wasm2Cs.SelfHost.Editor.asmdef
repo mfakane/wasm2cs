@@ -1,0 +1,5 @@
+{
+  "name": "Wasm2Cs.SelfHost.Editor",
+  "includePlatforms": ["Editor"],
+  "references": ["Wasm2Cs.SelfHost", "Wasm2Cs.SelfHost.Runtime"]
+}

@@ -45,4 +45,4 @@ Unity 供給・アダプター、Editor smoke、IL2CPP と出力の再ビルド�
 - 実行コマンド・結果: `scripts/test-unity-self-hosting.ps1`。Editor と Windows x64 IL2CPP Player の自己実行が SH-12 と一致し、欠落・破損 DLL は失敗し、反復実行は一致した。取得したソースは外側の .NET と別の IL2CPP Player で動作した。
 - Unity 版・bundle ハッシュ・Editor／build／Player ログ: Unity `6000.6.0f1`。bundle `a00695da11c3383f4990d938dab120e47816b8ab1dc7927eb0c2210909015bba`。記録は [SH-13 Unity 記録](../self-hosting/SH-13-unity.json)。作業ディレクトリ `C:\Users\fumika\AppData\Local\Temp\wasm2cs-sh13-0f429b22d0e04323a1589cbc2aa22f79`。
 - 未解決事項: なし。IL2CPP の既定 1MB スタックでは `mono_wasm_load_runtime` が `0xC00000FD` になるため、Player 実行前にスタック予約を 32MB にしている。
-- 終了コミット: 次の文書更新で追記
+- 終了コミット: `3f96025` (`feat: verify self-hosting on Unity IL2CPP`)

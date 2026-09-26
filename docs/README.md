@@ -2,12 +2,12 @@
 
 最終目標は、wasm2cs が C# に変換した .NET WASM ランタイム上に `Wasm2Cs.dll` をロードし、別の WASM を C# に変換することである。まず通常の .NET で成立させ、次に Windows x64 の Unity IL2CPP で同じ検証を通す。
 
-このディレクトリは実装手順と実績記録を兼ねる。SH-12 までの .NET 自己実行は完了しており、各段階の末尾に実行結果と終了コミットを記録する。コードの基準点は `5d0de8d`。既存11段階の完了履歴は [IMPLEMENTATION.md](../IMPLEMENTATION.md) に残す。
+このディレクトリは実装手順と実績記録を兼ねる。SH-14 まで完了している。各段階の末尾に実行結果と終了コミットを記録する。コードの基準点は `5d0de8d`。既存11段階の完了履歴は [IMPLEMENTATION.md](../IMPLEMENTATION.md) に残す。
 
 ## 読む順序と現在地
 
 1. [共通設計](self-hosting-design.md) で対象構成、実行境界、検証規則を確認する。
-2. 次の表を上から進める。現在着手できる段階は SH-14 である。
+2. 次の表を上から進める。SH-14 まで完了しており、追加の段階はない。
 3. 各段階の合格条件を満たしてコミットし、個別文書とこの表の状態を更新する。
 
 | ID | マイルストーン | 前提 | 状態 |
@@ -27,11 +27,11 @@
 | [SH-12](milestones/SH-12-self-hosting.md) | wasm2cs 自己実行 | SH-11 | 完了 |
 | [SH-12.5](milestones/SH-12.5-audit-cleanup.md) | 完了段階の整合性と境界テスト | SH-12 | 完了 |
 | [SH-13](milestones/SH-13-unity.md) | Unity IL2CPP 自己実行 | SH-12.5 | 完了 |
-| [SH-14](milestones/SH-14-reproducibility.md) | 再現性と継続検証 | SH-13 | 実施中 |
+| [SH-14](milestones/SH-14-reproducibility.md) | 再現性と継続検証 | SH-13 | 完了 |
 
 ## 現在の対応範囲
 
-SH-12 までで、固定した browser-wasm bundle 上の .NET 自己実行は完了している。SH-13 で Unity Editor と Windows x64 IL2CPP の同じ自己実行を手動で確認した。この Unity 結果は CI の成功ではない。範囲外は [共通設計](self-hosting-design.md) の末尾にあり、WASI、ブラウザー API 全体、任意の JavaScript interop、SIMD、threads、WASM GC、ゲスト内 Roslyn、runtime 自身の再変換、公開レジストリへの配布を含まない。
+SH-12 までで、固定した browser-wasm bundle 上の .NET 自己実行は完了している。SH-14 の `verify` でその経路を再実行した。SH-13 で Unity Editor と Windows x64 IL2CPP の同じ自己実行を手動で確認した。この Unity 結果は CI の成功ではない。`prepare` は同じ toolchain でも正典 bundle のバイト列を再現しない。正典はローカル成果物を hash で検証する。範囲外は [共通設計](self-hosting-design.md) の末尾にあり、WASI、ブラウザー API 全体、任意の JavaScript interop、SIMD、threads、WASM GC、ゲスト内 Roslyn、runtime 自身の再変換、公開レジストリへの配布を含まない。
 
 ## 合格としないもの
 

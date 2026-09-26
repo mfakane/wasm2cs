@@ -17,9 +17,10 @@ import { spawnSync } from 'node:child_process';
 import { arch, cpus, platform, release, tmpdir } from 'node:os';
 import { dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { acceptCacheStamp, cacheKey, extractMeasurement, missingTools, runStages, verifyStages } from './self-hosting-verify.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const artifactRoot = join(root, 'artifacts', 'self-hosting');
+const artifactRoot = resolve(process.env.SELF_HOSTING_ARTIFACTS ?? join(root, 'artifacts', 'self-hosting'));
 const environmentRoot = join(artifactRoot, 'environment');
 const bundleRoot = join(artifactRoot, 'bundle');
 const manifestPath = join(artifactRoot, 'bundle-manifest.json');
@@ -30,7 +31,7 @@ const profile = JSON.parse(readFileSync(profilePath, 'utf8'));
 const args = process.argv.slice(2);
 const command = args[0];
 
-const help = `Usage: node scripts/self-hosting.mjs <prepare|inventory|reference|generate|compile|host|hello|managed|translate|audit|unity-prepare|unity-check>
+const help = `Usage: node scripts/self-hosting.mjs <prepare|inventory|reference|generate|compile|host|hello|managed|translate|audit|verify|unity-prepare|unity-check>
 
 prepare    install/check the isolated workload and publish the guest bundle
 inventory  validate the bundle and record a full WABT inventory
@@ -41,7 +42,8 @@ host       run the C# SH-09 ABI fixture and construct the full generated runtime
 hello      start the generated Mono runtime and run managed Hello World
 managed    compare managed probes across .NET, official WASM, and translated Mono
 translate  run wasm2cs inside translated Mono and verify generated C#
-audit      verify canonical bundle provenance and SH-01 through SH-12 records
+audit      verify canonical bundle provenance and SH-01 through SH-13 records
+verify     rerun inventory, generation, compile, ABI, managed startup, and self-hosting; does not install workloads
 unity-prepare  write the Unity self-host runner and guest hash manifest
 unity-check   compare Unity Editor/IL2CPP output with SH-12 and compile it outside Unity
 
@@ -2107,6 +2109,9 @@ function audit() {
   const translated = JSON.parse(readFileSync(join(artifactRoot, 'translate-results.json'), 'utf8'));
   if (!translated.sourceRecords?.['arithmetic-changed-bytes'] || translated.generatedExecution?.arithmeticChangedBytes?.output !== 'GENERATED_OK')
     throw new Error('Translated SH-12 evidence does not prove changed-WASM generated behavior.');
+  const unitySelfHost = JSON.parse(readFileSync(join(root, 'docs', 'self-hosting', 'SH-13-unity.json'), 'utf8'));
+  if (unitySelfHost.status !== 'verified' || unitySelfHost.unity !== '6000.6.0f1' || unitySelfHost.bundleSha256 !== canonical.sha256)
+    throw new Error('SH-13 Unity evidence is not a verified run of the canonical bundle on Unity 6000.6.0f1.');
   const unityEvidence = JSON.parse(readFileSync(join(root, 'docs', 'self-hosting', 'SH-12.5-unity.json'), 'utf8'));
   const packagePath = join(root, 'artifacts', 'com.mfakane.wasm2cs-0.1.0-preview.1.tgz');
   if (unityEvidence.status !== 'verified' || !existsSync(packagePath) || sha256File(packagePath) !== unityEvidence.packageSha256)
@@ -2125,7 +2130,9 @@ function audit() {
     ['SH-09-host.md', '555cf67'],
     ['SH-10-mono-startup.md', '2e6913a'],
     ['SH-11-managed-runtime.md', 'a41058f'],
-    ['SH-12-self-hosting.md', 'cc41a6f']
+    ['SH-12-self-hosting.md', 'cc41a6f'],
+    ['SH-12.5-audit-cleanup.md', 'a64f6df'],
+    ['SH-13-unity.md', '3f96025']
   ];
   for (const [name, commit] of completions) {
     const text = readFileSync(join(root, 'docs', 'milestones', name), 'utf8');
@@ -2149,6 +2156,116 @@ function audit() {
     status: 'passed'
   });
   console.log(`SH-12.5 audit passed: canonical bundle ${canonical.sha256}, ${completions.length} completion records checked.`);
+}
+
+function verifyFailure(stage, error, manifest = null) {
+  return {
+    schemaVersion: 1,
+    milestone: 'SH-14',
+    status: 'failed',
+    failedStage: stage,
+    exitCode: 1,
+    bundleSha256: manifest?.bundleSha256 ?? null,
+    cacheKey: manifest ? cacheKey(manifest.bundleSha256) : null,
+    stages: verifyStages.map(name => ({ name, status: 'not-run', exitCode: null })),
+    reason: error instanceof Error ? error.message : String(error),
+    workloadUpdated: false
+  };
+}
+
+function stageEvidence(name) {
+  const files = {
+    inventory: 'inventory.json',
+    generate: 'generated-manifest.json',
+    compile: 'compile-results.json',
+    host: 'host-results.json',
+    hello: 'hello-results.json',
+    managed: 'managed-results.json',
+    translate: 'translate-results.json'
+  };
+  const path = join(artifactRoot, files[name] ?? '');
+  return files[name] && existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : null;
+}
+
+function verify() {
+  const resultPath = join(artifactRoot, 'verify-results.json');
+  const finish = (body, code) => {
+    json(resultPath, body);
+    if (code !== 0) {
+      console.error(`self-hosting: verify failed at ${body.failedStage}: ${body.reason ?? `exit ${code}`}`);
+      process.exitCode = code;
+    } else {
+      console.log(`SH-14 verify passed: ${verifyStages.length} stages, bundle ${body.bundleSha256}.`);
+    }
+  };
+  let manifest;
+  try {
+    manifest = verifyBundle();
+  } catch (error) {
+    finish(verifyFailure('bundle', error), 1);
+    return;
+  }
+  const stampPath = join(environmentRoot, 'cache-stamp.json');
+  if (existsSync(stampPath)) {
+    const stamp = JSON.parse(readFileSync(stampPath, 'utf8'));
+    if (acceptCacheStamp(stamp, manifest.bundleSha256).reason === 'mismatch') {
+      finish(verifyFailure('cache', new Error(`Cache stamp ${stamp.bundleSha256} does not match bundle ${manifest.bundleSha256}.`), manifest), 1);
+      return;
+    }
+  }
+  const wabt = ['wasm-validate', 'wasm-objdump', 'wasm2wat'].map(name => tool(savedWabtTool(name) ?? name));
+  const tools = [tool('dotnet'), tool('node'), ...wabt];
+  const absent = missingTools(tools);
+  const wrongWabt = wabt.filter(item => item.available && !item.version?.includes(profile.wabt));
+  let sdk = null;
+  if (!absent.length) {
+    try {
+      sdk = dotnetInfo();
+    } catch (error) {
+      finish(verifyFailure('tools', error, manifest), 1);
+      return;
+    }
+  }
+  if (absent.length || tool('node').version !== `v${profile.node}` || wrongWabt.length || sdk?.version !== profile.sdk) {
+    finish(verifyFailure('tools', new Error(`Pinned tools are missing or differ. Missing: ${absent.join(', ') || 'none'}. Node ${tool('node').version ?? 'missing'}, SDK ${sdk?.version ?? 'missing'}.`), manifest), 1);
+    return;
+  }
+  const planned = runStages(verifyStages, name => {
+    const child = run(process.execPath, [fileURLToPath(import.meta.url), name], { allowFailure: true });
+    if (child.status !== 0) {
+      const tail = (child.output ?? '').trim().split(/\r?\n/).slice(-20).join('\n');
+      if (tail) console.error(tail);
+    }
+    return child.status;
+  });
+  for (const stage of planned.stages) {
+    if (stage.status !== 'passed') continue;
+    const evidence = stageEvidence(stage.name);
+    if (evidence?.bundleSha256 && evidence.bundleSha256 !== manifest.bundleSha256) {
+      stage.status = 'failed';
+      stage.exitCode = 1;
+      planned.status = 'failed';
+      planned.failedStage = stage.name;
+      planned.exitCode = 1;
+      break;
+    }
+  }
+  const passedNames = planned.stages.filter(stage => stage.status === 'passed').map(stage => stage.name);
+  const measurements = Object.fromEntries(passedNames.map(name => [name, extractMeasurement(name, stageEvidence(name))]));
+  finish({
+    schemaVersion: 1,
+    milestone: 'SH-14',
+    status: planned.status,
+    failedStage: planned.failedStage,
+    exitCode: planned.exitCode,
+    bundleSha256: manifest.bundleSha256,
+    cacheKey: cacheKey(manifest.bundleSha256),
+    environment: { platform: platform(), arch: arch(), release: release(), node: process.version, dotnetSdk: sdk.version },
+    stages: planned.stages,
+    measurements,
+    workloadUpdated: false,
+    thresholds: null
+  }, planned.status === 'passed' ? 0 : planned.exitCode || 1);
 }
 
 function readSummary(directory) {
@@ -2555,6 +2672,11 @@ function prepare() {
      });
      const manifest = writeManifest();
      verifyCanonicalBundle(manifest);
+     json(join(environmentRoot, 'cache-stamp.json'), {
+       schemaVersion: 1,
+       bundleSha256: manifest.bundleSha256,
+       cacheKey: cacheKey(manifest.bundleSha256)
+     });
      rmSync(join(artifactRoot, 'prepare-failure.json'), { force: true });
      console.log(`Prepared bundle at ${bundleRoot}; bundle SHA-256: ${manifest.bundleSha256}`);
   } catch (error) {
@@ -2595,6 +2717,8 @@ try {
     translate();
   } else if (command === 'audit') {
     audit();
+  } else if (command === 'verify') {
+    verify();
   } else if (command === 'unity-prepare') {
     unityPrepare();
   } else if (command === 'unity-check') {

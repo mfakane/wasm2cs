@@ -1,0 +1,35 @@
+name: self-hosting
+
+# Dispatch only. A green regression check is not this job, and an unrun
+# dispatch is not a success. Unity IL2CPP stays on a licensed Windows machine.
+on:
+  workflow_dispatch:
+
+jobs:
+  self-hosting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.400
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.17.0
+      - name: install pinned WABT
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/wabt.tar.gz https://github.com/WebAssembly/wabt/releases/download/1.0.41/wabt-1.0.41-linux-x64.tar.gz
+          echo "83f8122e924745fcd70636e3594bc01c4c47f2d4c8f3c63b5d70d3f83a482677  /tmp/wabt.tar.gz" | sha256sum -c -
+          mkdir -p /tmp/wabt
+          tar -C /tmp/wabt -xzf /tmp/wabt.tar.gz
+          bin=$(find /tmp/wabt -type d -name bin -print -quit)
+          test -n "$bin"
+          echo "$bin" >> "$GITHUB_PATH"
+      - uses: actions/cache@v4
+        with:
+          path: artifacts/self-hosting/environment
+          key: wasm2cs-self-hosting-${{ hashFiles('docs/self-hosting/SH-01-profile.json') }}
+      - run: node scripts/self-hosting.mjs prepare
+      - run: node scripts/self-hosting.mjs reference
+      - run: node scripts/self-hosting.mjs verify

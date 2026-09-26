@@ -1,0 +1,24 @@
+name: regression
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.400
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.17.0
+      - run: dotnet build Wasm2Cs.slnx -m:1 -p:UseSharedCompilation=false --nologo
+      - run: dotnet tests/Wasm2Cs.Tests/bin/Debug/net10.0/Wasm2Cs.Tests.dll
+      - run: dotnet samples/Smoke/bin/Debug/net10.0/Smoke.dll
+      - run: node scripts/test-build.mjs
+      - run: node scripts/pack.mjs
+      - run: node scripts/test-package.mjs
+      - run: node scripts/test-self-hosting-verify.mjs

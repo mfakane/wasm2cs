@@ -27,7 +27,11 @@
 | [SH-12](milestones/SH-12-self-hosting.md) | wasm2cs 自己実行 | SH-11 | 完了 |
 | [SH-12.5](milestones/SH-12.5-audit-cleanup.md) | 完了段階の整合性と境界テスト | SH-12 | 完了 |
 | [SH-13](milestones/SH-13-unity.md) | Unity IL2CPP 自己実行 | SH-12.5 | 完了 |
-| [SH-14](milestones/SH-14-reproducibility.md) | 再現性と継続検証 | SH-13 | 未着手 |
+| [SH-14](milestones/SH-14-reproducibility.md) | 再現性と継続検証 | SH-13 | 実施中 |
+
+## 現在の対応範囲
+
+SH-12 までで、固定した browser-wasm bundle 上の .NET 自己実行は完了している。SH-13 で Unity Editor と Windows x64 IL2CPP の同じ自己実行を手動で確認した。この Unity 結果は CI の成功ではない。範囲外は [共通設計](self-hosting-design.md) の末尾にあり、WASI、ブラウザー API 全体、任意の JavaScript interop、SIMD、threads、WASM GC、ゲスト内 Roslyn、runtime 自身の再変換、公開レジストリへの配布を含まない。
 
 ## 合格としないもの
 

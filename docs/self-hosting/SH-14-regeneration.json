@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "milestone": "SH-14",
+  "status": "not-reproduced",
+  "command": "SELF_HOSTING_ARTIFACTS=/tmp/wasm2cs-sh14-prepare node scripts/self-hosting.mjs prepare",
+  "workDirectory": "/tmp/wasm2cs-sh14-prepare",
+  "canonicalBundleSha256": "a00695da11c3383f4990d938dab120e47816b8ab1dc7927eb0c2210909015bba",
+  "regeneratedBundleSha256": "f42132f46e44ebdeb9f94f173b4dadeeebd0e6a9f8a1e12cce3080ef6f6db3d2",
+  "samePathCount": 189,
+  "toolchain": { "sdk": "10.0.400", "runtimePack": "10.0.11", "emscripten": "3.1.56", "node": "v22.17.0" },
+  "sourceUnchangedSince": "cc41a6f",
+  "changed": [
+    { "path": "_framework/SelfHosting.dll", "canonicalBytes": 27648, "regeneratedBytes": 27648 },
+    { "path": "_framework/Wasm2Cs.dll", "canonicalBytes": 235520, "regeneratedBytes": 235520 },
+    { "path": "_framework/dotnet.boot.js", "canonicalBytes": 34872, "regeneratedBytes": 34872 },
+    { "path": "_framework/dotnet.native.js", "canonicalBytes": 257619, "regeneratedBytes": 257527 },
+    { "path": "_framework/dotnet.native.wasm", "canonicalBytes": 2970056, "regeneratedBytes": 2969917 }
+  ],
+  "cause": "prepare used the pinned SDK, runtime pack, Emscripten, and Node, and SelfHosting/Wasm2Cs sources were unchanged since the canonical commit. The publish still emitted different bytes for five files, including the native wasm. This is not a reproduced bundle.",
+  "pinnedBundle": "The canonical bundle is the local artifact checked by docs/self-hosting/SH-01-profile.json. It is not in git. verify and prepare reject any other hash."
+}

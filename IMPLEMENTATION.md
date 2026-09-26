@@ -6,6 +6,7 @@ Each milestone is committed separately after its checks pass. No registry publis
 This file records the completed initial scope. The [self-hosting roadmap](docs/README.md)
 records the later work. SH-10 through SH-12 run `Wasm2Cs.dll` inside a translated
 .NET WASM runtime; SH-12.5 reconciles its evidence before the Unity IL2CPP work.
+SH-13 has since verified that Unity path manually. It is not a CI result.
 The design allows the guest Mono IL interpreter while retaining ahead-of-time
 WASM-to-C# translation.
 

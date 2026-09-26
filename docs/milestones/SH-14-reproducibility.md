@@ -1,6 +1,6 @@
 # SH-14 再現性と継続検証
 
-状態: 未着手。前提: [SH-13](SH-13-unity.md)。次: 今回の最終合格判定。
+状態: 実施中。前提: [SH-13](SH-13-unity.md)。次: 今回の最終合格判定。
 
 ## 目的・変更対象
 
@@ -30,10 +30,16 @@ Windows では SH-13 の専用 PowerShell スクリプトを実行する。ク�
 ## 合格条件
 
 - [ ] 固定版の準備から .NET 自己実行までを一連のコマンドで再実行できる。
-- [ ] Unity Editor と Windows x64 IL2CPP の最終自己実行結果が保存されている。
-- [ ] 不一致・欠落・未実行・失敗を成功として集計しない。
+- [x] Unity Editor と Windows x64 IL2CPP の最終自己実行結果が保存されている。
+- [x] 不一致・欠落・未実行・失敗を成功として集計しない。
 - [ ] キャッシュキー、ハッシュ、環境情報、測定結果が検証対象に対応づいている。
 - [ ] 全 SH の記録が揃い、現在の対応範囲と未対応範囲を文書から判別できる。
+
+## CI と手動
+
+通常の回帰は `.github/workflows/regression.yml`。runtime 全体の `prepare` / `reference` / `verify` は `.github/workflows/self-hosting.yml` で、`workflow_dispatch` のときだけ動く。キャッシュキーは `wasm2cs-self-hosting-` にプロファイルファイルのハッシュを足したもので、`restore-keys` は使わない。未実行の dispatch は成功ではない。
+
+Unity はライセンスと Windows IL2CPP がある機械で `scripts/test-unity-self-hosting.ps1` を実行する。SH-13 の記録は手動の実績であり、CI の成功ではない。
 
 ## 非対象・失敗時の扱い
 
@@ -43,7 +49,7 @@ Windows では SH-13 の専用 PowerShell スクリプトを実行する。ク�
 
 一括ドライバー、CI／手動手順、最終実績の順に分ける。終了コミット例: `ci: make dotnet wasm self-hosting reproducible`。
 
-- 実行コマンド・結果: 未実施
-- クリーン環境・キャッシュ条件・ハッシュ・測定値: 未取得
-- 未解決事項: 最終検証の実行環境と実績
+- 実行コマンド・結果: `verify` を追加し、欠落・破損・不一致 bundle、別ハッシュのキャッシュ、ツール不足、途中失敗を成功にしていない。`node scripts/test-self-hosting-verify.mjs` は成功。クリーンな作業ディレクトリでの `prepare` は正典 hash と一致せず、成功扱いにしていない。正典 bundle に対する `verify` の再実行は未了。
+- クリーン環境・キャッシュ条件・ハッシュ・測定値: 再生成先 `/tmp/wasm2cs-sh14-prepare`。再生成 hash `f42132f46e44ebdeb9f94f173b4dadeeebd0e6a9f8a1e12cce3080ef6f6db3d2`。正典は `a00695da11c3383f4990d938dab120e47816b8ab1dc7927eb0c2210909015bba`。記録は [SH-14 再生成](../self-hosting/SH-14-regeneration.json) と [SH-14 基準値](../self-hosting/SH-14-baseline.json)。回帰閾値は未設定。
+- 未解決事項: 同じ toolchain でも publish の5ファイルがバイト一致しない。正典 bundle はローカル成果物を hash で検証する。`verify` の再実行は未了。
 - 終了コミット: 未完了

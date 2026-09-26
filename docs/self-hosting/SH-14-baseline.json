@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "milestone": "SH-14",
+  "status": "baseline",
+  "thresholds": null,
+  "note": "Environment-tagged measurements for the canonical bundle. Thresholds are not set. These figures come from the existing artifact results, not from a fresh verify run.",
+  "bundleSha256": "a00695da11c3383f4990d938dab120e47816b8ab1dc7927eb0c2210909015bba",
+  "cacheKey": "wasm2cs-self-hosting-a00695da11c3383f4990d938dab120e47816b8ab1dc7927eb0c2210909015bba",
+  "dotnet": {
+    "environment": {
+      "platform": "linux",
+      "release": "6.18.35.2-microsoft-standard-WSL2",
+      "architecture": "x64",
+      "node": "v22.17.0",
+      "dotnetSdk": "10.0.400",
+      "runtimePack": "10.0.11"
+    },
+    "generate": { "files": 12374, "bytes": 59516123, "durationMs": 24510.194884, "hostMaxRss": 436052 },
+    "compile": { "sourceCount": 12374, "durationMs": 77627.556438 },
+    "host": { "imports": 74 },
+    "hello": { "startupDurationMs": 21385.667514, "executionDurationMs": 26493.997246, "linearPages": 678, "outerGcHeap": 199110312, "outerWorkingSet": 602042368 },
+    "managed": { "normalDurationMs": 140.463016, "translatedDurationMs": 496880.412038, "guestHeap": [168656, 242488, 238296], "outerProcessMemoryBytes": 3221225472, "linearMemoryBytes": 268435456 },
+    "translate": { "startupDurationMs": 21259.607901, "executionDurationMs": 266903.417872, "linearPages": 782, "outerGcHeap": 325530440, "outerWorkingSet": 632348672 }
+  },
+  "unity": {
+    "ci": false,
+    "source": "docs/self-hosting/SH-13-unity.json",
+    "unity": "6000.6.0f1",
+    "target": "Windows x64 IL2CPP",
+    "editor": { "startupDurationMs": 330967.1737, "executionDurationMs": 5437558.5972, "linearPages": 782, "outerGcHeap": 268795904 },
+    "player": { "startupDurationMs": 68287.6989, "executionDurationMs": 1071111.769, "linearPages": 782, "outerGcHeap": 750338048 }
+  }
+}

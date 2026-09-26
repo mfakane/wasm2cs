@@ -11,8 +11,9 @@ function indices and byte offsets in diagnostics. See `IMPLEMENTATION.md` for
 the completed Unity/IL2CPP implementation milestones.
 
 `Wasm2Cs.dll` now runs inside a .NET WebAssembly runtime translated to C# and
-translates separate WASM modules without an outer WASM engine. Unity IL2CPP is
-the next runtime target. The Japanese [self-hosting roadmap](docs/README.md)
+translates separate WASM modules without an outer WASM engine. Unity IL2CPP
+self-hosting has been verified manually on Windows; that run is not a CI result.
+The Japanese [self-hosting roadmap](docs/README.md)
 records the implementation order, evidence, and acceptance criteria.
 
 Requires the **.NET 10 SDK** to build the tools and tests; Node.js 22+ supplies the

@@ -52,4 +52,4 @@ Unity はライセンスと Windows IL2CPP がある機械で `scripts/test-unit
 - 実行コマンド・結果: `prepare` は正典 hash と一致せず拒否した。`reference` と `verify` は正典 bundle `a00695da11c3383f4990d938dab120e47816b8ab1dc7927eb0c2210909015bba` で成功した。`verify` は7段階とも終了コード 0 で、workload は更新していない。`node scripts/test-self-hosting-verify.mjs` は成功。GitHub 上の self-hosting ワークフローは未実行であり、CI 成功ではない。
 - クリーン環境・キャッシュ条件・ハッシュ・測定値: 再生成先 `/tmp/wasm2cs-sh14-prepare`、再生成 hash `f42132f46e44ebdeb9f94f173b4dadeeebd0e6a9f8a1e12cce3080ef6f6db3d2`。正典のキャッシュキーは `wasm2cs-self-hosting-` にその hash を足したもの。測定は [SH-14 基準値](../self-hosting/SH-14-baseline.json)。回帰閾値は未設定。
 - 未解決事項: 同じ toolchain でも publish の5ファイルはバイト一致しない。正典 bundle はローカル成果物を hash で検証する。ビット一致の再生成はしていない。
-- 終了コミット: 次の文書更新で追記
+- 終了コミット: `63b62f3` (`docs: record SH-14 verification`)

@@ -2132,7 +2132,8 @@ function audit() {
     ['SH-11-managed-runtime.md', 'a41058f'],
     ['SH-12-self-hosting.md', 'cc41a6f'],
     ['SH-12.5-audit-cleanup.md', 'a64f6df'],
-    ['SH-13-unity.md', '3f96025']
+    ['SH-13-unity.md', '3f96025'],
+    ['SH-14-reproducibility.md', '63b62f3']
   ];
   for (const [name, commit] of completions) {
     const text = readFileSync(join(root, 'docs', 'milestones', name), 'utf8');

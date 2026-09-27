@@ -14,6 +14,9 @@ return SelfHostingDriver.RunManagedEntry();
 public static partial class SelfHostingDriver
 {
     private static IEnumerator<GeneratedSource>? sourceEnumerator;
+    private static string activeSourceName = "";
+    private static string? pendingSourceText;
+    private static int pendingSourceOffset;
     private static string lastManagedProbe = "";
 
     // SH-10 invokes this managed method through Mono's exported method bridge.
@@ -109,6 +112,9 @@ public static partial class SelfHostingDriver
         {
             sourceEnumerator?.Dispose();
             sourceEnumerator = Transpiler.TranslateSourceChunkSequence(Convert.FromBase64String(wasmBase64), className).GetEnumerator();
+            activeSourceName = "";
+            pendingSourceText = null;
+            pendingSourceOffset = 0;
             return "OK";
         }
         catch (Exception exception)
@@ -123,23 +129,35 @@ public static partial class SelfHostingDriver
     {
         try
         {
-            if (sourceEnumerator is null) return "ERROR: no active source translation";
-            if (!sourceEnumerator.MoveNext())
+            if (pendingSourceText is null || pendingSourceOffset >= pendingSourceText.Length)
             {
-                sourceEnumerator.Dispose();
-                sourceEnumerator = null;
-                return string.Empty;
+                if (sourceEnumerator is null) return "ERROR: no active source translation";
+                if (!sourceEnumerator.MoveNext())
+                {
+                    sourceEnumerator.Dispose();
+                    sourceEnumerator = null;
+                    pendingSourceText = null;
+                    return string.Empty;
+                }
+                pendingSourceText = sourceEnumerator.Current.Text;
+                activeSourceName = sourceEnumerator.Current.Name;
+                pendingSourceOffset = 0;
             }
-            return sourceEnumerator.Current.Text;
+            // JSExport truncates a large return on some runtimes. Keep each return short.
+            int length = Math.Min(4096, pendingSourceText.Length - pendingSourceOffset);
+            string slice = pendingSourceText.Substring(pendingSourceOffset, length);
+            pendingSourceOffset += length;
+            return slice;
         }
         catch (Exception exception)
         {
             sourceEnumerator?.Dispose();
             sourceEnumerator = null;
+            pendingSourceText = null;
             return $"ERROR: {exception.GetType().FullName}: {exception.Message}";
         }
     }
 
     [JSExport]
-    internal static string CurrentTranslateSourceName() => sourceEnumerator?.Current.Name ?? string.Empty;
+    internal static string CurrentTranslateSourceName() => activeSourceName;
 }

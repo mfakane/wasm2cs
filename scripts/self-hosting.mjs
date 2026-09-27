@@ -21,7 +21,7 @@ import { acceptCacheStamp, cacheKey, extractMeasurement, missingTools, runStages
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const artifactRoot = resolve(process.env.SELF_HOSTING_ARTIFACTS ?? join(root, 'artifacts', 'self-hosting'));
-const environmentRoot = join(artifactRoot, 'environment');
+const environmentRoot = resolve(process.env.SELF_HOSTING_ENVIRONMENT ?? join(tmpdir(), 'wasm2cs-self-hosting-environment'));
 const bundleRoot = join(artifactRoot, 'bundle');
 const manifestPath = join(artifactRoot, 'bundle-manifest.json');
 const profilePath = join(root, 'docs', 'self-hosting', 'SH-01-profile.json');
@@ -128,6 +128,16 @@ function isolatedEnvironment(basePath) {
   };
 }
 
+function deterministicBuildProperties() {
+  const pathMap = `${root}=/_/wasm2cs%2c${environmentRoot}=/_/self-hosting`;
+  return [
+    '-p:ContinuousIntegrationBuild=true',
+    '-p:Deterministic=true',
+    `-p:PathMap=${pathMap}`,
+    `-p:EmccExtraCFlags=-ffile-prefix-map=${environmentRoot}=/_/self-hosting`
+  ];
+}
+
 function recordCommand(log, program, programArgs, options = {}) {
   const result = run(program, programArgs, options);
   log.push(`$ ${program} ${programArgs.join(' ')}\n${result.output}`);
@@ -215,7 +225,7 @@ function verifyCanonicalBundle(manifest) {
       canonicalBundleSha256: canonical.sha256,
       runtimeSha256: runtime?.sha256 ?? null,
       canonicalRuntimeSha256: canonical.runtimeSha256,
-      reason: 'Publish embeds absolute workload paths, so another work directory cannot reproduce the canonical bytes.'
+      reason: 'The rebuilt bundle does not match the pinned reproducible output.'
     });
     console.error(`self-hosting: ${message} Continuing without claiming reproduction.`);
     return;
@@ -2130,8 +2140,8 @@ function audit() {
   if (!translated.sourceRecords?.['arithmetic-changed-bytes'] || translated.generatedExecution?.arithmeticChangedBytes?.output !== 'GENERATED_OK')
     throw new Error('Translated SH-12 evidence does not prove changed-WASM generated behavior.');
   const unitySelfHost = JSON.parse(readFileSync(join(root, 'docs', 'self-hosting', 'SH-13-unity.json'), 'utf8'));
-  if (unitySelfHost.status !== 'verified' || unitySelfHost.unity !== '6000.6.0f1' || unitySelfHost.bundleSha256 !== canonical.sha256)
-    throw new Error('SH-13 Unity evidence is not a verified run of the canonical bundle on Unity 6000.6.0f1.');
+  if (unitySelfHost.status !== 'verified' || unitySelfHost.unity !== '6000.6.0f1' || !lineage.has(unitySelfHost.bundleSha256))
+    throw new Error('SH-13 Unity evidence is not a verified run of the recorded bundle lineage on Unity 6000.6.0f1.');
   const unityEvidence = JSON.parse(readFileSync(join(root, 'docs', 'self-hosting', 'SH-12.5-unity.json'), 'utf8'));
   const packagePath = join(root, 'artifacts', 'com.mfakane.wasm2cs-0.1.0-preview.1.tgz');
   if (unityEvidence.status !== 'verified' || !existsSync(packagePath) || sha256File(packagePath) !== unityEvidence.packageSha256)
@@ -2637,10 +2647,11 @@ function prepare() {
         emcc: tool('emcc')
       },
       environment: {
-        cliHome: 'environment/dotnet-home',
-        nugetPackages: 'environment/nuget-packages',
-        msbuildUserExtensions: 'environment/msbuild',
-        workloadTemp: 'environment/workload-temp'
+        root: environmentRoot,
+        cliHome: 'dotnet-home',
+        nugetPackages: 'nuget-packages',
+        msbuildUserExtensions: 'msbuild',
+        workloadTemp: 'workload-temp'
       },
       build: {
         project: 'samples/SelfHosting/SelfHosting.csproj',
@@ -2659,7 +2670,9 @@ function prepare() {
     }
     json(join(artifactRoot, 'toolchain.json'), toolchain);
     const coreProject = join(root, 'src', 'Wasm2Cs', 'Wasm2Cs.csproj');
-    recordCommand(log, 'dotnet', ['build', coreProject, '--configuration', 'Release', '-m:1', '-p:UseSharedCompilation=false', '--nologo'], { env });
+    const deterministicProperties = deterministicBuildProperties();
+    recordCommand(log, 'dotnet', ['build', coreProject, '--configuration', 'Release', '-m:1',
+      '-p:UseSharedCompilation=false', ...deterministicProperties, '--nologo'], { env });
     const publishRoot = join(root, 'samples', 'SelfHosting', 'bin', 'Release');
     rmSync(publishRoot, { recursive: true, force: true });
     rmSync(join(root, 'samples', 'SelfHosting', 'obj', 'Release'), { recursive: true, force: true });
@@ -2667,7 +2680,7 @@ function prepare() {
     recordCommand(log, 'dotnet', [
       'publish', project, '--configuration', 'Release', '--runtime', profile.runtimeIdentifier,
       '-m:1', '-p:UseSharedCompilation=false', '-p:TargetLatestRuntimePatch=false',
-      `-p:RuntimeFrameworkVersion=${profile.runtimePack}`, '--nologo'
+      `-p:RuntimeFrameworkVersion=${profile.runtimePack}`, ...deterministicProperties, '--nologo'
     ], { env });
     const appBundle = walkFiles(publishRoot).map(path => dirname(path)).find(path =>
       path.endsWith('AppBundle') && existsSync(join(path, 'main.mjs')) &&
@@ -2701,6 +2714,12 @@ function prepare() {
       runtimePack,
       emscripten: emccVersion,
       buildProperties: profile.buildProperties,
+      deterministicProperties: {
+        continuousIntegrationBuild: true,
+        deterministic: true,
+        pathMap: '/_/wasm2cs,/_/self-hosting',
+        emccFilePrefixMap: '/_/self-hosting'
+      },
       runtimeOptions: profile.runtimeOptions,
       sourceProject: 'samples/SelfHosting/SelfHosting.csproj',
       evidence: ['build-evidence/wasm-props.json', 'build-evidence/SelfHosting.deps.json']

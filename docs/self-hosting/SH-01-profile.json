@@ -10,10 +10,10 @@
   "workloadManifest": "10.0.111",
   "runtimePack": "10.0.11",
   "canonicalBundle": {
-    "sha256": "a00695da11c3383f4990d938dab120e47816b8ab1dc7927eb0c2210909015bba",
-    "runtimeSha256": "d531922c75237648c1f643077c13ba0da8f9583ecfa3304476ab196984c3efe4",
-    "firstVerifiedByCommit": "cc41a6f",
-    "note": "The SH-01 baseline was rebuilt as the guest and host gained the implementations required through SH-12. Historical milestone measurements retain their original bundle hashes."
+    "sha256": "4adeffc8ec84c053ab3d89f95c34ff81de952a10671385f8101926f16738d624",
+    "runtimeSha256": "0573233631f16ebaaa5dbee8cb16c671d096d1d49555b5a8e329572b2af091e8",
+    "firstVerifiedByCommit": null,
+    "note": "The SH-14 baseline uses deterministic managed path mapping, native file-prefix mapping, and a stable isolated workload path. Historical milestone measurements retain their original bundle hashes."
   },
   "bundleLineage": [
     {
@@ -40,6 +40,11 @@
       "sha256": "a00695da11c3383f4990d938dab120e47816b8ab1dc7927eb0c2210909015bba",
       "scope": "Canonical bundle verified through SH-12",
       "verifiedByCommit": "cc41a6f"
+    },
+    {
+      "sha256": "4adeffc8ec84c053ab3d89f95c34ff81de952a10671385f8101926f16738d624",
+      "scope": "Reproducible canonical bundle verified through SH-14",
+      "verifiedByCommit": null
     }
   ],
   "node": "22.17.0",
@@ -90,11 +95,11 @@
   "inventory": {
     "status": "complete",
     "wabt": "1.0.41",
-    "bundleSha256": "a00695da11c3383f4990d938dab120e47816b8ab1dc7927eb0c2210909015bba",
+    "bundleSha256": "4adeffc8ec84c053ab3d89f95c34ff81de952a10671385f8101926f16738d624",
     "runtime": {
       "path": "_framework/dotnet.native.wasm",
-      "bytes": 2970056,
-      "sha256": "d531922c75237648c1f643077c13ba0da8f9583ecfa3304476ab196984c3efe4",
+      "bytes": 2969853,
+      "sha256": "0573233631f16ebaaa5dbee8cb16c671d096d1d49555b5a8e329572b2af091e8",
       "functions": 12356,
       "sections": {
         "Type": 176,

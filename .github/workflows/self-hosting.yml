@@ -2,15 +2,13 @@ name: self-hosting
 
 # Dispatch only. A green regression check is not this job, and an unrun
 # dispatch is not a success. Unity IL2CPP stays on a licensed Windows machine.
-# A green run here is a rebuild in the runner work directory, not the canonical bundle.
+# A green run requires the runner rebuild to match the canonical bundle.
 on:
   workflow_dispatch:
 
 jobs:
   self-hosting:
     runs-on: ubuntu-latest
-    env:
-      SELF_HOSTING_ACCEPT_REBUILD: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -33,7 +31,7 @@ jobs:
           echo "$bin" >> "$GITHUB_PATH"
       - uses: actions/cache@v4
         with:
-          path: artifacts/self-hosting/environment
+          path: /tmp/wasm2cs-self-hosting-environment
           key: wasm2cs-self-hosting-${{ hashFiles('docs/self-hosting/SH-01-profile.json') }}
       - run: node scripts/self-hosting.mjs prepare
       - run: node scripts/self-hosting.mjs reference

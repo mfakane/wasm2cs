@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "milestone": "SH-09",
   "runtimePath": "_framework/dotnet.native.wasm",
-  "runtimeSha256": "d531922c75237648c1f643077c13ba0da8f9583ecfa3304476ab196984c3efe4",
+  "runtimeSha256": "0573233631f16ebaaa5dbee8cb16c671d096d1d49555b5a8e329572b2af091e8",
   "bundleSha256Source": "artifacts/self-hosting/bundle-manifest.json",
   "defaultDisposition": "reject",
   "supportedImports": [

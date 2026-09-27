@@ -1,21 +1,16 @@
 {
   "schemaVersion": 1,
   "milestone": "SH-14",
-  "status": "not-reproduced",
-  "command": "SELF_HOSTING_ARTIFACTS=/tmp/wasm2cs-sh14-prepare node scripts/self-hosting.mjs prepare",
-  "workDirectory": "/tmp/wasm2cs-sh14-prepare",
-  "canonicalBundleSha256": "a00695da11c3383f4990d938dab120e47816b8ab1dc7927eb0c2210909015bba",
-  "regeneratedBundleSha256": "f42132f46e44ebdeb9f94f173b4dadeeebd0e6a9f8a1e12cce3080ef6f6db3d2",
+  "status": "reproduced",
+  "command": "SELF_HOSTING_ARTIFACTS=/tmp/wasm2cs-sh14-repro-{a,b,c} node scripts/self-hosting.mjs prepare",
+  "workDirectories": ["/tmp/wasm2cs-sh14-repro-a", "/tmp/wasm2cs-sh14-repro-b", "/tmp/wasm2cs-sh14-repro-c"],
+  "canonicalBundleSha256": "4adeffc8ec84c053ab3d89f95c34ff81de952a10671385f8101926f16738d624",
+  "regeneratedBundleSha256": "4adeffc8ec84c053ab3d89f95c34ff81de952a10671385f8101926f16738d624",
   "samePathCount": 189,
   "toolchain": { "sdk": "10.0.400", "runtimePack": "10.0.11", "emscripten": "3.1.56", "node": "v22.17.0" },
-  "sourceUnchangedSince": "cc41a6f",
-  "changed": [
-    { "path": "_framework/SelfHosting.dll", "canonicalBytes": 27648, "regeneratedBytes": 27648 },
-    { "path": "_framework/Wasm2Cs.dll", "canonicalBytes": 235520, "regeneratedBytes": 235520 },
-    { "path": "_framework/dotnet.boot.js", "canonicalBytes": 34872, "regeneratedBytes": 34872 },
-    { "path": "_framework/dotnet.native.js", "canonicalBytes": 257619, "regeneratedBytes": 257527 },
-    { "path": "_framework/dotnet.native.wasm", "canonicalBytes": 2970056, "regeneratedBytes": 2969917 }
-  ],
-  "cause": "prepare used the pinned SDK, runtime pack, Emscripten, and Node, and SelfHosting/Wasm2Cs sources were unchanged since the canonical commit. The publish still emitted different bytes for five files, including the native wasm. This is not a reproduced bundle.",
-  "pinnedBundle": "The canonical bundle is the local artifact checked by docs/self-hosting/SH-01-profile.json. It is not in git. verify and prepare reject any other hash."
+  "sourceCommit": "98ec4ff",
+  "changed": [],
+  "reproduction": "Two artifact roots in the primary checkout and one artifact root in a second checkout produced identical manifests and entry hashes.",
+  "cause": "Managed compiler paths are mapped to stable virtual roots. Emscripten source paths are mapped with -ffile-prefix-map, and every build uses /tmp/wasm2cs-self-hosting-environment for the isolated workload so generated JavaScript contains a stable include path.",
+  "pinnedBundle": "The canonical bundle is the reproducibly generated local artifact checked by docs/self-hosting/SH-01-profile.json. It is not in git. verify and prepare reject any other hash."
 }

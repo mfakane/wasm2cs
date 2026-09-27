@@ -49,7 +49,7 @@ Unity はライセンスと Windows IL2CPP がある機械で `scripts/test-unit
 
 一括ドライバー、CI／手動手順、最終実績の順に分ける。終了コミット例: `ci: make dotnet wasm self-hosting reproducible`。
 
-- 実行コマンド・結果: `prepare` は正典 hash と一致せず拒否した。`reference` と `verify` は正典 bundle `a00695da11c3383f4990d938dab120e47816b8ab1dc7927eb0c2210909015bba` で成功した。`verify` は7段階とも終了コード 0 で、workload は更新していない。`node scripts/test-self-hosting-verify.mjs` は成功。GitHub 上の self-hosting ワークフローは未実行であり、CI 成功ではない。
-- クリーン環境・キャッシュ条件・ハッシュ・測定値: 再生成先 `/tmp/wasm2cs-sh14-prepare`、再生成 hash `f42132f46e44ebdeb9f94f173b4dadeeebd0e6a9f8a1e12cce3080ef6f6db3d2`。正典のキャッシュキーは `wasm2cs-self-hosting-` にその hash を足したもの。測定は [SH-14 基準値](../self-hosting/SH-14-baseline.json)。回帰閾値は未設定。
-- 未解決事項: 同じ toolchain でも publish の5ファイルはバイト一致しない。正典 bundle はローカル成果物を hash で検証する。ビット一致の再生成はしていない。
+- 実行コマンド・結果: `prepare` は二つの成果物ディレクトリと別 checkout で同じ正典 hash `4adeffc8ec84c053ab3d89f95c34ff81de952a10671385f8101926f16738d624` を生成した。`reference` と `verify` はこの bundle で成功した。`verify` は7段階とも終了コード 0 で、workload は更新していない。GitHub Actions の実績は run `36291266704` で、固定パス対応前の再生成 bundle に対する7段階の成功である。
+- クリーン環境・キャッシュ条件・ハッシュ・測定値: 再生成先は `/tmp/wasm2cs-sh14-repro-a`、`-b`、`-c`。isolated workload は `/tmp/wasm2cs-self-hosting-environment` に固定し、キャッシュキーは `wasm2cs-self-hosting-` にプロファイルファイルの hash を足す。測定は [SH-14 基準値](../self-hosting/SH-14-baseline.json)。回帰閾値は未設定。
+- 未解決事項: Windows と Linux の間のバイト一致は検証していない。正典生成とCI検証は Linux x64 を対象とする。Unity Editor／IL2CPP の実績は一つ前の正典 bundle に対する SH-13 の記録であり、新しい正典では再実行していない。
 - 終了コミット: `63b62f3` (`docs: record SH-14 verification`)

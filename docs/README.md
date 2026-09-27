@@ -31,7 +31,7 @@
 
 ## 現在の対応範囲
 
-SH-12 までで、固定した browser-wasm bundle 上の .NET 自己実行は完了している。SH-14 の `verify` でその経路を再実行した。SH-13 で Unity Editor と Windows x64 IL2CPP の同じ自己実行を手動で確認した。この Unity 結果は CI の成功ではない。`prepare` は同じ toolchain でも正典 bundle のバイト列を再現しない。正典はローカル成果物を hash で検証する。範囲外は [共通設計](self-hosting-design.md) の末尾にあり、WASI、ブラウザー API 全体、任意の JavaScript interop、SIMD、threads、WASM GC、ゲスト内 Roslyn、runtime 自身の再変換、公開レジストリへの配布を含まない。
+SH-12 までで、固定した browser-wasm bundle 上の .NET 自己実行は完了している。SH-14 の `verify` でその経路を再実行した。SH-13 で Unity Editor と Windows x64 IL2CPP の同じ自己実行を手動で確認した。この Unity 結果は CI の成功ではない。`prepare` は固定した Linux x64 環境で正典 bundle のバイト列を再現し、正典はローカル成果物を hash で検証する。範囲外は [共通設計](self-hosting-design.md) の末尾にあり、WASI、ブラウザー API 全体、任意の JavaScript interop、SIMD、threads、WASM GC、ゲスト内 Roslyn、runtime 自身の再変換、公開レジストリへの配布を含まない。
 
 ## 合格としないもの
 

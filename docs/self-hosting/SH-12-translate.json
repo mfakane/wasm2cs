@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "milestone": "SH-12",
   "runtimePath": "_framework/dotnet.native.wasm",
-  "runtimeSha256": "d531922c75237648c1f643077c13ba0da8f9583ecfa3304476ab196984c3efe4",
-  "bundleSha256": "a00695da11c3383f4990d938dab120e47816b8ab1dc7927eb0c2210909015bba",
+  "runtimeSha256": "0573233631f16ebaaa5dbee8cb16c671d096d1d49555b5a8e329572b2af091e8",
+  "bundleSha256": "4adeffc8ec84c053ab3d89f95c34ff81de952a10671385f8101926f16738d624",
   "guestAssemblyCount": 174,
   "guestAssemblyHashes": {
-    "SelfHosting.dll": "6f5a63c62c51b7f4bc92292623cf204cff00377c672222b36bc11f7dad21c7b3",
-    "Wasm2Cs.dll": "79ef0782389fbde8a2dfbc52946cdb8c67f9cff626c73f0481b68410b38b1e54"
+    "SelfHosting.dll": "33de10868b263d65536962f71ea3d3d9d53a6cda7d82a4bd479d005772bd86cd",
+    "Wasm2Cs.dll": "7fe80e5a1d185720b2f507794bed40da57184a8bdb3b571dac912d4294bb3c10"
   },
   "wrapper": "__Wrapper_TranslateSourcesBase64_271973316",
   "inputScenarios": [

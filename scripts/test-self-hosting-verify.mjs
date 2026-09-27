@@ -10,6 +10,11 @@ import { acceptCacheStamp, cacheKey, extractMeasurement, missingTools, runStages
 const root = fileURLToPath(new URL('../', import.meta.url));
 const script = fileURLToPath(new URL('./self-hosting.mjs', import.meta.url));
 const profile = JSON.parse(readFileSync(new URL('../docs/self-hosting/SH-01-profile.json', import.meta.url), 'utf8'));
+const selfHostingScript = readFileSync(script, 'utf8');
+
+assert.match(selfHostingScript, /ContinuousIntegrationBuild=true/);
+assert.match(selfHostingScript, /-ffile-prefix-map=/);
+assert.match(selfHostingScript, /wasm2cs-self-hosting-environment/);
 
 const stopped = runStages(['one', 'two', 'three'], name => name === 'two' ? 7 : 0);
 assert.equal(stopped.status, 'failed');
@@ -44,7 +49,8 @@ assert.equal(extractMeasurement('hello', { results: { startupDurationMs: 1, exec
 function runVerify(directory, env = {}) {
   return spawnSync(process.execPath, [script, 'verify'], {
     cwd: root,
-    env: { ...process.env, SELF_HOSTING_ARTIFACTS: directory, ...env },
+    env: { ...process.env, SELF_HOSTING_ARTIFACTS: directory,
+      SELF_HOSTING_ENVIRONMENT: join(directory, 'environment'), ...env },
     encoding: 'utf8'
   });
 }
@@ -141,10 +147,11 @@ if (existsSync(regressionPath) && existsSync(selfHostingPath)) {
   assert.doesNotMatch(regression, /self-hosting\.mjs|test-unity-self-hosting/);
   assert.doesNotMatch(selfHosting, /restore-keys/);
   assert.match(selfHosting, /wasm2cs-self-hosting-/);
+  assert.match(selfHosting, /\/tmp\/wasm2cs-self-hosting-environment/);
   assert.match(selfHosting, /workflow_dispatch/);
   assert.match(selfHosting, /rollForward.:.disable/);
   assert.doesNotMatch(selfHosting, /workloadVersion/);
-  assert.match(selfHosting, /SELF_HOSTING_ACCEPT_REBUILD/);
+  assert.doesNotMatch(selfHosting, /SELF_HOSTING_ACCEPT_REBUILD/);
   assert.doesNotMatch(selfHosting, /test-unity-self-hosting/);
 }
 

@@ -3,9 +3,9 @@
   "milestone": "SH-14",
   "status": "baseline",
   "thresholds": null,
-  "note": "Environment-tagged measurements from the SH-14 verify run of the canonical bundle. Thresholds are not set. A clean prepare did not reproduce these bytes; see SH-14-regeneration.json.",
-  "bundleSha256": "a00695da11c3383f4990d938dab120e47816b8ab1dc7927eb0c2210909015bba",
-  "cacheKey": "wasm2cs-self-hosting-a00695da11c3383f4990d938dab120e47816b8ab1dc7927eb0c2210909015bba",
+  "note": "Environment-tagged measurements from the SH-14 verify run of the reproducible canonical bundle. Thresholds are not set.",
+  "bundleSha256": "4adeffc8ec84c053ab3d89f95c34ff81de952a10671385f8101926f16738d624",
+  "cacheKey": "wasm2cs-self-hosting-4adeffc8ec84c053ab3d89f95c34ff81de952a10671385f8101926f16738d624",
   "verify": {
     "status": "passed",
     "exitCode": 0,
@@ -17,12 +17,12 @@
       "node": "v22.17.0",
       "dotnetSdk": "10.0.400"
     },
-    "generate": { "files": 12374, "bytes": 59516123, "durationMs": 24730.115164, "hostMaxRss": 440552 },
-    "compile": { "sourceCount": 12374, "durationMs": 80573.416427 },
+    "generate": { "files": 12374, "bytes": 59515833, "durationMs": 21285.913524, "hostMaxRss": 339152 },
+    "compile": { "sourceCount": 12374, "durationMs": 72388.752086 },
     "host": { "imports": 74 },
-    "hello": { "startupDurationMs": 22032.412863, "executionDurationMs": 29393.538441, "linearPages": 678, "outerGcHeap": 318791472, "outerWorkingSet": 491102208 },
-    "managed": { "normalDurationMs": 153.536752, "translatedDurationMs": 527132.492035, "guestHeap": [168656, 245464, 241272], "outerProcessMemoryBytes": 3221225472, "linearMemoryBytes": 268435456 },
-    "translate": { "startupDurationMs": 24072.257137, "executionDurationMs": 272222.668156, "linearPages": 782, "outerGcHeap": 317622512, "outerWorkingSet": 934150144 }
+    "hello": { "startupDurationMs": 21350.137525, "executionDurationMs": 26227.191718, "linearPages": 678, "outerGcHeap": 1305229288, "outerWorkingSet": 689504256 },
+    "managed": { "normalDurationMs": 124.607873, "translatedDurationMs": 474764.556658, "guestHeap": [168656, 243616, 239424], "outerProcessMemoryBytes": 3221225472, "linearMemoryBytes": 268435456 },
+    "translate": { "startupDurationMs": 23868.538027, "executionDurationMs": 267915.276884, "linearPages": 782, "outerGcHeap": 307997392, "outerWorkingSet": 913268736 }
   },
   "unity": {
     "ci": false,

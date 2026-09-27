@@ -53,3 +53,4 @@ Unity はライセンスと Windows IL2CPP がある機械で `scripts/test-unit
 - クリーン環境・キャッシュ条件・ハッシュ・測定値: 再生成先は `/tmp/wasm2cs-sh14-repro-a`、`-b`、`-c`。isolated workload は `/tmp/wasm2cs-self-hosting-environment` に固定し、キャッシュキーは `wasm2cs-self-hosting-` にプロファイルファイルの hash を足す。測定は [SH-14 基準値](../self-hosting/SH-14-baseline.json)。回帰閾値は未設定。
 - 未解決事項: Windows と Linux の間のバイト一致は検証していない。正典生成とCI検証は Linux x64 を対象とする。Unity Editor／IL2CPP の実績は一つ前の正典 bundle に対する SH-13 の記録であり、新しい正典では再実行していない。
 - 終了コミット: `63b62f3` (`docs: record SH-14 verification`)
+- 再現性修正コミット: `8bf1c18` (`fix: make self-hosting bundle reproducible`)

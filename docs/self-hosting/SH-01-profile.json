@@ -12,7 +12,7 @@
   "canonicalBundle": {
     "sha256": "4adeffc8ec84c053ab3d89f95c34ff81de952a10671385f8101926f16738d624",
     "runtimeSha256": "0573233631f16ebaaa5dbee8cb16c671d096d1d49555b5a8e329572b2af091e8",
-    "firstVerifiedByCommit": null,
+    "firstVerifiedByCommit": "8bf1c18",
     "note": "The SH-14 baseline uses deterministic managed path mapping, native file-prefix mapping, and a stable isolated workload path. Historical milestone measurements retain their original bundle hashes."
   },
   "bundleLineage": [
@@ -44,7 +44,7 @@
     {
       "sha256": "4adeffc8ec84c053ab3d89f95c34ff81de952a10671385f8101926f16738d624",
       "scope": "Reproducible canonical bundle verified through SH-14",
-      "verifiedByCommit": null
+      "verifiedByCommit": "8bf1c18"
     }
   ],
   "node": "22.17.0",

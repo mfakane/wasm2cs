@@ -144,6 +144,7 @@ if (existsSync(regressionPath) && existsSync(selfHostingPath)) {
   assert.match(selfHosting, /workflow_dispatch/);
   assert.match(selfHosting, /rollForward.:.disable/);
   assert.doesNotMatch(selfHosting, /workloadVersion/);
+  assert.match(selfHosting, /SELF_HOSTING_ACCEPT_REBUILD/);
   assert.doesNotMatch(selfHosting, /test-unity-self-hosting/);
 }
 

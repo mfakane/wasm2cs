@@ -196,12 +196,30 @@ function writeManifest() {
   return JSON.parse(readFileSync(manifestPath, 'utf8'));
 }
 
+function acceptRebuild() {
+  return process.env.SELF_HOSTING_ACCEPT_REBUILD === '1';
+}
+
 function verifyCanonicalBundle(manifest) {
   const canonical = profile.canonicalBundle;
   if (!canonical?.sha256 || !canonical.runtimeSha256)
     throw new Error(`Canonical bundle hashes are missing from ${profilePath}.`);
-  if (manifest.bundleSha256 !== canonical.sha256)
-    throw new Error(`Bundle ${manifest.bundleSha256} differs from canonical bundle ${canonical.sha256}.`);
+  if (manifest.bundleSha256 !== canonical.sha256) {
+    const message = `Bundle ${manifest.bundleSha256} differs from canonical bundle ${canonical.sha256}.`;
+    if (!acceptRebuild()) throw new Error(message);
+    const runtime = manifest.entries?.find(item => item.path === '_framework/dotnet.native.wasm');
+    json(join(artifactRoot, 'rebuild-mismatch.json'), {
+      schemaVersion: 1,
+      status: 'not-reproduced',
+      bundleSha256: manifest.bundleSha256,
+      canonicalBundleSha256: canonical.sha256,
+      runtimeSha256: runtime?.sha256 ?? null,
+      canonicalRuntimeSha256: canonical.runtimeSha256,
+      reason: 'Publish embeds absolute workload paths, so another work directory cannot reproduce the canonical bytes.'
+    });
+    console.error(`self-hosting: ${message} Continuing without claiming reproduction.`);
+    return;
+  }
   const runtime = runtimeEntry(manifest);
   if (runtime.sha256 !== canonical.runtimeSha256)
     throw new Error(`Runtime ${runtime.sha256} differs from canonical runtime ${canonical.runtimeSha256}.`);

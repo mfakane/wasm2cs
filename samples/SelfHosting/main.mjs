@@ -94,5 +94,10 @@ const results = request.scenarios.map(scenario => {
   throw new Error(`Unknown reference operation: ${scenario.operation}`);
 });
 
-console.log(JSON.stringify({ protocol: 1, results }));
+const resultLine = JSON.stringify({ protocol: 1, results });
+if (process.env.SELF_HOSTING_RESULT_FILE) {
+  const { writeFileSync } = await import('node:fs');
+  writeFileSync(process.env.SELF_HOSTING_RESULT_FILE, resultLine);
+}
+console.log(resultLine);
 await runMainAndExit();

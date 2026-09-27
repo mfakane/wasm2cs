@@ -533,7 +533,7 @@ function parseReferenceOutput(output) {
       // Runtime diagnostics are retained in the log; keep looking for the protocol line.
     }
   }
-  throw new Error(`The guest did not emit a reference protocol result.\n${output}`);
+  throw new Error('The guest did not emit a reference protocol result.');
 }
 
 function parseBundleOutput(output, streamId) {
@@ -559,7 +559,7 @@ function parseBundleOutput(output, streamId) {
       // Runtime diagnostics are retained in the log; keep looking for protocol lines.
     }
   }
-  if (!response) throw new Error(`The guest did not emit a reference protocol result.\n${output}`);
+  if (!response) throw new Error('The guest did not emit a reference protocol result.');
   if (streamError) throw new Error(streamError);
   return { response, sources };
 }
@@ -2455,18 +2455,28 @@ function invokeBundle(request, options = {}) {
   const host = tool('node');
   if (host.version !== `v${profile.node}`) throw new Error(`Node ${profile.node} is required; selected Node is ${host.version ?? 'missing'}.`);
   const requestPath = join(artifactRoot, `.request-${process.pid}.json`);
+  const resultPath = join(artifactRoot, `.result-${process.pid}.json`);
   writeFileSync(requestPath, JSON.stringify(request));
   try {
     const result = run(process.execPath, [main], {
       cwd: bundleRoot,
-      env: { ...process.env, SELF_HOSTING_REQUEST_FILE: requestPath },
+      env: { ...process.env, SELF_HOSTING_REQUEST_FILE: requestPath, SELF_HOSTING_RESULT_FILE: resultPath },
       timeoutMs: options.timeoutMs
     });
-    const stream = request.scenarios.find(scenario => scenario.operation === 'translate-sources-stream');
-    const parsed = stream ? parseBundleOutput(result.output, stream.id) : { response: parseReferenceOutput(result.output), sources: [] };
+    const streamed = request.scenarios.find(scenario => scenario.operation === 'translate-sources-stream');
+    let parsed;
+    try {
+      parsed = streamed ? parseBundleOutput(result.output, streamed.id) : { response: parseReferenceOutput(result.output), sources: [] };
+    } catch (error) {
+      if (!existsSync(resultPath)) throw error;
+      const saved = JSON.parse(readFileSync(resultPath, 'utf8'));
+      if (saved?.protocol !== 1) throw error;
+      parsed = streamed ? parseBundleOutput(`${result.output}\n${JSON.stringify(saved)}`, streamed.id) : { response: saved, sources: [] };
+    }
     return { manifest, response: parsed.response, sources: parsed.sources, host };
   } finally {
     rmSync(requestPath, { force: true });
+    rmSync(resultPath, { force: true });
   }
 }
 

@@ -144,7 +144,7 @@ public static partial class SelfHostingDriver
                 pendingSourceOffset = 0;
             }
             // JSExport truncates a large return on some runtimes. Keep each return short.
-            int length = Math.Min(4096, pendingSourceText.Length - pendingSourceOffset);
+            int length = Math.Min(1024, pendingSourceText.Length - pendingSourceOffset);
             string slice = pendingSourceText.Substring(pendingSourceOffset, length);
             pendingSourceOffset += length;
             return slice;

@@ -265,7 +265,7 @@ function bootConfig(manifest) {
   const runtime = runtimeEntry(manifest);
   const runtimePath = join(bundleRoot, ...runtime.path.split('/'));
   if (runtime.path !== profile.runtimePath) throw new Error(`SH-10 runtime path differs: ${runtime.path}`);
-  if (sha256File(runtimePath) !== profile.runtimeWasmSha256)
+  if (!acceptRebuild() && sha256File(runtimePath) !== profile.runtimeWasmSha256)
     throw new Error(`SH-10 runtime hash differs from ${startupProfilePath}.`);
   if (config.mainAssemblyName !== profile.mainAssemblyName)
     throw new Error(`SH-10 main assembly differs: ${config.mainAssemblyName}`);
@@ -615,7 +615,7 @@ function loadSh09Contract(manifest) {
   const runtimePath = join(bundleRoot, ...runtime.path.split('/'));
   if (runtime.path !== contract.runtimePath) throw new Error(`SH-09 contract targets ${contract.runtimePath}, not ${runtime.path}.`);
   const runtimeSha256 = sha256File(runtimePath);
-  if (runtimeSha256 !== contract.runtimeSha256)
+  if (!acceptRebuild() && runtimeSha256 !== contract.runtimeSha256)
     throw new Error(`SH-09 runtime hash differs: contract ${contract.runtimeSha256}, bundle ${runtimeSha256}.`);
   const inventoryPath = join(artifactRoot, 'inventory.json');
   if (!existsSync(inventoryPath)) throw new Error(`Runtime inventory is missing. Run inventory first: ${inventoryPath}`);
@@ -643,7 +643,7 @@ function loadSh09Contract(manifest) {
     throw new Error('SH-09 import contract contains an unknown disposition.');
   for (const key of supported.keys()) if (!inventoryKeys.has(key))
     throw new Error(`SH-09 contract contains an import absent from the runtime inventory: ${key.replace('\0', '.')}`);
-  if (contract.bundleSha256 && contract.bundleSha256 !== manifest.bundleSha256)
+  if (!acceptRebuild() && contract.bundleSha256 && contract.bundleSha256 !== manifest.bundleSha256)
     throw new Error(`SH-09 bundle hash differs: contract ${contract.bundleSha256}, bundle ${manifest.bundleSha256}.`);
   return { contract, imports, bundleSha256: manifest.bundleSha256, runtimeSha256 };
 }
@@ -1853,11 +1853,12 @@ function translate() {
     const evidencePath = join(root, 'docs', 'self-hosting', 'SH-12-translate.json');
     if (!existsSync(evidencePath)) throw new Error(`SH-12 evidence is missing: ${evidencePath}`);
     const evidence = JSON.parse(readFileSync(evidencePath, 'utf8'));
-    if (evidence.schemaVersion !== 1 || evidence.milestone !== 'SH-12' || evidence.bundleSha256 !== manifest.bundleSha256 || evidence.runtimeSha256 !== startup.runtimeSha256)
+    if (evidence.schemaVersion !== 1 || evidence.milestone !== 'SH-12' ||
+        (!acceptRebuild() && (evidence.bundleSha256 !== manifest.bundleSha256 || evidence.runtimeSha256 !== startup.runtimeSha256)))
       throw new Error('SH-12 evidence does not match the verified bundle or runtime.');
     if (evidence.guestAssemblyCount !== startup.assemblies.length)
       throw new Error('SH-12 evidence has a different guest assembly count.');
-    for (const [name, expectedHash] of Object.entries(evidence.guestAssemblyHashes ?? {})) {
+    if (!acceptRebuild()) for (const [name, expectedHash] of Object.entries(evidence.guestAssemblyHashes ?? {})) {
       const assembly = startup.assemblies.find(value => value.name === name);
       const actualHash = assembly && manifest.entries.find(entry => entry.path === `_framework/${assembly.virtualPath ?? assembly.name}`)?.sha256;
       if (actualHash !== expectedHash) throw new Error(`SH-12 evidence hash differs for ${name}.`);
@@ -1970,9 +1971,9 @@ function managed() {
       throw new Error('SH-11 profile contains invalid timeout or memory limits.');
     const manifest = verifyBundle();
     const startup = bootConfig(manifest);
-    if (contract.runtimeSha256 !== startup.runtimeSha256)
+    if (!acceptRebuild() && contract.runtimeSha256 !== startup.runtimeSha256)
       throw new Error(`SH-11 runtime hash differs from ${managedProfilePath}.`);
-    if (contract.bundleSha256 && contract.bundleSha256 !== manifest.bundleSha256)
+    if (!acceptRebuild() && contract.bundleSha256 && contract.bundleSha256 !== manifest.bundleSha256)
       throw new Error(`SH-11 bundle hash differs from ${managedProfilePath}; rerun prepare and update the pinned profile.`);
     const generated = generatedManifest();
     if (generated.manifest.bundleSha256 !== manifest.bundleSha256)

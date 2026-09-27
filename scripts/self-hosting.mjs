@@ -2578,17 +2578,17 @@ function prepare() {
     const env = isolatedEnvironment(info.basePath);
     const initialWorkloads = recordCommand(log, 'dotnet', ['workload', 'list'], { env, allowFailure: true });
     let workloadText = initialWorkloads.output;
-    if (!/^\s*wasm-tools(?:\s|$)/mi.test(workloadText)) {
+    if (!workloadText.includes(profile.workloadManifest)) {
       if (args.includes('--skip-workload-install')) {
-        throw new Error('wasm-tools is not installed; rerun without --skip-workload-install in the dedicated environment.');
+        throw new Error(`wasm-tools ${profile.workloadManifest} is not installed; rerun without --skip-workload-install in the dedicated environment.`);
       }
       const install = recordCommand(log, 'dotnet', [
-        'workload', 'install', 'wasm-tools', '--skip-manifest-update', '--disable-parallel',
+        'workload', 'install', 'wasm-tools', '--version', profile.workloadSet, '--disable-parallel',
         '--temp-dir', join(environmentRoot, 'workload-temp')
       ], { env, allowFailure: true });
       if (install.status !== 0) throw new Error(`Dedicated wasm-tools installation failed (exit ${install.status}).`);
       workloadText = recordCommand(log, 'dotnet', ['workload', 'list'], { env }).output;
-      if (!/^\s*wasm-tools(?:\s|$)/mi.test(workloadText)) throw new Error('wasm-tools installation did not appear in the dedicated workload list.');
+      if (!workloadText.includes(profile.workloadManifest)) throw new Error(`wasm-tools ${profile.workloadManifest} did not appear in the dedicated workload list.`);
     }
     const toolchain = {
       schemaVersion: 1,
@@ -2633,7 +2633,8 @@ function prepare() {
     const project = join(root, 'samples', 'SelfHosting', 'SelfHosting.csproj');
     recordCommand(log, 'dotnet', [
       'publish', project, '--configuration', 'Release', '--runtime', profile.runtimeIdentifier,
-      '-m:1', '-p:UseSharedCompilation=false', '--nologo'
+      '-m:1', '-p:UseSharedCompilation=false', '-p:TargetLatestRuntimePatch=false',
+      `-p:RuntimeFrameworkVersion=${profile.runtimePack}`, '--nologo'
     ], { env });
     const appBundle = walkFiles(publishRoot).map(path => dirname(path)).find(path =>
       path.endsWith('AppBundle') && existsSync(join(path, 'main.mjs')) &&

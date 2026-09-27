@@ -143,6 +143,7 @@ if (existsSync(regressionPath) && existsSync(selfHostingPath)) {
   assert.match(selfHosting, /wasm2cs-self-hosting-/);
   assert.match(selfHosting, /workflow_dispatch/);
   assert.match(selfHosting, /rollForward.:.disable/);
+  assert.match(selfHosting, /workloadVersion.:.10\.0\.400/);
   assert.doesNotMatch(selfHosting, /test-unity-self-hosting/);
 }
 

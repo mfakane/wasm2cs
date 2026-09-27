@@ -6,6 +6,8 @@
   "runtimeIdentifier": "browser-wasm",
   "sdk": "10.0.400",
   "workload": "wasm-tools",
+  "workloadSet": "10.0.400",
+  "workloadManifest": "10.0.111",
   "runtimePack": "10.0.11",
   "canonicalBundle": {
     "sha256": "a00695da11c3383f4990d938dab120e47816b8ab1dc7927eb0c2210909015bba",

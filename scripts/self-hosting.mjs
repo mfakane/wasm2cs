@@ -556,6 +556,7 @@ function parseBundleOutput(output, streamId) {
         }
       } else if (value?.protocol === 1) response = value;
     } catch {
+      if (line.startsWith('{"protocol":1')) throw new Error('A self-hosting protocol line was split before it could be parsed.');
       // Runtime diagnostics are retained in the log; keep looking for protocol lines.
     }
   }

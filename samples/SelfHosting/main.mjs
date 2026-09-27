@@ -80,10 +80,10 @@ const results = request.scenarios.map(scenario => {
         return { id: scenario.id, operation: scenario.operation, output: 'STREAM_ERROR' };
       }
       const name = driver.CurrentTranslateSourceName();
-      // Keep each stdout protocol line below the browser-wasm host's line
-      // limit. parseBundleOutput reassembles chunks with the same source name.
-      for (let offset = 0; offset < next.length; offset += 48 * 1024) {
-        let end = Math.min(next.length, offset + 48 * 1024);
+      // Keep each stdout protocol line below the host line limit. A split
+      // line is dropped by JSON.parse and would compile as a missing method.
+      for (let offset = 0; offset < next.length; offset += 4 * 1024) {
+        let end = Math.min(next.length, offset + 4 * 1024);
         if (end < next.length && next.charCodeAt(end - 1) >= 0xd800 && next.charCodeAt(end - 1) <= 0xdbff) end--;
         console.log(JSON.stringify({ protocol: 1, stream: true, id: scenario.id,
           source: { Name: name, Text: next.slice(offset, end) } }));

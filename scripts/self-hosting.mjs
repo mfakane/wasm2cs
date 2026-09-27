@@ -2586,7 +2586,7 @@ function prepare() {
         'workload', 'install', 'wasm-tools', '--version', profile.workloadSet, '--disable-parallel',
         '--temp-dir', join(environmentRoot, 'workload-temp')
       ], { env, allowFailure: true });
-      if (install.status !== 0) throw new Error(`Dedicated wasm-tools installation failed (exit ${install.status}).`);
+      if (install.status !== 0) throw new Error(`Dedicated wasm-tools installation failed (exit ${install.status}).\n${install.output}`);
       workloadText = recordCommand(log, 'dotnet', ['workload', 'list'], { env }).output;
       if (!workloadText.includes(profile.workloadManifest)) throw new Error(`wasm-tools ${profile.workloadManifest} did not appear in the dedicated workload list.`);
     }

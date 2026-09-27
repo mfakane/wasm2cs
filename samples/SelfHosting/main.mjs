@@ -20,6 +20,14 @@ const { getAssemblyExports, getConfig, runMainAndExit } = await runtime.create()
 const config = getConfig();
 const exports = await getAssemblyExports(config.mainAssemblyName);
 const driver = exports.SelfHostingDriver;
+const streamFile = process.env.SELF_HOSTING_STREAM_FILE;
+const streamFs = streamFile ? await import('node:fs') : null;
+const streamFd = streamFs?.openSync(streamFile, 'w');
+const emitStream = value => {
+  const line = JSON.stringify(value);
+  if (streamFd !== undefined) streamFs.writeSync(streamFd, line + '\n');
+  else console.log(line);
+};
 
 const results = request.scenarios.map(scenario => {
   if (scenario.operation === 'hello') {
@@ -69,14 +77,14 @@ const results = request.scenarios.map(scenario => {
   if (scenario.operation === 'translate-sources-stream') {
     const started = driver.BeginTranslateSourcesBase64(scenario.wasmBase64, scenario.className);
     if (started !== 'OK') {
-      console.log(JSON.stringify({ protocol: 1, stream: true, id: scenario.id, error: started }));
+      emitStream({ protocol: 1, stream: true, id: scenario.id, error: started });
       return { id: scenario.id, operation: scenario.operation, output: 'STREAM_ERROR' };
     }
     while (true) {
       const next = driver.NextTranslateSource();
       if (next === '') break;
       if (next.startsWith('ERROR:')) {
-        console.log(JSON.stringify({ protocol: 1, stream: true, id: scenario.id, error: next }));
+        emitStream({ protocol: 1, stream: true, id: scenario.id, error: next });
         return { id: scenario.id, operation: scenario.operation, output: 'STREAM_ERROR' };
       }
       const name = driver.CurrentTranslateSourceName();
@@ -85,14 +93,15 @@ const results = request.scenarios.map(scenario => {
       for (let offset = 0; offset < next.length; offset += 4 * 1024) {
         let end = Math.min(next.length, offset + 4 * 1024);
         if (end < next.length && next.charCodeAt(end - 1) >= 0xd800 && next.charCodeAt(end - 1) <= 0xdbff) end--;
-        console.log(JSON.stringify({ protocol: 1, stream: true, id: scenario.id,
-          source: { Name: name, Text: next.slice(offset, end) } }));
+        emitStream({ protocol: 1, stream: true, id: scenario.id,
+          source: { Name: name, Text: next.slice(offset, end) } });
       }
     }
     return { id: scenario.id, operation: scenario.operation, output: 'STREAM' };
   }
   throw new Error(`Unknown reference operation: ${scenario.operation}`);
 });
+if (streamFd !== undefined) streamFs.closeSync(streamFd);
 
 const resultLine = JSON.stringify({ protocol: 1, results });
 if (process.env.SELF_HOSTING_RESULT_FILE) {

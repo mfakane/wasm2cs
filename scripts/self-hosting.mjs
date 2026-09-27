@@ -2458,27 +2458,30 @@ function invokeBundle(request, options = {}) {
   if (host.version !== `v${profile.node}`) throw new Error(`Node ${profile.node} is required; selected Node is ${host.version ?? 'missing'}.`);
   const requestPath = join(artifactRoot, `.request-${process.pid}.json`);
   const resultPath = join(artifactRoot, `.result-${process.pid}.json`);
+  const streamPath = join(artifactRoot, `.stream-${process.pid}.jsonl`);
   writeFileSync(requestPath, JSON.stringify(request));
+  rmSync(streamPath, { force: true });
   try {
     const result = run(process.execPath, [main], {
       cwd: bundleRoot,
-      env: { ...process.env, SELF_HOSTING_REQUEST_FILE: requestPath, SELF_HOSTING_RESULT_FILE: resultPath },
+      env: { ...process.env, SELF_HOSTING_REQUEST_FILE: requestPath, SELF_HOSTING_RESULT_FILE: resultPath,
+        SELF_HOSTING_STREAM_FILE: streamPath },
       timeoutMs: options.timeoutMs
     });
     const streamed = request.scenarios.find(scenario => scenario.operation === 'translate-sources-stream');
     let parsed;
-    try {
-      parsed = streamed ? parseBundleOutput(result.output, streamed.id) : { response: parseReferenceOutput(result.output), sources: [] };
-    } catch (error) {
-      if (!existsSync(resultPath)) throw error;
+    if (streamed && existsSync(streamPath) && existsSync(resultPath)) {
       const saved = JSON.parse(readFileSync(resultPath, 'utf8'));
-      if (saved?.protocol !== 1) throw error;
-      parsed = streamed ? parseBundleOutput(`${result.output}\n${JSON.stringify(saved)}`, streamed.id) : { response: saved, sources: [] };
+      if (saved?.protocol !== 1) throw new Error('The guest saved an invalid reference protocol result.');
+      parsed = parseBundleOutput(`${readFileSync(streamPath, 'utf8')}\n${JSON.stringify(saved)}`, streamed.id);
+    } else {
+      parsed = streamed ? parseBundleOutput(result.output, streamed.id) : { response: parseReferenceOutput(result.output), sources: [] };
     }
     return { manifest, response: parsed.response, sources: parsed.sources, host };
   } finally {
     rmSync(requestPath, { force: true });
     rmSync(resultPath, { force: true });
+    rmSync(streamPath, { force: true });
   }
 }
 

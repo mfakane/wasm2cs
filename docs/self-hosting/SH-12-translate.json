@@ -3,7 +3,7 @@
   "milestone": "SH-12",
   "runtimePath": "_framework/dotnet.native.wasm",
   "runtimeSha256": "0573233631f16ebaaa5dbee8cb16c671d096d1d49555b5a8e329572b2af091e8",
-  "bundleSha256": "26c9442d979bee001899f418637e77c32c4c2142a4be22213d59e32494bdc47b",
+  "bundleSha256": "04a6594a5aead8155c7f26ac6339effb633f2e8c3b45a2ec2ebd3ba0bac45613",
   "guestAssemblyCount": 174,
   "guestAssemblyHashes": {
     "SelfHosting.dll": "33de10868b263d65536962f71ea3d3d9d53a6cda7d82a4bd479d005772bd86cd",

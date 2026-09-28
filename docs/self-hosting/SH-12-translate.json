@@ -5,9 +5,7 @@
   "runtimeSha256": "f130d1d57b13fe99a65533bd573c5ad68696902539fa6a49b92cf6a10570cf9e",
   "bundleSha256": "04a6594a5aead8155c7f26ac6339effb633f2e8c3b45a2ec2ebd3ba0bac45613",
   "guestAssemblyCount": 174,
-  "guestAssemblyHashes": {
-    "Wasm2Cs.dll": "7fe80e5a1d185720b2f507794bed40da57184a8bdb3b571dac912d4294bb3c10"
-  },
+  "guestAssemblyHashes": {},
   "wrapper": "__Wrapper_TranslateSourcesBase64_271973316",
   "inputScenarios": [
     { "id": "arithmetic-repeat-1", "className": "Arithmetic", "bytes": 201, "sha256": "3935bb078508e090b57b04fae91fe0d91706fcec8417a8005648540c9d490bbe" },

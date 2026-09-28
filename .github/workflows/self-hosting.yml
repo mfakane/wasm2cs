@@ -34,11 +34,5 @@ jobs:
           path: /tmp/wasm2cs-self-hosting-environment
           key: wasm2cs-self-hosting-${{ hashFiles('docs/self-hosting/SH-01-profile.json') }}
       - run: node scripts/self-hosting.mjs prepare
-      - name: upload self-hosting artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: self-hosting-artifacts
-          path: artifacts/self-hosting
       - run: node scripts/self-hosting.mjs reference
       - run: node scripts/self-hosting.mjs verify

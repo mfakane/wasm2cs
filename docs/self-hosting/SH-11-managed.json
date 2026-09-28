@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "milestone": "SH-11",
   "runtimePath": "_framework/dotnet.native.wasm",
-  "runtimeSha256": "0573233631f16ebaaa5dbee8cb16c671d096d1d49555b5a8e329572b2af091e8",
+  "runtimeSha256": "f130d1d57b13fe99a65533bd573c5ad68696902539fa6a49b92cf6a10570cf9e",
   "bundleSha256": "04a6594a5aead8155c7f26ac6339effb633f2e8c3b45a2ec2ebd3ba0bac45613",
   "invocationsPerInstance": 3,
   "instances": 2,

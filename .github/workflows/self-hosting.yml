@@ -10,13 +10,13 @@ jobs:
   self-hosting:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.400
       - name: select pinned SDK
         run: printf '%s\n' '{"sdk":{"version":"10.0.400","rollForward":"disable"}}' > global.json
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22.17.0
       - name: install pinned WABT
@@ -29,7 +29,7 @@ jobs:
           bin=$(find /tmp/wabt -type d -name bin -print -quit)
           test -n "$bin"
           echo "$bin" >> "$GITHUB_PATH"
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: /tmp/wasm2cs-self-hosting-environment
           key: wasm2cs-self-hosting-bbc6f433d63c2dbd780c19f6b7e7f453505f270f506ca3ba8b889c53a00b7838

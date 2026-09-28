@@ -6,7 +6,6 @@
   "bundleSha256": "04a6594a5aead8155c7f26ac6339effb633f2e8c3b45a2ec2ebd3ba0bac45613",
   "guestAssemblyCount": 174,
   "guestAssemblyHashes": {
-    "SelfHosting.dll": "20ab8fb65ec13cac68434134a02a801c3bc277bacf0c218a7bfb56ea5f0861bd",
     "Wasm2Cs.dll": "7fe80e5a1d185720b2f507794bed40da57184a8bdb3b571dac912d4294bb3c10"
   },
   "wrapper": "__Wrapper_TranslateSourcesBase64_271973316",

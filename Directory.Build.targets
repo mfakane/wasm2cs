@@ -1,0 +1,7 @@
+<Project>
+  <Target Name="PinSelfHostingSourceRevision" BeforeTargets="_InitializeGitHubSourceLinkUrl" Condition="'$(SelfHostingDeterministicBuild)' == 'true'">
+    <ItemGroup>
+      <SourceRoot Update="@(SourceRoot)" RevisionId="98ec4ff07eec40ec289b0b20fd1ff1ec6980d2e1" />
+    </ItemGroup>
+  </Target>
+</Project>

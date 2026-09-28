@@ -133,6 +133,9 @@ function deterministicBuildProperties() {
   return [
     '-p:ContinuousIntegrationBuild=true',
     '-p:Deterministic=true',
+    '-p:SourceRevisionId=98ec4ff07eec40ec289b0b20fd1ff1ec6980d2e1',
+    '-p:RepositoryCommit=98ec4ff07eec40ec289b0b20fd1ff1ec6980d2e1',
+    '-p:SelfHostingDeterministicBuild=true',
     `-p:PathMap=${pathMap}`,
     `-p:EmccExtraCFlags=-ffile-prefix-map=${environmentRoot}=/_/self-hosting`
   ];

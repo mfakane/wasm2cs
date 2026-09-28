@@ -13,6 +13,7 @@ const profile = JSON.parse(readFileSync(new URL('../docs/self-hosting/SH-01-prof
 const selfHostingScript = readFileSync(script, 'utf8');
 
 assert.match(selfHostingScript, /ContinuousIntegrationBuild=true/);
+assert.match(selfHostingScript, /SourceRevisionId=98ec4ff07eec40ec289b0b20fd1ff1ec6980d2e1/);
 assert.match(selfHostingScript, /-ffile-prefix-map=/);
 assert.match(selfHostingScript, /wasm2cs-self-hosting-environment/);
 
@@ -141,6 +142,8 @@ if (existsSync(bundleManifest) && readFileSync(bundleManifest, 'utf8').includes(
 
 const regressionPath = fileURLToPath(new URL('../.github/workflows/regression.yml', import.meta.url));
 const selfHostingPath = fileURLToPath(new URL('../.github/workflows/self-hosting.yml', import.meta.url));
+const buildTargets = readFileSync(new URL('../Directory.Build.targets', import.meta.url), 'utf8');
+assert.match(buildTargets, /PinSelfHostingSourceRevision/);
 if (existsSync(regressionPath) && existsSync(selfHostingPath)) {
   const regression = readFileSync(regressionPath, 'utf8');
   const selfHosting = readFileSync(selfHostingPath, 'utf8');

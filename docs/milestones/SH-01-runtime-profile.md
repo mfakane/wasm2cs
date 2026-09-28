@@ -47,6 +47,6 @@ WASI への切替、別の runtime バージョンへの無断変更、Mono fork
 準備・サンプル、一覧化・参照テストの順に検証可能なコミットへ分ける。終了コミット例: `test: pin dotnet wasm self-hosting baseline`。
 
 - 実行コマンド・結果: `prepare` 成功（SDK `10.0.400`、workload set `10.0.400-manifests.330ea142`、`wasm-tools` `10.0.111/10.0.100`、runtime pack `10.0.11`）。`reference` 成功（Hello World、Arithmetic、Clang、不正入力）。`inventory` 成功（[WABT `1.0.41`](https://github.com/WebAssembly/wabt/releases/tag/1.0.41)、runtime native WASM の `12,356` 関数）。
-- 対象 bundle ハッシュ・ログ: 初回調査は `10e2f5cee5fecd86681ef9e043082a04df131a0d7eb76855ac895ea0cbf3c9e6`。SH-14 の再現性対応を含む現在の正典は `26c9442d979bee001899f418637e77c32c4c2142a4be22213d59e32494bdc47b`。履歴と用途は [SH-01 プロファイル](../self-hosting/SH-01-profile.json) に分けて記録する。成果物とログは `artifacts/self-hosting/` の `bundle-manifest.json`、`toolchain.json`、`prepare.log`、`reference-results.json`、`inventory.json`、`inventory.md` に保存。
+- 対象 bundle ハッシュ・ログ: 初回調査は `10e2f5cee5fecd86681ef9e043082a04df131a0d7eb76855ac895ea0cbf3c9e6`。SH-14 の再現性対応を含む現在の正典は `4adeffc8ec84c053ab3d89f95c34ff81de952a10671385f8101926f16738d624`。履歴と用途は [SH-01 プロファイル](../self-hosting/SH-01-profile.json) に分けて記録する。成果物とログは `artifacts/self-hosting/` の `bundle-manifest.json`、`toolchain.json`、`prepare.log`、`reference-results.json`、`inventory.json`、`inventory.md` に保存。
 - 未解決事項: なし。Wasm2Cs による生成 runtime の実行は、この段階ではまだ検証しない。
 - 終了コミット: `38b7afe` (`test: pin dotnet wasm self-hosting baseline`)

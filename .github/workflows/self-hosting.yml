@@ -32,7 +32,7 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: /tmp/wasm2cs-self-hosting-environment
-          key: wasm2cs-self-hosting-${{ hashFiles('docs/self-hosting/SH-01-profile.json') }}
+          key: wasm2cs-self-hosting-bbc6f433d63c2dbd780c19f6b7e7f453505f270f506ca3ba8b889c53a00b7838
       - run: node scripts/self-hosting.mjs prepare
       - run: node scripts/self-hosting.mjs reference
       - run: node scripts/self-hosting.mjs verify

@@ -136,6 +136,8 @@ function deterministicBuildProperties() {
     '-p:SourceRevisionId=98ec4ff07eec40ec289b0b20fd1ff1ec6980d2e1',
     '-p:RepositoryCommit=98ec4ff07eec40ec289b0b20fd1ff1ec6980d2e1',
     '-p:SelfHostingDeterministicBuild=true',
+    '-p:DebugType=None',
+    '-p:DebugSymbols=false',
     `-p:PathMap=${pathMap}`,
     `-p:EmccExtraCFlags=-ffile-prefix-map=${environmentRoot}=/_/self-hosting`
   ];

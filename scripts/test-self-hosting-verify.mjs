@@ -14,6 +14,7 @@ const selfHostingScript = readFileSync(script, 'utf8');
 
 assert.match(selfHostingScript, /ContinuousIntegrationBuild=true/);
 assert.match(selfHostingScript, /SourceRevisionId=98ec4ff07eec40ec289b0b20fd1ff1ec6980d2e1/);
+assert.match(selfHostingScript, /DebugType=None/);
 assert.match(selfHostingScript, /-ffile-prefix-map=/);
 assert.match(selfHostingScript, /wasm2cs-self-hosting-environment/);
 

@@ -4,8 +4,8 @@
   "status": "baseline",
   "thresholds": null,
   "note": "Environment-tagged measurements from the SH-14 verify run of the reproducible canonical bundle. Thresholds are not set.",
-  "bundleSha256": "4adeffc8ec84c053ab3d89f95c34ff81de952a10671385f8101926f16738d624",
-  "cacheKey": "wasm2cs-self-hosting-4adeffc8ec84c053ab3d89f95c34ff81de952a10671385f8101926f16738d624",
+  "bundleSha256": "0fbad21e5bb2714eec7ca1008f725a93e0ca8edda7a9f8fa7641bea8d47a607c",
+  "cacheKey": "wasm2cs-self-hosting-0fbad21e5bb2714eec7ca1008f725a93e0ca8edda7a9f8fa7641bea8d47a607c",
   "verify": {
     "status": "passed",
     "exitCode": 0,

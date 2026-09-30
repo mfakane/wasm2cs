@@ -6,6 +6,7 @@
     <Version>0.1.0-preview.1</Version>
     <Authors>Wasm2Cs contributors</Authors>
     <Description>Ahead-of-time C# generation for a typed numeric WebAssembly subset.</Description>
+    <PackageLicenseExpression>0BSD</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <NoWarn>$(NoWarn);NU5128</NoWarn>
     <IncludeBuildOutput>false</IncludeBuildOutput>
@@ -21,6 +22,7 @@
     <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="../../build/Wasm2Cs.targets" Pack="true" PackagePath="build/Wasm2Cs.Generator.targets" />
     <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../LICENSE" Pack="true" PackagePath="/" />
   </ItemGroup>
   <Target Name="BuildRuntimeNetStandard21" BeforeTargets="_GetPackageFiles">
     <MSBuild

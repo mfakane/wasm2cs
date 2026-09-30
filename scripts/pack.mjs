@@ -16,6 +16,7 @@ const packagePath=join(staging,'package');
 cpSync(join(root,'unity/Packages/com.mfakane.wasm2cs'),packagePath,{recursive:true});
 copyFileSync(join(root,'src/Wasm2Cs.Generator/bin/Release/netstandard2.0/Wasm2Cs.Generator.dll'),join(packagePath,'Runtime/Wasm2Cs.Generator.dll'));
 copyFileSync(join(root,'src/Wasm2Cs.Runtime/bin/Release/netstandard2.0/Wasm2Cs.Runtime.dll'),join(packagePath,'Runtime/Wasm2Cs.Runtime.dll'));
+copyFileSync(join(root,'LICENSE'),join(packagePath,'LICENSE'));
 const archive=join(artifacts,`${manifest.name}-${manifest.version}.tgz`);
 execFileSync('tar',['-czf',archive,'-C',staging,'package'],{stdio:'inherit'});
 console.log(`Packages: ${artifacts}\nUPM archive: ${archive}\nStaging retained: ${staging}`);

@@ -3,6 +3,7 @@
   "version": "0.1.0-preview.1",
   "displayName": "Wasm2Cs",
   "description": "Generate C# module instances from a supported subset of WebAssembly.",
+  "license": "0BSD",
   "unity": "6000.0",
   "dependencies": {
     "com.unity.mathematics": "1.3.3"

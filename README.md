@@ -71,7 +71,7 @@ This is **not** a general-purpose WASM compiler; ordinary Rust/C/C++ outputs typ
 
 See the [supported feature list](https://github.com/mfakane/wasm2cs/blob/master/docs/supported-features.md) for the exact instruction and type subset.
 
-Package licensing has not been designated; choose a license before public redistribution.
+Project-owned code is licensed under 0BSD. The WebAssembly conformance fixtures retain their own licenses; see `tests/Conformance/LICENSE`.
 
 ## Self-hosting
 

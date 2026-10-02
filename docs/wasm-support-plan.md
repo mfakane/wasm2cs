@@ -50,7 +50,7 @@
 - **前提:** T02。WASI Preview1 入力を対象にすると決めた場合のみ実施する。
 - **作業:** `tests/Wasm2Cs.Tests/ExecutionChecks.cs` の import/start と共有メモリの例を基に、imported memory と自モジュール所有 memory の両方について、import 関数がメモリにアクセスできるか、特に `start` 中にアクセスできるかを小型モジュールで確認する。既存の `src/Wasm2Cs.DotnetHost/HostEnvironment.cs` には iovec・出力・exit の部品があるが、WASI ABI の結線が完成しているとはみなさない。必要な API 変更をここで決める。
 - **成果物:** 実行できる再現テストと、必要なら最小限の import／メモリ接続変更。
-  - 2026-10-03 の結果: [t06-start-memory.md](t06-start-memory.md)。imported memory は start 中にホストから読める。owned memory は start 自体はデータを読むが、コンストラクタが返るまでホストへ公開されない。API は変えていない。T07 は未着手。
+  - 2026-10-03 の結果: [t06-start-memory.md](t06-start-memory.md)。imported memory は start 中にホストから読める。owned memory は start 自体はデータを読むが、コンストラクタが返るまでホストへ公開されない。API は変えていない。T07 はこの阻害を解消していない。
 - **受入条件:** `start` 中を含めホストが正しいメモリを参照できることをテストで確認する。成立しなければ T07 の前に阻害要因として記録する。
 
 ## T07: WASI Preview1 の必要な import を一つ接続する（条件付き・反復）
@@ -58,6 +58,7 @@
 - **前提:** T06。T02 の入力が要求する関数を一つ指定する。`fd_write` と `proc_exit` は候補であって自動的な実装対象ではない。
 - **作業:** import の module/name と署名を照合し、`Wasm2Cs.DotnetHost` の既存部品を再利用して Preview1 ABI のポインタ・長さ・エラー番号・終了処理を実装する。`HostChecks.cs` の単体テストに加え、実モジュールから呼ぶテストを追加する。標準出力やファイルアクセスは明示設定とし、未対応 import を成功値の仮実装にしない。
 - **成果物:** 一つの import の結線・正常系／境界エラーテストと利用方法の文書。
+  - 2026-10-03 の結果: [t07-fd-write.md](t07-fd-write.md)。対象は `wasi_snapshot_preview1.fd_write` のみ。`wasi_hello.wasm` は wasmtime 28.0.1 と同じく標準出力 `hello wasi\n`。`_start` は void で、正常時は `proc_exit` を呼ばずに戻り、wasmtime の終了コードは 0。`proc_exit` は呼ばれず、未接続。start 中の owned memory は未公開のまま。`Wasm2Cs.DotnetHost` は NuGet / Unity パッケージに含めず、WASI 対応を配布物としては主張しない。
 - **受入条件:** 固定 WASI 入力の該当 import が参照ランタイムと同じ結果になり、`dotnet run --project tests/Wasm2Cs.Tests` が成功する。別の import が必要なら T07 を別タスクとして反復する。WASI 対応を配布する段階では、現在 NuGet に含まれない `Wasm2Cs.DotnetHost` の提供方法を決め、`node scripts/pack.mjs` と `node scripts/test-package.mjs` でも消費者側の接続を検証する。
 
 ## T08: 実用範囲を再測定して公開する

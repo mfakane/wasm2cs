@@ -182,6 +182,84 @@ public sealed class HostEnvironment
         return Write(fd, memory.ReadMemory(address, count), 0, count);
     }
 
+    public const int WasiErrnoSuccess = 0;
+    public const int WasiErrnoBadf = 8;
+    public const int WasiErrnoFault = 21;
+    public const int WasiErrnoInval = 28;
+    public const int WasiErrnoIo = 29;
+    public const int WasiErrnoRofs = 68;
+
+    // wasi_snapshot_preview1.fd_write (i32,i32,i32,i32)->i32.
+    // iovs is an array of {buf:u32, buf_len:u32}. nwritten receives the byte count on success.
+    // fd 1 and fd 2 use Stdout and Stderr. Other fds use OpenFile. No other Preview1 import is implemented.
+    // The caller must already hold the WasmMemory. Owned memory is not published until the generated
+    // constructor returns, so this cannot serve an import that runs from a start section.
+    public int FdWrite(WasmMemory memory, int fd, int iovs, int iovsLength, int nwritten)
+    {
+        if (memory == null) throw new ArgumentNullException(nameof(memory));
+        uint resultAddress = unchecked((uint)nwritten);
+        if (!InRange(memory, resultAddress, 4)) return WasiErrnoFault;
+
+        uint vectorCount = unchecked((uint)iovsLength);
+        uint vectorAddress = unchecked((uint)iovs);
+        if (vectorCount > uint.MaxValue / 8) return WasiErrnoFault;
+        if (vectorCount != 0 && !InRange(memory, vectorAddress, vectorCount * 8)) return WasiErrnoFault;
+
+        var vectors = new List<WasmIovec>();
+        uint total = 0;
+        for (uint i = 0; i < vectorCount; i++)
+        {
+            WasmIovec vector = ReadIovec(memory, vectorAddress + (i * 8u));
+            if (vector.Length != 0 && !InRange(memory, vector.Address, vector.Length)) return WasiErrnoFault;
+            if (vector.Length > uint.MaxValue - total) return WasiErrnoInval;
+            total += vector.Length;
+            vectors.Add(vector);
+        }
+        if (total > int.MaxValue) return WasiErrnoInval;
+
+        int writable = RequireWritable(fd);
+        if (writable != WasiErrnoSuccess) return writable;
+
+        int written;
+        if (total == 0) written = 0;
+        else
+        {
+            var payload = new byte[(int)total];
+            int filled = 0;
+            foreach (WasmIovec vector in vectors)
+            {
+                if (vector.Length == 0) continue;
+                int amount = (int)vector.Length;
+                memory.ReadMemory(vector.Address, payload, filled, amount);
+                filled += amount;
+            }
+            written = Write(fd, payload, 0, payload.Length);
+            if (written < 0) return WriteErrno(written);
+        }
+        WriteUInt32(memory, resultAddress, (uint)written);
+        return WasiErrnoSuccess;
+    }
+
+    private int RequireWritable(int fd)
+    {
+        if (fd == 1 || fd == 2) return WasiErrnoSuccess;
+        int written = Write(fd, Array.Empty<byte>(), 0, 0);
+        return written < 0 ? WriteErrno(written) : WasiErrnoSuccess;
+    }
+
+    private static int WriteErrno(int written)
+    {
+        if (written == -9) return WasiErrnoBadf;
+        if (written == -1) return WasiErrnoRofs;
+        return WasiErrnoIo;
+    }
+
+    private static bool InRange(WasmMemory memory, uint address, uint length)
+    {
+        ulong end = (ulong)address + length;
+        return end >= address && end <= (ulong)memory.Size;
+    }
+
     public void Exit(int code)
     {
         if (HasExited) throw new InvalidOperationException("The host has already exited.");
@@ -266,8 +344,11 @@ public sealed class HostEnvironment
 
     public static uint ReadUInt32(WasmMemory memory, uint address)
     {
-        return (uint)(memory.ReadByte(address) | memory.ReadByte(checked(address + 1)) << 8 |
-            memory.ReadByte(checked(address + 2)) << 16 | memory.ReadByte(checked(address + 3)) << 24);
+        // Shift as uint. A checked cast of the int expression throws when bit 31 is set.
+        return memory.ReadByte(address)
+            | ((uint)memory.ReadByte(checked(address + 1)) << 8)
+            | ((uint)memory.ReadByte(checked(address + 2)) << 16)
+            | ((uint)memory.ReadByte(checked(address + 3)) << 24);
     }
 
     public static void WriteUInt32(WasmMemory memory, uint address, uint value)

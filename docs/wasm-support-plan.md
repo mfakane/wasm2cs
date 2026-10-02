@@ -65,6 +65,7 @@
 
 - **前提:** 実装した T03/T05/T07 の各タスク。未着手の条件付きタスクを待つ必要はない。
 - **作業:** T02 と同じ入力・比較方法で通過／失敗を再測定し、`docs/supported-features.md` と `docs/usage.md` を実測した範囲に合わせる。新しい機能の依存 profile、必要なホスト設定、未対応機能を明示する。
+  - 2026-10-03 の結果: [t08-wasi-remeasure.md](t08-wasi-remeasure.md)。再測定したのは WASI fixture のみ。wasmtime 28.0.1 と Node.js 22.19.0 は `hello wasi\n` と終了コード 0。`HostEnvironment.FdWrite` も同じ標準出力で、`_start` は正常 return、`proc_exit` は未呼び出し・未実装。他の Preview1 import、start 中の owned memory、NuGet/Unity 同梱は未対応。Unity/IL2CPP は未検証。配布スクリプトは変更していない。SIMD と Core は触っていない。
 - **受入条件:** 変更前後の結果と未対応入力が一覧に残る。変更した配布経路のテストが成功し、Unity/IL2CPP など環境不足で実行できない項目は未検証と記録する。
 
 WASI を実装しても、実行時間・メモリ・再帰深度に制限を設けるサンドボックスにはならない。新しい依存や profile は、既存の部品と標準 API では必要な意味論を実現できない場合に限って追加する。

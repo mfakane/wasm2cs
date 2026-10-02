@@ -179,6 +179,8 @@ guest._start();
 
 fd 1 and fd 2 are the stdout and stderr callbacks. Any other fd has to be opened with `OpenFile` on a virtual file. Bytes are not written to the real filesystem. This is not a sandbox.
 
+Measured scope, 2026-10-03, fixture `samples/WasiPreview1/wasi_hello.wasm` only (`docs/t08-wasi-remeasure.md`): wasmtime 28.0.1 and Node.js 22.19.0 preview1 both print `hello wasi` plus a newline and exit 0, and the generated host matches that stdout without calling `proc_exit`. That is the whole WASI surface. The host project is a direct reference, not a NuGet or Unity package. Unity and IL2CPP were not verified.
+
 ## CLI
 
 Translate a single module to stdout:

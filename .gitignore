@@ -11,3 +11,5 @@
 .opencode/
 .devshell/
 .direnv/
+# Rust sample build output
+**/target/

@@ -11,6 +11,9 @@
 - **前提:** なし。
 - **作業:** `samples/` と `tests/Conformance/` に既にある入力を確認し、不足する場合に限り Clang freestanding、Rust `wasm32-unknown-unknown`、WASI Preview1 の小型プログラムをそれぞれ一つ追加する。整数・メモリ・標準出力など、用途を区別できる例にする。ソース、生成した `.wasm`、コンパイラのバージョン・ターゲット・フラグ・再生成コマンドを記録する。利用できないツールチェーンやターゲットがあれば、その入力は未作成として記録し、別の生成物で代用しない。
 - **成果物:** チェックインした入力と再生成手順（既存 fixture で足りる場合は参照一覧のみ）。
+  - Clang freestanding: `samples/CAlgorithms/`（既存）。
+  - Rust `wasm32-unknown-unknown`: `samples/RustWasm32UnknownUnknown/`。
+  - WASI Preview1: `samples/WasiPreview1/`（`HostAbi.wat` は WASI とみなさない）。
 - **受入条件:** 各入力の出所・バイナリ・再生成手順が対応し、既存の `dotnet run --project tests/Wasm2Cs.Tests` が成功する。
 
 ## T02: 未対応項目と基準結果を記録する

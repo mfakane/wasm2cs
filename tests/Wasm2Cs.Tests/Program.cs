@@ -166,6 +166,7 @@ ExecutionChecks.SharedMemoryGlobalsAndBulkData();
 ExecutionChecks.TargetProfiles();
 await ExecutionChecks.CAlgorithms();
 ExecutionChecks.Imports();
+ExecutionChecks.MemoryDuringStart();
 ConformanceChecks.Verify();
 await TypedIrChecks.Verify();
 await I64Checks.Verify();

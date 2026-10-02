@@ -50,6 +50,7 @@
 - **前提:** T02。WASI Preview1 入力を対象にすると決めた場合のみ実施する。
 - **作業:** `tests/Wasm2Cs.Tests/ExecutionChecks.cs` の import/start と共有メモリの例を基に、imported memory と自モジュール所有 memory の両方について、import 関数がメモリにアクセスできるか、特に `start` 中にアクセスできるかを小型モジュールで確認する。既存の `src/Wasm2Cs.DotnetHost/HostEnvironment.cs` には iovec・出力・exit の部品があるが、WASI ABI の結線が完成しているとはみなさない。必要な API 変更をここで決める。
 - **成果物:** 実行できる再現テストと、必要なら最小限の import／メモリ接続変更。
+  - 2026-10-03 の結果: [t06-start-memory.md](t06-start-memory.md)。imported memory は start 中にホストから読める。owned memory は start 自体はデータを読むが、コンストラクタが返るまでホストへ公開されない。API は変えていない。T07 は未着手。
 - **受入条件:** `start` 中を含めホストが正しいメモリを参照できることをテストで確認する。成立しなければ T07 の前に阻害要因として記録する。
 
 ## T07: WASI Preview1 の必要な import を一つ接続する（条件付き・反復）

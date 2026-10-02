@@ -80,7 +80,95 @@ public static class HostChecks
         var unsupported = new UnsupportedImportException("env", "missing", 1, 2);
         Check(unsupported.Message.Contains("env.missing", StringComparison.Ordinal), "unsupported import name missing");
         Check(unsupported.Arguments.Count == 2, "unsupported import arguments missing");
-        Console.WriteLine("PASS: portable host memory, stdout/stderr, virtual files, clocks, entropy, callbacks, and rejection state.");
+        VerifyFdWrite();
+        Console.WriteLine("PASS: portable host memory, stdout/stderr, virtual files, clocks, entropy, callbacks, rejection state, and wasi fd_write.");
+    }
+
+    private static void VerifyFdWrite()
+    {
+        var stdout = new List<byte>();
+        var stderr = new List<byte>();
+        var host = new HostEnvironment(
+            stdout: stdout.AddRange,
+            stderr: stderr.AddRange,
+            virtualFiles: new Dictionary<string, byte[]>
+            {
+                ["/out"] = Array.Empty<byte>(),
+                ["/ro"] = new byte[] { 1, 2, 3 }
+            });
+        var memory = new WasmMemory(1);
+        byte[] hello = System.Text.Encoding.ASCII.GetBytes("hello wasi\n");
+        memory.WriteMemory(32, hello);
+        PutIovec(memory, 64, 32, (uint)hello.Length);
+        HostEnvironment.WriteUInt32(memory, 80, 0xffffffff);
+        Check(host.FdWrite(memory, 1, 64, 1, 80) == HostEnvironment.WasiErrnoSuccess, "fd_write stdout errno differs");
+        Check(HostEnvironment.ReadUInt32(memory, 80) == (uint)hello.Length, "fd_write stdout nwritten differs");
+        Check(System.Text.Encoding.ASCII.GetString(stdout.ToArray()) == "hello wasi\n", "fd_write stdout bytes differ");
+
+        memory.WriteMemory(96, System.Text.Encoding.ASCII.GetBytes("err"));
+        PutIovec(memory, 112, 96, 3);
+        Check(host.FdWrite(memory, 2, 112, 1, 80) == HostEnvironment.WasiErrnoSuccess, "fd_write stderr errno differs");
+        Check(System.Text.Encoding.ASCII.GetString(stderr.ToArray()) == "err", "fd_write stderr bytes differ");
+
+        int before = stdout.Count;
+        PutIovec(memory, 120, 32, 5);
+        PutIovec(memory, 128, 37, (uint)hello.Length - 5);
+        Check(host.FdWrite(memory, 1, 120, 2, 80) == HostEnvironment.WasiErrnoSuccess, "fd_write multi-iovec errno differs");
+        Check(HostEnvironment.ReadUInt32(memory, 80) == (uint)hello.Length, "fd_write multi-iovec nwritten differs");
+        Check(System.Text.Encoding.ASCII.GetString(stdout.ToArray()) == "hello wasi\nhello wasi\n", "fd_write multi-iovec bytes differ");
+        Check(stdout.Count == before + hello.Length, "fd_write multi-iovec byte count differs");
+
+        HostEnvironment.WriteUInt32(memory, 80, 0xffffffff);
+        Check(host.FdWrite(memory, 1, 64, 0, 80) == HostEnvironment.WasiErrnoSuccess, "empty fd_write errno differs");
+        Check(HostEnvironment.ReadUInt32(memory, 80) == 0, "empty fd_write nwritten differs");
+        Check(stdout.Count == before + hello.Length, "empty fd_write wrote stdout");
+
+        HostEnvironment.WriteUInt32(memory, 80, 0xffffffff);
+        Check(host.FdWrite(memory, 0, 64, 1, 80) == HostEnvironment.WasiErrnoBadf, "stdin fd_write did not return EBADF");
+        Check(host.FdWrite(memory, 99, 64, 1, 80) == HostEnvironment.WasiErrnoBadf, "unknown fd_write did not return EBADF");
+        Check(HostEnvironment.ReadUInt32(memory, 80) == 0xffffffff, "failed fd_write changed nwritten");
+
+        int readOnly = host.OpenFile("/ro");
+        Check(host.FdWrite(memory, readOnly, 64, 1, 80) == HostEnvironment.WasiErrnoRofs, "read-only fd_write did not return EROFS");
+        var unchanged = new byte[3];
+        int readBack = host.OpenFile("/ro");
+        Check(host.Read(readBack, unchanged, 0, 3) == 3 && unchanged.AsSpan().SequenceEqual(new byte[] { 1, 2, 3 }), "read-only file changed");
+
+        int writeFd = host.OpenFile("/out", writable: true);
+        Check(host.FdWrite(memory, writeFd, 64, 1, 80) == HostEnvironment.WasiErrnoSuccess, "file fd_write errno differs");
+        Check(HostEnvironment.ReadUInt32(memory, 80) == (uint)hello.Length, "file fd_write nwritten differs");
+        var fileBytes = new byte[hello.Length];
+        int writtenBack = host.OpenFile("/out");
+        Check(host.Read(writtenBack, fileBytes, 0, fileBytes.Length) == fileBytes.Length && fileBytes.AsSpan().SequenceEqual(hello), "file fd_write bytes differ");
+
+        int stdoutBeforeFault = stdout.Count;
+        HostEnvironment.WriteUInt32(memory, 80, 0xffffffff);
+        Check(host.FdWrite(memory, 1, 65536, 1, 80) == HostEnvironment.WasiErrnoFault, "out-of-range iovec did not return EFAULT");
+        PutIovec(memory, 64, 65536, 1);
+        Check(host.FdWrite(memory, 1, 64, 1, 80) == HostEnvironment.WasiErrnoFault, "out-of-range payload did not return EFAULT");
+        PutIovec(memory, 64, 32, (uint)hello.Length);
+        Check(host.FdWrite(memory, 1, 64, 1, 65536) == HostEnvironment.WasiErrnoFault, "out-of-range nwritten did not return EFAULT");
+        Check(host.FdWrite(memory, 1, 64, -1, 80) == HostEnvironment.WasiErrnoFault, "negative iovs length did not return EFAULT");
+        Check(HostEnvironment.ReadUInt32(memory, 80) == 0xffffffff, "faulting fd_write changed nwritten");
+        Check(stdout.Count == stdoutBeforeFault, "faulting fd_write wrote stdout");
+        PutIovec(memory, 64, (uint)memory.Size, 0);
+        Check(host.FdWrite(memory, 1, 64, 1, 80) == HostEnvironment.WasiErrnoSuccess, "zero-length one-past-end iovec failed");
+        Check(HostEnvironment.ReadUInt32(memory, 80) == 0, "zero-length iovec nwritten differs");
+
+        PutIovec(memory, 64, 0x80000000, 1);
+        HostEnvironment.WriteUInt32(memory, 80, 0xffffffff);
+        Check(host.FdWrite(memory, 1, 64, 1, 80) == HostEnvironment.WasiErrnoFault, "high iovec pointer did not return EFAULT");
+        Check(HostEnvironment.ReadUInt32(memory, 80) == 0xffffffff, "high iovec pointer changed nwritten");
+        Check(HostEnvironment.ReadUInt32(memory, 64) == 0x80000000, "high iovec pointer was not read");
+
+        try { host.FdWrite(null!, 1, 0, 0, 0); throw new Exception("null memory accepted"); }
+        catch (ArgumentNullException) { }
+    }
+
+    private static void PutIovec(WasmMemory memory, uint address, uint pointer, uint length)
+    {
+        HostEnvironment.WriteUInt32(memory, address, pointer);
+        HostEnvironment.WriteUInt32(memory, address + 4, length);
     }
 
     private static void Check(bool condition, string message)

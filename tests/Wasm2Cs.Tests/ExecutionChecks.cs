@@ -530,5 +530,78 @@ internal static class ExecutionChecks
         if (unchecked((uint)crc) != 0xcbf43926u || sum != 477) throw new Exception("C algorithm known-answer test failed.");
         Console.WriteLine("PASS: Clang-produced CRC32/array algorithms, known answers, and full-memory differential checks.");
     }
+    public static void MemoryDuringStart()
+    {
+        byte[] peekType = [0x60, 2, 0x7f, 0x7f, 0];
+        byte[] emptyType = [0x60, 0, 0];
+        byte[] types = [2, ..peekType, ..emptyType];
+        byte[] env = [3, (byte)'e', (byte)'n', (byte)'v'];
+        byte[] memoryName = [6, .."memory"u8.ToArray()];
+        byte[] peekName = [4, .."peek"u8.ToArray()];
+        byte[] memoryImport = [..env, ..memoryName, 2, 0, 1];
+        byte[] peekImport = [..env, ..peekName, 0, 0];
+        // start loads the byte at address 8 and passes (loaded, 4) to env.peek.
+        byte[] body = [0, 0x41, 8, 0x2d, 0, 0, 0x41, 4, 0x10, 0, 0x0b];
+        byte[] data = [1, 0, 0x41, 8, 0x0b, 4, 0x11, 0x22, 0x33, 0x44];
+        byte[] code = [1, ..U32(body.Length), ..body];
+        byte[] imported = [0, 97, 115, 109, 1, 0, 0, 0,
+            ..Section(1, types),
+            ..Section(2, [2, ..memoryImport, ..peekImport]),
+            ..Section(3, [1, 1]),
+            ..Section(7, [1, ..memoryName, 2, 0]),
+            ..Section(8, [1]),
+            ..Section(10, code),
+            ..Section(11, data)];
+        var importedType = Compile(imported, "ImportedStart").GetType("Wasm2Cs.Generated.ImportedStart")!;
+        var memory = new WasmMemory(1);
+        int importedValue = -1, importedLength = -1;
+        bool importedDuringConstruction = false;
+        Action<int, int> importedPeek = (value, length) =>
+        {
+            importedDuringConstruction = true;
+            importedValue = value;
+            importedLength = length;
+            var bytes = memory.ReadMemory(8, 4);
+            if (bytes[0] != 0x11 || bytes[1] != 0x22 || bytes[2] != 0x33 || bytes[3] != 0x44)
+                throw new Exception("Imported memory did not contain the active data segment during start.");
+        };
+        var importedDelegate = Delegate.CreateDelegate(importedType.GetNestedType("__wasm_Import0")!, importedPeek.Target, importedPeek.Method);
+        var importedCtor = importedType.GetConstructors().Single(ctor => ctor.GetParameters().Length == 2);
+        var importedArgs = importedCtor.GetParameters().Select(parameter =>
+            typeof(WasmMemory).IsAssignableFrom(parameter.ParameterType) ? (object)memory : importedDelegate).ToArray();
+        var importedInstance = importedCtor.Invoke(importedArgs);
+        if (!importedDuringConstruction || importedValue != 0x11 || importedLength != 4)
+            throw new Exception("Start did not pass the imported-memory byte to the host.");
+        if (!ReferenceEquals(importedType.GetProperty("memory")!.GetValue(importedInstance), memory))
+            throw new Exception("Imported memory export is not the host memory.");
+
+        byte[] owned = [0, 97, 115, 109, 1, 0, 0, 0,
+            ..Section(1, types),
+            ..Section(2, [1, ..peekImport]),
+            ..Section(3, [1, 1]),
+            ..Section(5, [1, 0, 1]),
+            ..Section(7, [1, ..memoryName, 2, 0]),
+            ..Section(8, [1]),
+            ..Section(10, code),
+            ..Section(11, data)];
+        var ownedType = Compile(owned, "OwnedStart").GetType("Wasm2Cs.Generated.OwnedStart")!;
+        object? ownedInstance = null;
+        bool ownedPeekSawUnpublishedInstance = false;
+        int ownedValue = -1;
+        Action<int, int> ownedPeek = (value, length) =>
+        {
+            ownedPeekSawUnpublishedInstance = ownedInstance == null;
+            ownedValue = value;
+            if (length != 4) throw new Exception("Owned start passed the wrong length.");
+        };
+        var ownedDelegate = Delegate.CreateDelegate(ownedType.GetNestedType("__wasm_Import0")!, ownedPeek.Target, ownedPeek.Method);
+        ownedInstance = Activator.CreateInstance(ownedType, ownedDelegate)!;
+        var after = (byte[])ownedType.GetMethod("ReadMemory")!.Invoke(ownedInstance!, [8u, 4])!;
+        if (ownedValue != 0x11 || !after.SequenceEqual(new byte[] { 0x11, 0x22, 0x33, 0x44 }))
+            throw new Exception("Owned memory was not initialized with the active data segment before start.");
+        if (!ownedPeekSawUnpublishedInstance)
+            throw new Exception("Owned-memory instance was visible to the host during start.");
+        Console.WriteLine("PASS: host reads imported memory during start; owned memory is initialized but unpublished until the constructor returns.");
+    }
     private sealed record Outcome(bool Trapped, int Value);
 }

@@ -96,9 +96,15 @@ Parsing validates section boundaries and order, LEB128 encodings, indices, and o
 
 - WASM threads, shared memory, memory64.
 - WASM GC proposal.
-- WASI.
+- WASI Preview1, except `wasi_snapshot_preview1.fd_write` when the program references `Wasm2Cs.DotnetHost` (see below). That host is not in the NuGet or Unity packages.
 - SIMD instructions beyond `v128.const`, `f32x4.add`, `f32x4.mul`.
 - `v128` globals.
 - Arbitrary Rust/C/C++ output: most real-world outputs require instructions or sections not yet in the subset.
 
-This is **not** an execution sandbox. There is no fuel or time limit, and recursive calls use the host stack. Host resource exhaustion is not normalized to a WASM trap.
+## WASI Preview1 `fd_write`
+
+Only this import is implemented: `wasi_snapshot_preview1.fd_write` `(i32 fd, i32 iovs, i32 iovs_len, i32 nwritten) -> i32`, on `Wasm2Cs.DotnetHost.HostEnvironment.FdWrite`. The translator does not emit a host, and other imports (including `proc_exit`) are not stubbed as success. Stdout is fd 1 and stderr is fd 2, using the callbacks passed to `HostEnvironment`. Other descriptors are virtual files from `OpenFile`.
+
+The caller passes the guest `WasmMemory`. Owned memory is not visible until the generated constructor returns, so `fd_write` from a start section on owned memory still cannot read that memory. `samples/WasiPreview1/wasi_hello.wasm` has no start section; call the exported `_start` after `new`. Checked against wasmtime 28.0.1: stdout is `hello wasi` plus a newline, and the process exits 0. The export `_start` is void; a normal return does not call `proc_exit`.
+
+This is **not** an execution sandbox. There is no fuel or time limit, and recursive calls use the host stack. Host resource exhaustion is not normalized to a WASM trap. `fd_write` does not add one.

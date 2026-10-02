@@ -29,6 +29,6 @@ No generated-constructor or `Wasm2Cs.DotnetHost` change. `HostEnvironment.ReadIo
 
 Publishing an owned `WasmMemory` before start would mean storing a caller-supplied object on every generated constructor. That is larger than this check, and `samples/WasiPreview1/wasi_hello.wasm` does not need it: it has no start section. Its `fd_write` runs from the exported `_start` after `new` returns, when `memory` is already public (see the T02 consumer).
 
-## Blocker before T07
+## Still open for start on owned memory
 
-T07 is not started. A Preview1 import that runs from a **start section** against **owned** memory cannot see that memory with the current API. A Preview1 import invoked from an export after construction, which is the `wasi_hello.wasm` shape, is not blocked by this result. Do not treat `HostEnvironment` as a finished WASI adapter.
+T07 connects `fd_write` only for a call that already has the `WasmMemory` (`docs/t07-fd-write.md`). A Preview1 import that runs from a **start section** against **owned** memory still cannot see that memory. A Preview1 import invoked from an export after construction, which is the `wasi_hello.wasm` shape, is not blocked by this result. `HostEnvironment` is not a finished WASI adapter.

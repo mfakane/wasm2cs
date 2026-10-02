@@ -5,6 +5,7 @@ using System.Text.Json;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Wasm2Cs;
+using Wasm2Cs.DotnetHost;
 
 internal static class ExecutionChecks
 {
@@ -602,6 +603,41 @@ internal static class ExecutionChecks
         if (!ownedPeekSawUnpublishedInstance)
             throw new Exception("Owned-memory instance was visible to the host during start.");
         Console.WriteLine("PASS: host reads imported memory during start; owned memory is initialized but unpublished until the constructor returns.");
+    }
+    public static void WasiFdWrite()
+    {
+        byte[] bytes = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "WasiPreview1", "wasi_hello.wasm"));
+        var type = Compile(bytes, "WasiHello").GetType("Wasm2Cs.Generated.WasiHello")!;
+        var stdout = new List<byte>();
+        var stderr = new List<byte>();
+        var host = new HostEnvironment(stdout: stdout.AddRange, stderr: stderr.AddRange);
+        object? guest = null;
+        bool procExitCalled = false;
+        Func<int, int, int, int, int> fdWrite = (fd, iovs, iovsLength, nwritten) =>
+        {
+            if (guest == null)
+                throw new InvalidOperationException("Owned memory is not published until the constructor returns.");
+            var memory = (WasmMemory)type.GetProperty("memory")!.GetValue(guest)!;
+            return host.FdWrite(memory, fd, iovs, iovsLength, nwritten);
+        };
+        Action<int> procExit = code =>
+        {
+            procExitCalled = true;
+            throw new InvalidOperationException("proc_exit is not connected: " + code);
+        };
+        var fdWriteDelegate = Delegate.CreateDelegate(type.GetNestedType("__wasm_Import0")!, fdWrite.Target, fdWrite.Method);
+        var procExitDelegate = Delegate.CreateDelegate(type.GetNestedType("__wasm_Import1")!, procExit.Target, procExit.Method);
+        var constructor = type.GetConstructors().Single(ctor => ctor.GetParameters().Length == 2);
+        var arguments = constructor.GetParameters().Select(parameter =>
+            parameter.Name == "import0" ? fdWriteDelegate : procExitDelegate).ToArray();
+        guest = constructor.Invoke(arguments);
+        // _start is void. A normal return does not call proc_exit; wasmtime reports that as exit 0.
+        type.GetMethod("_start")!.Invoke(guest, null);
+        if (procExitCalled) throw new Exception("proc_exit was called.");
+        string text = System.Text.Encoding.ASCII.GetString(stdout.ToArray());
+        if (text != "hello wasi\n") throw new Exception("stdout was " + text);
+        if (stderr.Count != 0) throw new Exception("stderr was not empty.");
+        Console.WriteLine("PASS: wasi_hello.wasm fd_write wrote hello wasi and _start returned normally. proc_exit was not called. Owned memory during start is still unpublished.");
     }
     private sealed record Outcome(bool Trapped, int Value);
 }

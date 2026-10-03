@@ -62,6 +62,8 @@ Numeric globals (`i32`, `i64`, `f32`, `f64`). Owned and imported. Mutable and im
 
 Only `v128.const`, `f32x4.add`, and `f32x4.mul` are supported. All other SIMD instructions are rejected. `v128` globals are not supported. The `dotnet-vector` and `unity-mathematics` target profiles provide the lowering for these three instructions; `portable-netstandard2.0` and `dotnet-netstandard2.1` reject them.
 
+Clang 18 autovectorization (`-O3 -msimd128`, `samples/CSimd`) emitted these unsupported instructions, so such modules are rejected on every profile: `i32x4.add`, `v128.and`, `i16x8.narrow_i32x4_u`, `i8x16.shuffle`, `v128.store`, `i8x16.max_u`, `i32x4.mul`, `i8x16.narrow_i16x8_u`, `v128.load`, `f32x4.lt`, `f32x4.pmin`, `f32x4.splat`, `i16x8.extend_low_i8x16_u`, `i32x4.extend_low_i16x8_u`, `i32x4.extract_lane`, `i32x4.splat`, `i8x16.extract_lane_u`, `v128.bitselect`, `v128.load32_zero` (`docs/t02-gap-report-2.md`).
+
 ## Traps
 
 Runtime traps use each generated module's nested `TrapException` and `TrapKind`:
@@ -99,16 +101,18 @@ Parsing validates section boundaries and order, LEB128 encodings, indices, and o
 - WASI Preview1. The packages do not provide a WASI host; supply the imports yourself (see below).
 - SIMD instructions beyond `v128.const`, `f32x4.add`, `f32x4.mul`.
 - `v128` globals.
-- Arbitrary Rust/C/C++ output: most real-world outputs require instructions or sections not yet in the subset.
+- Arbitrary Rust/C/C++ output is not guaranteed. Measured on 2026-10-03 (`docs/t08-remeasure-2.md`): Clang 18 (wasi-sdk-24.0) `-O2` library output, linked with wasi-libc `memcpy`/`memset`, translated and matched Node.js, with or without `-mbulk-memory -msign-ext -mnontrapping-fptoint -mmultivalue -mreference-types`. A `no_std` Rust 1.85 `wasm32-unknown-unknown` library matched too. `-O3 -msimd128` output does not translate (see SIMD). Rust `std`, newer rustc, and C++ output were not measured.
 
-## WASI Preview1 `fd_write` and `proc_exit` (test host only)
+## WASI Preview1 `fd_write`, `proc_exit`, and `fd_fdstat_get` (test host only)
 
-WASI imports are ordinary function imports: the caller passes the delegates. The test-only project `tests/Wasm2Cs.DotnetHost` (self-hosting experiment host, not shipped) implements two imports as a reference: `wasi_snapshot_preview1.fd_write` `(i32 fd, i32 iovs, i32 iovs_len, i32 nwritten) -> i32` on `HostEnvironment.FdWrite`, and `wasi_snapshot_preview1.proc_exit` `(i32 code)` on `HostEnvironment.ProcExit`. The translator does not emit a host, and other imports are not stubbed as success. Stdout is fd 1 and stderr is fd 2, using the callbacks passed to `HostEnvironment`. Other descriptors are virtual files from `OpenFile`.
+WASI imports are ordinary function imports: the caller passes the delegates. The test-only project `tests/Wasm2Cs.DotnetHost` (self-hosting experiment host, not shipped) implements three imports as a reference: `wasi_snapshot_preview1.fd_write` `(i32 fd, i32 iovs, i32 iovs_len, i32 nwritten) -> i32` on `HostEnvironment.FdWrite`, `wasi_snapshot_preview1.proc_exit` `(i32 code)` on `HostEnvironment.ProcExit`, and `wasi_snapshot_preview1.fd_fdstat_get` `(i32 fd, i32 buf) -> i32` on `HostEnvironment.FdFdstatGet`. The translator does not emit a host, and other imports are not stubbed as success. Stdout is fd 1 and stderr is fd 2, using the callbacks passed to `HostEnvironment`. Other descriptors are virtual files from `OpenFile`.
 
 The caller passes the guest `WasmMemory`. Owned memory is not visible until the generated constructor returns, so `fd_write` from a start section on owned memory still cannot read that memory. `samples/WasiPreview1/wasi_hello.wasm` has no start section; call the exported `_start` after `new`. Checked on 2026-10-03 against wasmtime 28.0.1 and Node.js 22.19.0 `node:wasi` preview1 (`docs/t08-wasi-remeasure.md`). Both write `hello wasi` plus a newline (`68 65 6c 6c 6f 20 77 61 73 69 0a`) and exit 0. Node calls `fd_write(1, 66584, 1, 66580)` once, returns errno 0, and does not call `proc_exit`. `ExecutionChecks.WasiFdWrite` matches that stdout. The export `_start` is void; a normal return is that exit 0.
 
 `ProcExit` records the code as given and throws `WasiProcExitException`, because `proc_exit` does not return (wasi-libc follows the call with `unreachable`). Catch it around `_start`. `samples/WasiPreview1/exit_code.wasm` writes `exit 3` plus a newline to stderr and calls `proc_exit(3)`. On 2026-10-03, wasmtime 28.0.1 exited 3 with those stderr bytes, Node.js 22.17.0 `node:wasi` returned 3 from `start()`, and `ExecutionChecks.WasiProcExit` matched both (`docs/t07-proc-exit.md`).
 
-Not in this measured slice: any other Preview1 import, exit codes other than 3 against a reference runtime, `fd_write` from a start section on owned memory, a sandbox, and shipping the host in NuGet or Unity (the host stays test code). Unity and IL2CPP were not run. No target profile changed.
+`FdFdstatGet` reports fd 1 and fd 2 as a character device with only the `fd_write` right, and `OpenFile` fds as regular files (`fd_write` only when writable). Unknown fds return `EBADF`. This record is a host choice; Node's depends on where its stdout goes. wasi-libc stdio calls it once on stdout before the first write. `samples/WasiPreview1/wasi_printf.wasm` (`printf` and `fprintf`) then matched wasmtime 28.0.1 and Node.js 22.17.0 in stdout, stderr, exit 0, and import call order (`docs/t07-fd-fdstat-get.md`). It also imports `fd_seek` and `fd_close`, which it does not call and the host does not implement.
+
+Not in this measured slice: any other Preview1 import (including `fd_seek` and `fd_close`), exit codes other than 3 against a reference runtime, `fd_write` from a start section on owned memory, a sandbox, and shipping the host in NuGet or Unity (the host stays test code). Unity and IL2CPP were not run. No target profile changed.
 
 This is **not** an execution sandbox. There is no fuel or time limit, and recursive calls use the host stack. Host resource exhaustion is not normalized to a WASM trap. `fd_write` does not add one.

@@ -159,7 +159,7 @@ Unity 6.0 is the compatibility baseline; `6000.6.0f1` is the tested editor. The 
 
 ## WASI Preview1 imports
 
-No WASI host is generated or shipped in the `Wasm2Cs.Generator` NuGet package or the Unity tarball. Pass delegates for the module's `wasi_snapshot_preview1` imports yourself. `tests/Wasm2Cs.DotnetHost` is a test-only host from the self-hosting experiments; do not reference it from an application. Its `HostEnvironment.FdWrite` and `HostEnvironment.ProcExit` are tested reference implementations of `wasi_snapshot_preview1.fd_write` and `proc_exit` that you can copy, and the example below is how the tests use them. Do not pass a delegate that returns success for imports you have not implemented.
+No WASI host is generated or shipped in the `Wasm2Cs.Generator` NuGet package or the Unity tarball. Pass delegates for the module's `wasi_snapshot_preview1` imports yourself. `tests/Wasm2Cs.DotnetHost` is a test-only host from the self-hosting experiments; do not reference it from an application. Its `HostEnvironment.FdWrite`, `ProcExit`, and `FdFdstatGet` are tested reference implementations of `wasi_snapshot_preview1.fd_write`, `proc_exit`, and `fd_fdstat_get` that you can copy, and the example below is how the tests use them. Do not pass a delegate that returns success for imports you have not implemented.
 
 `FdWrite` needs the module memory. Owned memory is unpublished until `new` returns, so this does not work for a start-section import on owned memory. `samples/WasiPreview1/wasi_hello.wasm` exports `_start` and has no start section. The export is void. wasmtime 28.0.1 prints `hello wasi` and a newline and exits 0. A normal return from `_start`, with `proc_exit` not called, is that exit 0. `ExecutionChecks.WasiFdWrite` checks the same stdout.
 
@@ -184,7 +184,9 @@ catch (WasiProcExitException exit) { exitCode = exit.ExitCode; }
 
 fd 1 and fd 2 are the stdout and stderr callbacks. Any other fd has to be opened with `OpenFile` on a virtual file. Bytes are not written to the real filesystem. This is not a sandbox.
 
-Measured scope, 2026-10-03, fixtures `samples/WasiPreview1/wasi_hello.wasm` (`docs/t08-wasi-remeasure.md`) and `exit_code.wasm` (`docs/t07-proc-exit.md`): wasmtime 28.0.1 and Node.js preview1 print `hello wasi` plus a newline and exit 0, or `exit 3` plus a newline on stderr and exit 3, and the test host matches both. That is the whole WASI surface. The host is test code, not a NuGet or Unity package. Unity and IL2CPP were not verified.
+wasi-libc `printf` also imports `fd_fdstat_get`, and calls it once on stdout before writing. Pass `(fd, buf) => host.FdFdstatGet(guest!.memory, fd, buf)` for it. Its `fd_seek` and `fd_close` imports were not called by `samples/WasiPreview1/wasi_printf.wasm`. Pass delegates that throw for them; do not stub them as success.
+
+Measured scope, 2026-10-03 (`docs/t08-remeasure-2.md`), fixtures `samples/WasiPreview1/wasi_hello.wasm`, `exit_code.wasm`, and `wasi_printf.wasm`: wasmtime 28.0.1 and Node.js 22.17.0 preview1 print `hello wasi` and exit 0, print `exit 3` on stderr and exit 3, or print the `printf`/`fprintf` lines and exit 0. The test host matches all three. That is the whole WASI surface. The host is test code, not a NuGet or Unity package. Unity and IL2CPP were not verified.
 
 ## CLI
 

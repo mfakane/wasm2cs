@@ -1,4 +1,4 @@
-# Rebuild samples/WasiPreview1/wasi_hello.wasm and exit_code.wasm with wasi-sdk-24.0
+# Rebuild samples/WasiPreview1/wasi_hello.wasm, exit_code.wasm, and wasi_printf.wasm with wasi-sdk-24.0
 param(
     [string]$WasiSdk = $env:WASI_SDK_PATH
 )
@@ -21,7 +21,7 @@ if (-not $WasiSdk) { throw "wasi-sdk-24.0 not found. Pass -WasiSdk or set WASI_S
 
 $clang = Join-Path $WasiSdk "bin\clang.exe"
 & $clang --version
-foreach ($pair in @(@("hello.c", "wasi_hello.wasm"), @("exit_code.c", "exit_code.wasm"))) {
+foreach ($pair in @(@("hello.c", "wasi_hello.wasm"), @("exit_code.c", "exit_code.wasm"), @("printf.c", "wasi_printf.wasm"))) {
     & $clang --target=wasm32-wasi -O1 -g0 "-Wl,--strip-all" `
         (Join-Path $sample $pair[0]) `
         -o (Join-Path $sample $pair[1])

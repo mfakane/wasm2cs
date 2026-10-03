@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rebuild samples/WasiPreview1/wasi_hello.wasm and exit_code.wasm with wasi-sdk-24.0
+# Rebuild samples/WasiPreview1/wasi_hello.wasm, exit_code.wasm, and wasi_printf.wasm with wasi-sdk-24.0
 set -euo pipefail
 repo="$(cd "$(dirname "$0")/.." && pwd)"
 sample="$repo/samples/WasiPreview1"
@@ -26,7 +26,7 @@ fi
 
 clang="$sdk/bin/clang"
 "$clang" --version
-for pair in hello.c:wasi_hello.wasm exit_code.c:exit_code.wasm; do
+for pair in hello.c:wasi_hello.wasm exit_code.c:exit_code.wasm printf.c:wasi_printf.wasm; do
   "$clang" --target=wasm32-wasi -O1 -g0 -Wl,--strip-all \
     "$sample/${pair%%:*}" \
     -o "$sample/${pair##*:}"

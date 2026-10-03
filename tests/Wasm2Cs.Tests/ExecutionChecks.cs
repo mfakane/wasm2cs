@@ -531,6 +531,45 @@ internal static class ExecutionChecks
         if (unchecked((uint)crc) != 0xcbf43926u || sum != 477) throw new Exception("C algorithm known-answer test failed.");
         Console.WriteLine("PASS: Clang-produced CRC32/array algorithms, known answers, and full-memory differential checks.");
     }
+    public static async Task CWorkload()
+    {
+        string directory = Path.Combine(AppContext.BaseDirectory, "CWorkload");
+        string callsPath = Path.Combine(directory, "calls.json");
+        var calls = JsonSerializer.Deserialize<JsonElement[][]>(File.ReadAllText(callsPath))!;
+        foreach (string name in new[] { "Workload", "WorkloadFeatures" })
+        {
+            string wasmPath = Path.Combine(directory, name + ".wasm");
+            var type = Compile(File.ReadAllBytes(wasmPath), name).GetType("Wasm2Cs.Generated." + name)!;
+            var instance = Activator.CreateInstance(type)!;
+            var actual = new List<string>();
+            foreach (var call in calls)
+            {
+                string export = call[0].GetString()!;
+                object[] arguments = call[1].EnumerateArray().Select(value => (object)value.GetInt32()).ToArray();
+                string head = $"{export}({string.Join(",", arguments)})";
+                try { actual.Add($"{head} = {type.GetMethod(export)!.Invoke(instance, arguments)}"); }
+                catch (TargetInvocationException e) when (e.InnerException?.GetType().DeclaringType == type && e.InnerException.GetType().Name == "TrapException")
+                { actual.Add($"{head} trap"); }
+            }
+            var memory = (WasmMemory)type.GetProperty("memory")!.GetValue(instance)!;
+            actual.Add("memory " + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(memory.ReadMemory(0, (int)memory.Size))).ToLowerInvariant());
+
+            var start = new ProcessStartInfo("node") { RedirectStandardOutput = true, RedirectStandardError = true };
+            start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "sequence-oracle.mjs"));
+            start.ArgumentList.Add(wasmPath);
+            start.ArgumentList.Add(callsPath);
+            using var node = Process.Start(start)!;
+            var output = node.StandardOutput.ReadToEndAsync();
+            var error = node.StandardError.ReadToEndAsync();
+            await node.WaitForExitAsync();
+            if (node.ExitCode != 0) throw new Exception(await error);
+            string[] expected = (await output).TrimEnd('\n').Split('\n');
+            if (expected.Length != actual.Count) throw new Exception(name + ": oracle line count differs.");
+            for (int i = 0; i < expected.Length; i++)
+                if (expected[i] != actual[i]) throw new Exception($"{name}: WASM/C# mismatch: {actual[i]} != {expected[i]}");
+        }
+        Console.WriteLine($"PASS: Clang -O2 workload (default and bulk-memory/sign-ext/nontrapping-fptoint builds) matched Node over {calls.Length} calls and final memory.");
+    }
     public static void MemoryDuringStart()
     {
         byte[] peekType = [0x60, 2, 0x7f, 0x7f, 0];

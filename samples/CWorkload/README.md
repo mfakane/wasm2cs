@@ -26,3 +26,8 @@ pointer), and `buffer_ptr`.
 `int`, which is undefined in C. The two builds return different values for that
 call (trapping-guarded vs. saturating conversion). Each build matches Node.js on
 its own.
+
+`calls.json` is the call sequence used by `ExecutionChecks.CWorkload`. The test
+replays it in order on one instance of each build, in the generated C# and in
+Node.js (`tests/Wasm2Cs.Tests/sequence-oracle.mjs`), and compares every return
+value or trap and the SHA-256 of the final memory.

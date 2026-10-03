@@ -14,6 +14,7 @@
   - Clang freestanding: `samples/CAlgorithms/`（既存）。
   - Rust `wasm32-unknown-unknown`: `samples/RustWasm32UnknownUnknown/`。
   - WASI Preview1: `samples/WasiPreview1/`（`HostAbi.wat` は WASI とみなさない）。
+  - 第3回の追加入力: `samples/RustStd/`。同じ標準ライブラリ使用ソースを Rust 1.85.0 / 1.90.0 でコンパイルし、両バイナリと再生成手順を固定した。
 - **受入条件:** 各入力の出所・バイナリ・再生成手順が対応し、既存の `dotnet run --project tests/Wasm2Cs.Tests` が成功する。
 
 ## T02: 未対応項目と基準結果を記録する
@@ -23,6 +24,7 @@
 - **成果物:** 入力ごとの結果、再現コマンド、確認できた不足項目、Core/SIMD/WASI の分類と優先順位を記した一覧。
   - 2026-10-03 の測定: [t02-gap-report.md](t02-gap-report.md)。次の Core 一群はなし（T03 は実施しない）。
   - 2026-10-03 の第2回測定: [t02-gap-report-2.md](t02-gap-report-2.md)。Clang `-O2` の workload（既定 CPU と bulk-memory 等の機能付きの2種）、`-O3 -msimd128` の自動ベクトル化、WASI `printf` を追加した。Core の不足はなし（T03 は引き続き実施しない）。SIMD は 19 命令が不足し、T04 の入力ができた。WASI `printf` は `fd_fdstat_get` が唯一の阻害要因で、次の T07 候補。
+  - 2026-10-03 の第3回測定: [t02-gap-report-3.md](t02-gap-report-3.md)。Rust `std` の解析・ソート・集計・文字列出力を 1.85.0 / 1.90.0 で比較した。約1.2万〜1.3万命令の両入力について、18ケース、メモリ拡張、毎回の全メモリ、境界 trap、新規インスタンスが Node と一致した。Core の不足はなく、T03 は実施しない。第三者製モジュール・C++・Unity/IL2CPP は未測定。
 - **受入条件:** 次に扱う Core 機能を一つ選べる。不足の頻度は確認した入力の範囲でのみ集計し、初回エラーを全出現回数として数えない。
 
 ## T03: Core 機能を一群実装する

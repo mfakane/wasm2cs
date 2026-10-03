@@ -101,7 +101,8 @@ Parsing validates section boundaries and order, LEB128 encodings, indices, and o
 - WASI Preview1. The packages do not provide a WASI host; supply the imports yourself (see below).
 - SIMD instructions beyond `v128.const`, `f32x4.add`, `f32x4.mul`.
 - `v128` globals.
-- Arbitrary Rust/C/C++ output is not guaranteed. Measured on 2026-10-03 (`docs/t08-remeasure-2.md`): Clang 18 (wasi-sdk-24.0) `-O2` library output, linked with wasi-libc `memcpy`/`memset`, translated and matched Node.js, with or without `-mbulk-memory -msign-ext -mnontrapping-fptoint -mmultivalue -mreference-types`. A `no_std` Rust 1.85 `wasm32-unknown-unknown` library matched too. `-O3 -msimd128` output does not translate (see SIMD). Rust `std`, newer rustc, and C++ output were not measured.
+- Arbitrary Rust/C/C++ output is not guaranteed. Measured on 2026-10-03 (`docs/t08-remeasure-2.md`): Clang 18 (wasi-sdk-24.0) `-O2` library output, linked with wasi-libc `memcpy`/`memset`, translated and matched Node.js, with or without `-mbulk-memory -msign-ext -mnontrapping-fptoint -mmultivalue -mreference-types`. A `no_std` Rust 1.85 `wasm32-unknown-unknown` library matched too. `-O3 -msimd128` output does not translate (see SIMD).
+- The Rust `std` data-summary library in `samples/RustStd` was measured with Rust 1.85.0 and 1.90.0 on 2026-10-03 ([T02 round 3](t02-gap-report-3.md)). It uses integer parsing, `Vec`, sorting, `BTreeMap`, string formatting, and the standard allocator, with no imports. Both modules (about 12–13k instructions) compiled as C# 9 on `portable-netstandard2.0` and matched Node.js in 18 cases, full memory snapshots, memory growth, a bounds trap, and fresh instance memory. This does not cover other std APIs, other Rust versions, C++ output, third-party modules, Unity, or IL2CPP.
 
 ## WASI Preview1 `fd_write`, `proc_exit`, and `fd_fdstat_get` (test host only)
 

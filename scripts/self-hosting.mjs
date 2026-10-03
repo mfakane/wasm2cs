@@ -1512,7 +1512,7 @@ function translatedManagedResults(boot, generated, wrappers, timeoutMs, gcHeapLi
     <Compile Include="*.g.cs" />
     <Compile Include="Program.cs" />
     <ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.Runtime', 'Wasm2Cs.Runtime.csproj'))}" />
-    <ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.DotnetHost', 'Wasm2Cs.DotnetHost.csproj'))}" />
+    <ProjectReference Include="${xml(join(root, 'tests', 'Wasm2Cs.DotnetHost', 'Wasm2Cs.DotnetHost.csproj'))}" />
   </ItemGroup>
 </Project>
 `);
@@ -1606,7 +1606,7 @@ function translatedTranslateResults(boot, generated, wrappers, scenarios, timeou
     <Compile Include="*.g.cs" />
     <Compile Include="Program.cs" />
     <ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.Runtime', 'Wasm2Cs.Runtime.csproj'))}" />
-    <ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.DotnetHost', 'Wasm2Cs.DotnetHost.csproj'))}" />
+    <ProjectReference Include="${xml(join(root, 'tests', 'Wasm2Cs.DotnetHost', 'Wasm2Cs.DotnetHost.csproj'))}" />
   </ItemGroup>
 </Project>
 `;
@@ -1662,7 +1662,7 @@ function compileGeneratedModule(id, sources, reference) {
     writeFileSync(project, `<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><TargetFramework>net10.0</TargetFramework><OutputType>Exe</OutputType><LangVersion>9.0</LangVersion><Nullable>enable</Nullable><ImplicitUsings>disable</ImplicitUsings><EnableDefaultCompileItems>false</EnableDefaultCompileItems><TreatWarningsAsErrors>true</TreatWarningsAsErrors></PropertyGroup>
   <ItemGroup><Compile Include="*.g.cs" /><Compile Include="Program.cs" /><ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.Runtime', 'Wasm2Cs.Runtime.csproj'))}" />${hostProject ? `
-    <ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.DotnetHost', 'Wasm2Cs.DotnetHost.csproj'))}" />` : ''}</ItemGroup>
+    <ProjectReference Include="${xml(join(root, 'tests', 'Wasm2Cs.DotnetHost', 'Wasm2Cs.DotnetHost.csproj'))}" />` : ''}</ItemGroup>
 </Project>
 `);
     const execution = run('dotnet', ['run', '--project', project, '--configuration', 'Release', '-p:UseSharedCompilation=false', '--nologo']);
@@ -1729,7 +1729,7 @@ function host() {
     <Compile Include="*.g.cs" />
     <Compile Include="Program.cs" />
     <ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.Runtime', 'Wasm2Cs.Runtime.csproj'))}" />
-    <ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.DotnetHost', 'Wasm2Cs.DotnetHost.csproj'))}" />
+    <ProjectReference Include="${xml(join(root, 'tests', 'Wasm2Cs.DotnetHost', 'Wasm2Cs.DotnetHost.csproj'))}" />
   </ItemGroup>
 </Project>
 `);
@@ -1794,7 +1794,7 @@ function hello() {
     <Compile Include="*.g.cs" />
     <Compile Include="Program.cs" />
     <ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.Runtime', 'Wasm2Cs.Runtime.csproj'))}" />
-    <ProjectReference Include="${xml(join(root, 'src', 'Wasm2Cs.DotnetHost', 'Wasm2Cs.DotnetHost.csproj'))}" />
+    <ProjectReference Include="${xml(join(root, 'tests', 'Wasm2Cs.DotnetHost', 'Wasm2Cs.DotnetHost.csproj'))}" />
   </ItemGroup>
 </Project>
 `);

@@ -22,6 +22,7 @@
 - **作業:** 各入力を `dotnet run --project src/Wasm2Cs.Cli -- <file.wasm>` で変換し、成功した入力は `samples/Smoke/` を参考に一時 consumer でコンパイル・実行する。失敗をセクション／命令・即値／型検証／import／生成 C# のコンパイル／実行結果に分類する。最初のエラーだけで全不足を推定せず、必要なら小型モジュールに分けて確かめる。通過する入力も Node.js 等の参照 WebAssembly 実行と、戻り値・メモリ・trap を比較する。WASI 入力は、適切な Preview1 参照ランタイムがない場合、実行結果を未比較と記録する。
 - **成果物:** 入力ごとの結果、再現コマンド、確認できた不足項目、Core/SIMD/WASI の分類と優先順位を記した一覧。
   - 2026-10-03 の測定: [t02-gap-report.md](t02-gap-report.md)。次の Core 一群はなし（T03 は実施しない）。
+  - 2026-10-03 の第2回測定: [t02-gap-report-2.md](t02-gap-report-2.md)。Clang `-O2` の workload（既定 CPU と bulk-memory 等の機能付きの2種）、`-O3 -msimd128` の自動ベクトル化、WASI `printf` を追加した。Core の不足はなし（T03 は引き続き実施しない）。SIMD は 19 命令が不足し、T04 の入力ができた。WASI `printf` は `fd_fdstat_get` が唯一の阻害要因で、次の T07 候補。
 - **受入条件:** 次に扱う Core 機能を一つ選べる。不足の頻度は確認した入力の範囲でのみ集計し、初回エラーを全出現回数として数えない。
 
 ## T03: Core 機能を一群実装する

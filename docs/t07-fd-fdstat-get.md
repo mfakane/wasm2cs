@@ -29,7 +29,7 @@ Node.js v22.17.0 `node:wasi` filled that record differently depending on the rea
 | pipe | `06 00 01 00 00 00 00 00 4a 00 20 38 00 00 00 00 ff ff ff 3f 00 00 00 00` |
 | regular file | `04 00 01 80 00 00 00 00 ff 01 e0 08 00 00 00 00 00 00 00 00 00 00 00 00` |
 
-The program's output did not depend on the record on this input: Node wrote the same stdout in all three cases, and so did the C# host with its own record. One line goes out in one `fd_write` whichever buffering mode is chosen.
+The program's output did not depend on the record on this input. Node's stdout bytes were identical for the pipe and the regular file (the `/dev/null` run cannot be read back), and the C# host wrote the same bytes with its own record. One line goes out in one `fd_write` whichever buffering mode is chosen.
 
 | Runtime | calls | stdout | stderr | exit |
 |---|---|---|---|---|

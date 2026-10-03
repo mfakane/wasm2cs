@@ -39,6 +39,18 @@ public sealed class UnsupportedImportException : Exception
     public IReadOnlyList<object> Arguments { get; }
 }
 
+// Thrown by HostEnvironment.ProcExit to unwind the guest. proc_exit does not return.
+public sealed class WasiProcExitException : Exception
+{
+    public WasiProcExitException(int exitCode)
+        : base("wasi_snapshot_preview1.proc_exit(" + exitCode + ").")
+    {
+        ExitCode = exitCode;
+    }
+
+    public int ExitCode { get; }
+}
+
 public sealed class HostEnvironment
 {
     private sealed class FileEntry
@@ -265,6 +277,15 @@ public sealed class HostEnvironment
         if (HasExited) throw new InvalidOperationException("The host has already exited.");
         HasExited = true;
         ExitCode = code;
+    }
+
+    // wasi_snapshot_preview1.proc_exit (i32)->().
+    // Records the code as given, then throws WasiProcExitException. Returning would run the guest's
+    // trailing unreachable, so the caller catches the exception around the export it invoked.
+    public void ProcExit(int code)
+    {
+        Exit(code);
+        throw new WasiProcExitException(code);
     }
 
     public void Enqueue(Action callback) { callbacks.Enqueue(callback ?? throw new ArgumentNullException(nameof(callback))); }

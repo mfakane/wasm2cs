@@ -81,7 +81,22 @@ public static class HostChecks
         Check(unsupported.Message.Contains("env.missing", StringComparison.Ordinal), "unsupported import name missing");
         Check(unsupported.Arguments.Count == 2, "unsupported import arguments missing");
         VerifyFdWrite();
-        Console.WriteLine("PASS: portable host memory, stdout/stderr, virtual files, clocks, entropy, callbacks, rejection state, and wasi fd_write.");
+        VerifyProcExit();
+        Console.WriteLine("PASS: portable host memory, stdout/stderr, virtual files, clocks, entropy, callbacks, rejection state, wasi fd_write, and wasi proc_exit.");
+    }
+
+    private static void VerifyProcExit()
+    {
+        foreach (int code in new[] { 0, 3, -1, int.MaxValue })
+        {
+            var host = new HostEnvironment();
+            try { host.ProcExit(code); throw new Exception("proc_exit returned"); }
+            catch (WasiProcExitException exception) { Check(exception.ExitCode == code, "proc_exit exception code differs"); }
+            Check(host.HasExited && host.ExitCode == code, "proc_exit did not record the raw code");
+            try { host.ProcExit(code); throw new Exception("second proc_exit accepted"); }
+            catch (InvalidOperationException) { }
+            Check(host.ExitCode == code, "second proc_exit changed the code");
+        }
     }
 
     private static void VerifyFdWrite()

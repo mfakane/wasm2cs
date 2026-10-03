@@ -32,6 +32,8 @@ dotnet run --project tests/Wasm2Cs.Tests
 
 `Wasm2Cs.DotnetHost` is still not in the NuGet package or the Unity tarball. WASI is not claimed as something those packages provide, so `scripts/pack.mjs` and `scripts/test-package.mjs` are unchanged. A consumer that wants this import references `src/Wasm2Cs.DotnetHost/Wasm2Cs.DotnetHost.csproj` and supplies the delegates itself. See `docs/usage.md`.
 
+Later (2026-10-03): the project moved to `tests/Wasm2Cs.DotnetHost` and is test code only. Consumers supply their own delegates; `FdWrite` is a reference to copy.
+
 ## Still open
 
 An import that runs from a **start section** against **owned** memory still cannot call `ReadMemory` or `FdWrite`. The generated constructor does not publish that `WasmMemory` until it returns. T06 recorded this, and T07 does not change the constructor. `wasi_hello.wasm` is not blocked: `fd_write` runs from the exported `_start` after `new`.

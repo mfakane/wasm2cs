@@ -157,13 +157,14 @@ The script creates a temporary consumer project, installs the package, and build
 
 Unity 6.0 is the compatibility baseline; `6000.6.0f1` is the tested editor. The source-only `unity/Packages/com.mfakane.wasm2cs` directory is not a ready-to-install distribution.
 
-## WASI Preview1 `fd_write`
+## WASI Preview1 imports
 
-This is not generated, and it is not in the `Wasm2Cs.Generator` NuGet package or the Unity tarball. Reference `src/Wasm2Cs.DotnetHost/Wasm2Cs.DotnetHost.csproj` from the program that constructs the module. Only `wasi_snapshot_preview1.fd_write` is connected. Do not pass a delegate that returns success for imports you have not implemented. `proc_exit` is not provided.
+No WASI host is generated or shipped in the `Wasm2Cs.Generator` NuGet package or the Unity tarball. Pass delegates for the module's `wasi_snapshot_preview1` imports yourself. `tests/Wasm2Cs.DotnetHost` is a test-only host from the self-hosting experiments; do not reference it from an application. Its `HostEnvironment.FdWrite` is a tested reference implementation of `wasi_snapshot_preview1.fd_write` that you can copy, and the example below is how the tests use it. Do not pass a delegate that returns success for imports you have not implemented. `proc_exit` is not provided.
 
 `FdWrite` needs the module memory. Owned memory is unpublished until `new` returns, so this does not work for a start-section import on owned memory. `samples/WasiPreview1/wasi_hello.wasm` exports `_start` and has no start section. The export is void. wasmtime 28.0.1 prints `hello wasi` and a newline and exits 0. A normal return from `_start`, with `proc_exit` not called, is that exit 0. `ExecutionChecks.WasiFdWrite` checks the same stdout.
 
 ```csharp
+// Test-side usage (tests/Wasm2Cs.Tests). Not for applications: copy FdWrite instead.
 using Wasm2Cs.DotnetHost;
 using Wasm2Cs.Generated;
 
@@ -179,7 +180,7 @@ guest._start();
 
 fd 1 and fd 2 are the stdout and stderr callbacks. Any other fd has to be opened with `OpenFile` on a virtual file. Bytes are not written to the real filesystem. This is not a sandbox.
 
-Measured scope, 2026-10-03, fixture `samples/WasiPreview1/wasi_hello.wasm` only (`docs/t08-wasi-remeasure.md`): wasmtime 28.0.1 and Node.js 22.19.0 preview1 both print `hello wasi` plus a newline and exit 0, and the generated host matches that stdout without calling `proc_exit`. That is the whole WASI surface. The host project is a direct reference, not a NuGet or Unity package. Unity and IL2CPP were not verified.
+Measured scope, 2026-10-03, fixture `samples/WasiPreview1/wasi_hello.wasm` only (`docs/t08-wasi-remeasure.md`): wasmtime 28.0.1 and Node.js 22.19.0 preview1 both print `hello wasi` plus a newline and exit 0, and the generated host matches that stdout without calling `proc_exit`. That is the whole WASI surface. The host is test code, not a NuGet or Unity package. Unity and IL2CPP were not verified.
 
 ## CLI
 

@@ -68,7 +68,7 @@ Invoke-SelfHosting @("unity-prepare", "--output", $prepare)
 
 $hostOut = Join-Path $WorkDirectory "host"
 New-Item -ItemType Directory -Path $hostOut -Force | Out-Null
-dotnet build (Join-Path $repo "src/Wasm2Cs.DotnetHost/Wasm2Cs.DotnetHost.csproj") -f netstandard2.0 -c Release -o $hostOut --nologo
+dotnet build (Join-Path $repo "tests/Wasm2Cs.DotnetHost/Wasm2Cs.DotnetHost.csproj") -f netstandard2.0 -c Release -o $hostOut --nologo
 if ($LASTEXITCODE -ne 0) { throw "Host library build failed." }
 $hostDll = Join-Path $hostOut "Wasm2Cs.DotnetHost.dll"
 

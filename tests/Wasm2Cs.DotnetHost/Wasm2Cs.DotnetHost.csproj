@@ -4,6 +4,6 @@
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../Wasm2Cs.Runtime/Wasm2Cs.Runtime.csproj" />
+    <ProjectReference Include="../../src/Wasm2Cs.Runtime/Wasm2Cs.Runtime.csproj" />
   </ItemGroup>
 </Project>

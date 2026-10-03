@@ -34,6 +34,6 @@ dotnet run --project tests/Wasm2Cs.Tests
 
 ## Host settings this scope needs
 
-Reference `src/Wasm2Cs.DotnetHost/Wasm2Cs.DotnetHost.csproj`. Pass an explicit stdout callback (fd 1) and stderr callback (fd 2). Other fds are `OpenFile` virtual files, not the real filesystem. Call `FdWrite` with the exported `memory` only after `new`. Do not treat this as a sandbox.
+Reference `src/Wasm2Cs.DotnetHost/Wasm2Cs.DotnetHost.csproj` (on 2026-10-03, later moved to `tests/Wasm2Cs.DotnetHost` as test-only code). Pass an explicit stdout callback (fd 1) and stderr callback (fd 2). Other fds are `OpenFile` virtual files, not the real filesystem. Call `FdWrite` with the exported `memory` only after `new`. Do not treat this as a sandbox.
 
 `docs/supported-features.md` and `docs/usage.md` describe this measured slice and nothing wider.

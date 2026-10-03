@@ -1,0 +1,8 @@
+[["fill",[1,4096]],["fnv64",[0]],["fnv64",[1]],["fnv64",[4096]],["fnv64",[-5]],["fnv64",[99999]],
+ ["copy_fill",[0,0,0]],["copy_fill",[3,100,171]],["copy_fill",[2048,2048,255]],["copy_fill",[-1,5,0]],["copy_fill",[0,3000,0]],
+ ["signed_bytes",[0]],["signed_bytes",[1]],["signed_bytes",[4096]],["signed_bytes",[-1]],
+ ["stats",[0,1]],["stats",[1,1000]],["stats",[4096,3]],["stats",[333,-77]],["stats",[4096,2147483647]],
+ ["interpret",[0,0]],["interpret",[256,7]],["interpret",[100,-1]],["interpret",[300,1]],
+ ["fill",[-123456,4096]],["interpret",[256,2147483647]],["stats",[4096,100]],
+ ["sort_bytes",[0,0]],["sort_bytes",[512,0]],["sort_bytes",[512,1]],["sort_bytes",[512,2]],["sort_bytes",[10,3]],["sort_bytes",[513,0]],
+ ["fill",[2147483647,777]],["fnv64",[777]],["copy_fill",[1,777,1]],["signed_bytes",[777]],["sort_bytes",[300,2]],["fill",[0,-1]],["buffer_ptr",[]]]

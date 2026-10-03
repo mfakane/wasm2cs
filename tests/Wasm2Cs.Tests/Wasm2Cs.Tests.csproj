@@ -17,6 +17,10 @@
     <None Include="../../samples/CAlgorithms/Algorithms.wasm" Link="Algorithms.wasm" CopyToOutputDirectory="PreserveNewest" />
     <None Include="oracle.mjs" CopyToOutputDirectory="PreserveNewest" />
     <None Include="execution-oracle.mjs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="sequence-oracle.mjs" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../samples/CWorkload/Workload.wasm" Link="CWorkload/Workload.wasm" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../samples/CWorkload/WorkloadFeatures.wasm" Link="CWorkload/WorkloadFeatures.wasm" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../samples/CWorkload/calls.json" Link="CWorkload/calls.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../scripts/conformance/*.mjs" Link="ConformanceTools/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../Conformance/typed-ir.wast" Link="Conformance/typed-ir.wast" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../Conformance/typed-ir.json" Link="Conformance/typed-ir.json" CopyToOutputDirectory="PreserveNewest" />

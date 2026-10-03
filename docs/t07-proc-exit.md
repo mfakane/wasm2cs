@@ -45,6 +45,8 @@ dotnet run --project tests/Wasm2Cs.Tests
 
 A full T08 re-measure of every input is left for after the new inputs from the next T01/T02 pass.
 
+Later (2026-10-03): done, `docs/t08-remeasure-2.md`.
+
 ## Still open
 
 Any other Preview1 import, a start-section import on owned memory, and a shipped WASI host.

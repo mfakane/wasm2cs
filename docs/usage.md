@@ -166,7 +166,7 @@ No WASI host is generated or shipped in the `Wasm2Cs.Generator` NuGet package or
 `proc_exit` does not return. `ProcExit` records the code and throws `WasiProcExitException`; returning from the delegate instead would hit the guest's `unreachable` and trap. A non-zero `main` (`samples/WasiPreview1/exit_code.wasm`) ends `_start` that way with code 3, as wasmtime and `node:wasi` do.
 
 ```csharp
-// Test-side usage (tests/Wasm2Cs.Tests). Not for applications: copy FdWrite instead.
+// Test-side usage (tests/Wasm2Cs.Tests). Not for applications: copy FdWrite / ProcExit / FdFdstatGet instead.
 using Wasm2Cs.DotnetHost;
 using Wasm2Cs.Generated;
 

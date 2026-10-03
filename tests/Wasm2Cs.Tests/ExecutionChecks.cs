@@ -672,5 +672,40 @@ internal static class ExecutionChecks
         if (stdout.Count != 0) throw new Exception("stdout was not empty.");
         Console.WriteLine("PASS: exit_code.wasm wrote exit 3 to stderr and proc_exit(3) unwound _start through WasiProcExitException.");
     }
+    public static void WasiPrintf()
+    {
+        byte[] bytes = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "WasiPreview1", "wasi_printf.wasm"));
+        var type = Compile(bytes, "WasiPrintf").GetType("Wasm2Cs.Generated.WasiPrintf")!;
+        var stdout = new List<byte>();
+        var stderr = new List<byte>();
+        var host = new HostEnvironment(stdout: stdout.AddRange, stderr: stderr.AddRange);
+        object? guest = null;
+        var calls = new List<string>();
+        WasmMemory Memory() => guest == null
+            ? throw new InvalidOperationException("Owned memory is not published until the constructor returns.")
+            : (WasmMemory)type.GetProperty("memory")!.GetValue(guest)!;
+        // Import order: fd_close, fd_fdstat_get, fd_seek, fd_write, proc_exit.
+        Func<int, int> fdClose = fd => throw new UnsupportedImportException("wasi_snapshot_preview1", "fd_close", fd);
+        Func<int, int, int> fdstatGet = (fd, buf) => { calls.Add($"fd_fdstat_get({fd})"); return host.FdFdstatGet(Memory(), fd, buf); };
+        Func<int, long, int, int, int> fdSeek = (fd, offset, whence, result) =>
+            throw new UnsupportedImportException("wasi_snapshot_preview1", "fd_seek", fd, offset, whence, result);
+        Func<int, int, int, int, int> fdWrite = (fd, iovs, iovsLength, nwritten) => { calls.Add($"fd_write({fd})"); return host.FdWrite(Memory(), fd, iovs, iovsLength, nwritten); };
+        Action<int> procExit = host.ProcExit;
+        Delegate[] functions = [fdClose, fdstatGet, fdSeek, fdWrite, procExit];
+        var constructor = type.GetConstructors().Single(ctor => ctor.GetParameters().Length == 5);
+        var arguments = constructor.GetParameters().Select((parameter, index) =>
+            (object)Delegate.CreateDelegate(type.GetNestedType("__wasm_Import" + index)!, functions[index].Target, functions[index].Method)).ToArray();
+        guest = constructor.Invoke(arguments);
+        // main returns 0: _start returns normally, as in wasmtime 28.0.1 and node:wasi.
+        type.GetMethod("_start")!.Invoke(guest, null);
+        if (host.HasExited) throw new Exception("proc_exit was called.");
+        // node:wasi made the same three calls; fd_seek and fd_close are imported but not called.
+        if (string.Join(" ", calls) != "fd_fdstat_get(1) fd_write(1) fd_write(2)") throw new Exception("WASI calls were " + string.Join(" ", calls));
+        string text = System.Text.Encoding.ASCII.GetString(stdout.ToArray());
+        if (text != "count=4 total=1028 mean=257.000 hex=0x404 name=wasi\n") throw new Exception("stdout was " + text);
+        string error = System.Text.Encoding.ASCII.GetString(stderr.ToArray());
+        if (error != "warn:  12.3%\n") throw new Exception("stderr was " + error);
+        Console.WriteLine("PASS: wasi_printf.wasm printf/fprintf matched wasmtime and node:wasi through fd_fdstat_get and fd_write.");
+    }
     private sealed record Outcome(bool Trapped, int Value);
 }

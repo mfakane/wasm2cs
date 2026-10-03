@@ -62,6 +62,7 @@
   - 2026-10-03 の結果: [t07-fd-write.md](t07-fd-write.md)。対象は `wasi_snapshot_preview1.fd_write` のみ。`wasi_hello.wasm` は wasmtime 28.0.1 と同じく標準出力 `hello wasi\n`。`_start` は void で、正常時は `proc_exit` を呼ばずに戻り、wasmtime の終了コードは 0。`proc_exit` は呼ばれず、未接続。start 中の owned memory は未公開のまま。`Wasm2Cs.DotnetHost` は NuGet / Unity パッケージに含めず、WASI 対応を配布物としては主張しない。
 - **受入条件:** 固定 WASI 入力の該当 import が参照ランタイムと同じ結果になり、`dotnet run --project tests/Wasm2Cs.Tests` が成功する。別の import が必要なら T07 を別タスクとして反復する。WASI 対応を配布する段階では、配布用のホストを別途用意し、`node scripts/pack.mjs` と `node scripts/test-package.mjs` でも消費者側の接続を検証する。
   - 2026-10-03 の結果（反復2）: [t07-proc-exit.md](t07-proc-exit.md)。対象は `wasi_snapshot_preview1.proc_exit`。新しい固定入力 `exit_code.wasm`（`main` が 3 を返す）で必要になった。stderr `exit 3\n` と終了コード 3 が wasmtime 28.0.1・Node.js 22.17.0 と一致。テスト用ホストの `ProcExit` はコードを記録して `WasiProcExitException` を投げる（`proc_exit` は戻らないため）。範囲外の終了コードは参照と未比較。全入力の T08 再測定は次の T01/T02 の後に行う。
+  - 2026-10-03 の結果（反復3）: [t07-fd-fdstat-get.md](t07-fd-fdstat-get.md)。対象は `wasi_snapshot_preview1.fd_fdstat_get`。T02 第2回で `wasi_printf.wasm` の唯一の阻害要因だった。テスト用ホストは fd 1/2 を character device（権限は `fd_write` のみ）として返す。これは設計上の選択で、Node の記録は実際の stdout の種類で変わる。stdout・stderr・呼び出し順は wasmtime 28.0.1・Node.js 22.17.0 と一致。`fd_seek`・`fd_close` は import されるが呼ばれず、未実装。
   - 決定: `Wasm2Cs.DotnetHost` はセルフホスト実験用のテストコードとして `tests/Wasm2Cs.DotnetHost` に置き、配布物に含めない。配布用の WASI ホストはこれとは別に設計する。
 
 ## T08: 実用範囲を再測定して公開する

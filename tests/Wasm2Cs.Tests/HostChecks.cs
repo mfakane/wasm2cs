@@ -82,7 +82,36 @@ public static class HostChecks
         Check(unsupported.Arguments.Count == 2, "unsupported import arguments missing");
         VerifyFdWrite();
         VerifyProcExit();
-        Console.WriteLine("PASS: portable host memory, stdout/stderr, virtual files, clocks, entropy, callbacks, rejection state, wasi fd_write, and wasi proc_exit.");
+        VerifyFdstatGet();
+        Console.WriteLine("PASS: portable host memory, stdout/stderr, virtual files, clocks, entropy, callbacks, rejection state, wasi fd_write, proc_exit, and fd_fdstat_get.");
+    }
+
+    private static void VerifyFdstatGet()
+    {
+        var host = new HostEnvironment(virtualFiles: new Dictionary<string, byte[]> { ["/ro"] = new byte[] { 1 }, ["/rw"] = Array.Empty<byte>() });
+        var memory = new WasmMemory(1);
+        byte[] Record(int fd, int expectedErrno)
+        {
+            memory.WriteMemory(200, Enumerable.Repeat((byte)0xaa, 24).ToArray());
+            Check(host.FdFdstatGet(memory, fd, 200) == expectedErrno, "fd_fdstat_get errno differs for fd " + fd);
+            return memory.ReadMemory(200, 24);
+        }
+        byte[] Expected(byte filetype, bool write)
+        {
+            var record = new byte[24];
+            record[0] = filetype;
+            if (write) record[8] = 0x40;
+            return record;
+        }
+        Check(Record(1, 0).SequenceEqual(Expected(2, true)), "stdout fdstat differs");
+        Check(Record(2, 0).SequenceEqual(Expected(2, true)), "stderr fdstat differs");
+        Check(Record(host.OpenFile("/ro"), 0).SequenceEqual(Expected(4, false)), "read-only file fdstat differs");
+        Check(Record(host.OpenFile("/rw", writable: true), 0).SequenceEqual(Expected(4, true)), "writable file fdstat differs");
+        Check(Record(0, HostEnvironment.WasiErrnoBadf).All(value => value == 0xaa), "stdin fdstat wrote memory");
+        Check(Record(99, HostEnvironment.WasiErrnoBadf).All(value => value == 0xaa), "unknown fd fdstat wrote memory");
+        Check(host.FdFdstatGet(memory, 1, (int)memory.Size - 23) == HostEnvironment.WasiErrnoFault, "partial fdstat buffer accepted");
+        Check(host.FdFdstatGet(memory, 1, -1) == HostEnvironment.WasiErrnoFault, "out-of-range fdstat buffer accepted");
+        Check(host.FdFdstatGet(memory, 1, (int)memory.Size - 24) == HostEnvironment.WasiErrnoSuccess, "fdstat at the end of memory rejected");
     }
 
     private static void VerifyProcExit()

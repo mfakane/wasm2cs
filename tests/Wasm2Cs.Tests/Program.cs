@@ -169,6 +169,7 @@ ExecutionChecks.Imports();
 ExecutionChecks.MemoryDuringStart();
 ExecutionChecks.WasiFdWrite();
 ExecutionChecks.WasiProcExit();
+ExecutionChecks.WasiPrintf();
 ConformanceChecks.Verify();
 await TypedIrChecks.Verify();
 await I64Checks.Verify();

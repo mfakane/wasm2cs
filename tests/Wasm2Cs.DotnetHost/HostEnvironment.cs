@@ -252,6 +252,40 @@ public sealed class HostEnvironment
         return WasiErrnoSuccess;
     }
 
+    public const byte WasiFiletypeCharacterDevice = 2;
+    public const byte WasiFiletypeRegularFile = 4;
+    public const ulong WasiRightFdWrite = 1ul << 6;
+
+    // wasi_snapshot_preview1.fd_fdstat_get (i32,i32)->i32.
+    // buf receives a 24-byte fdstat: u8 filetype @0, u16 flags @2, u64 rights_base @8, u64 rights_inheriting @16.
+    // fd 1 and fd 2 report a character device with only fd_write. OpenFile fds report a regular file with fd_write
+    // when writable. These records describe what this host implements; they do not copy a reference runtime.
+    public int FdFdstatGet(WasmMemory memory, int fd, int buf)
+    {
+        if (memory == null) throw new ArgumentNullException(nameof(memory));
+        uint address = unchecked((uint)buf);
+        if (!InRange(memory, address, 24)) return WasiErrnoFault;
+        byte filetype;
+        ulong rights;
+        if (fd == 1 || fd == 2)
+        {
+            filetype = WasiFiletypeCharacterDevice;
+            rights = WasiRightFdWrite;
+        }
+        else
+        {
+            FileEntry file;
+            if (!descriptors.TryGetValue(fd, out file)) return WasiErrnoBadf;
+            filetype = WasiFiletypeRegularFile;
+            rights = file.Writable ? WasiRightFdWrite : 0;
+        }
+        var record = new byte[24];
+        record[0] = filetype;
+        for (int i = 0; i < 8; i++) record[8 + i] = unchecked((byte)(rights >> (i * 8)));
+        memory.WriteMemory(address, record);
+        return WasiErrnoSuccess;
+    }
+
     private int RequireWritable(int fd)
     {
         if (fd == 1 || fd == 2) return WasiErrnoSuccess;

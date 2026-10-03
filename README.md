@@ -67,7 +67,7 @@ On Windows, `scripts/test-unity.ps1 -PackagePath <tarball>` creates a temporary 
 
 ## Limitations
 
-This is **not** a general-purpose WASM compiler; ordinary Rust/C/C++ outputs typically need more instructions than the current subset. This is **not** an execution sandbox: no fuel or time limit, and recursive calls use the host stack. Unsupported instructions and sections are rejected at build time with `WASM001`.
+This is **not** a general-purpose WASM compiler. Clang `-O2` library output and a `no_std` Rust library have been measured to translate, but SIMD autovectorized code does not, and other Rust/C/C++ output is not guaranteed. This is **not** an execution sandbox: no fuel or time limit, and recursive calls use the host stack. Unsupported instructions and sections are rejected at build time with `WASM001`.
 
 See the [supported feature list](https://github.com/mfakane/wasm2cs/blob/master/docs/supported-features.md) for the exact instruction and type subset.
 

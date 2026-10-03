@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rebuild samples/WasiPreview1/wasi_hello.wasm with wasi-sdk-24.0
+# Rebuild samples/WasiPreview1/wasi_hello.wasm and exit_code.wasm with wasi-sdk-24.0
 set -euo pipefail
 repo="$(cd "$(dirname "$0")/.." && pwd)"
 sample="$repo/samples/WasiPreview1"
@@ -26,8 +26,9 @@ fi
 
 clang="$sdk/bin/clang"
 "$clang" --version
-"$clang" --target=wasm32-wasi -O1 -g0 -Wl,--strip-all \
-  "$sample/hello.c" \
-  -o "$sample/wasi_hello.wasm"
-
-sha256sum "$sample/wasi_hello.wasm"
+for pair in hello.c:wasi_hello.wasm exit_code.c:exit_code.wasm; do
+  "$clang" --target=wasm32-wasi -O1 -g0 -Wl,--strip-all \
+    "$sample/${pair%%:*}" \
+    -o "$sample/${pair##*:}"
+  sha256sum "$sample/${pair##*:}"
+done

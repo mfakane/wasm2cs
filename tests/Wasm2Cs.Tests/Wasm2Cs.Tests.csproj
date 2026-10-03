@@ -12,6 +12,7 @@
     <None Include="$(PkgNETStandard_Library)/build/netstandard2.0/ref/*.dll" Link="ReferenceAssemblies/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../samples/Smoke/Arithmetic.wasm" Link="Arithmetic.wasm" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../samples/WasiPreview1/wasi_hello.wasm" Link="WasiPreview1/wasi_hello.wasm" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../samples/WasiPreview1/exit_code.wasm" Link="WasiPreview1/exit_code.wasm" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../samples/CAlgorithms/Algorithms.wasm" Link="Algorithms.wasm" CopyToOutputDirectory="PreserveNewest" />
     <None Include="oracle.mjs" CopyToOutputDirectory="PreserveNewest" />
     <None Include="execution-oracle.mjs" CopyToOutputDirectory="PreserveNewest" />

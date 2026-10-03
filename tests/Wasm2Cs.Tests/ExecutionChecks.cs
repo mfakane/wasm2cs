@@ -639,5 +639,38 @@ internal static class ExecutionChecks
         if (stderr.Count != 0) throw new Exception("stderr was not empty.");
         Console.WriteLine("PASS: wasi_hello.wasm fd_write wrote hello wasi and _start returned normally. proc_exit was not called. Owned memory during start is still unpublished.");
     }
+    public static void WasiProcExit()
+    {
+        byte[] bytes = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "WasiPreview1", "exit_code.wasm"));
+        var type = Compile(bytes, "WasiExitCode").GetType("Wasm2Cs.Generated.WasiExitCode")!;
+        var stdout = new List<byte>();
+        var stderr = new List<byte>();
+        var host = new HostEnvironment(stdout: stdout.AddRange, stderr: stderr.AddRange);
+        object? guest = null;
+        Func<int, int, int, int, int> fdWrite = (fd, iovs, iovsLength, nwritten) =>
+        {
+            if (guest == null)
+                throw new InvalidOperationException("Owned memory is not published until the constructor returns.");
+            var memory = (WasmMemory)type.GetProperty("memory")!.GetValue(guest)!;
+            return host.FdWrite(memory, fd, iovs, iovsLength, nwritten);
+        };
+        Action<int> procExit = host.ProcExit;
+        var fdWriteDelegate = Delegate.CreateDelegate(type.GetNestedType("__wasm_Import0")!, fdWrite.Target, fdWrite.Method);
+        var procExitDelegate = Delegate.CreateDelegate(type.GetNestedType("__wasm_Import1")!, procExit.Target, procExit.Method);
+        var constructor = type.GetConstructors().Single(ctor => ctor.GetParameters().Length == 2);
+        var arguments = constructor.GetParameters().Select(parameter =>
+            parameter.Name == "import0" ? fdWriteDelegate : procExitDelegate).ToArray();
+        guest = constructor.Invoke(arguments);
+        // main returns 3, so wasi-libc's _start calls proc_exit(3). wasmtime and node:wasi report exit 3.
+        int? exitCode = null;
+        try { type.GetMethod("_start")!.Invoke(guest, null); }
+        catch (TargetInvocationException exception) when (exception.InnerException is WasiProcExitException exit) { exitCode = exit.ExitCode; }
+        if (exitCode != 3) throw new Exception("proc_exit code was " + (exitCode?.ToString() ?? "not called"));
+        if (!host.HasExited || host.ExitCode != 3) throw new Exception("host exit state differs.");
+        string text = System.Text.Encoding.ASCII.GetString(stderr.ToArray());
+        if (text != "exit 3\n") throw new Exception("stderr was " + text);
+        if (stdout.Count != 0) throw new Exception("stdout was not empty.");
+        Console.WriteLine("PASS: exit_code.wasm wrote exit 3 to stderr and proc_exit(3) unwound _start through WasiProcExitException.");
+    }
     private sealed record Outcome(bool Trapped, int Value);
 }

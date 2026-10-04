@@ -64,5 +64,22 @@ also compared. Artifacts are retained in `artifacts/t02-rust-std/`.
 The regression workflow runs the comparison without requiring Rust or WABT.
 
 See [the T02 round 3 report](../../docs/t02-gap-report-3.md). This measurement
-does not cover host I/O, all Rust std APIs, arbitrary Rust versions, Unity, or
-IL2CPP.
+does not cover host I/O, all Rust std APIs, arbitrary Rust versions, or every
+Unity platform and backend.
+
+## Unity measurement
+
+The Rust 1.90.0 fixture was also checked with the packaged Unity UPM package
+on Unity 6000.6.0f1 Editor Mono and Windows x64 IL2CPP. From the repository root:
+
+```sh
+node scripts/measure-rust-std.mjs --unity-oracle
+node scripts/pack.mjs
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-unity-rust-std.ps1 -PackagePath artifacts/com.mfakane.wasm2cs-0.1.0-preview.1.tgz
+```
+
+The Windows PowerShell harness requires Unity 6 with Windows Build Support
+(IL2CPP). It creates a temporary project and checks 18 calls, complete memory
+snapshots, growth, a bounds trap, and a fresh instance against the Node oracle.
+See the [T02 round 4 report](../../docs/t02-gap-report-4.md) for the measured
+versions, hashes, and scope limits.

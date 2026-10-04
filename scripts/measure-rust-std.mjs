@@ -1,5 +1,5 @@
 // T02 round 3: compare the complete Rust std call sequence and linear memory.
-// node scripts/measure-rust-std.mjs [--inventory] (WABT required for inventory).
+// node scripts/measure-rust-std.mjs [--inventory | --unity-oracle]
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-assert.ok(process.argv.slice(2).every(arg => arg === '--inventory'), 'unknown option');
+assert.ok(process.argv.slice(2).every(arg => ['--inventory', '--unity-oracle'].includes(arg)), 'unknown option');
 const inventory = process.argv.includes('--inventory');
 const directory = join(root, 'artifacts/t02-rust-std');
 mkdirSync(directory, { recursive: true });
@@ -91,6 +91,19 @@ function reference(module) {
   const fresh = new WebAssembly.Instance(module).exports;
   assert.equal(hash(Buffer.from(fresh.memory.buffer)), initial.memorySha256, 'fresh instance memory');
   return { initial, rows, trap: 'Unreachable', freshMemorySha256: hash(Buffer.from(fresh.memory.buffer)) };
+}
+
+if (process.argv.includes('--unity-oracle')) {
+  const bytes = readFileSync(join(root, 'samples/RustStd/RustStd190.wasm'));
+  const module = new WebAssembly.Module(bytes);
+  assert.deepEqual(WebAssembly.Module.imports(module), [], 'library must need no host stubs');
+  const oraclePath = join(directory, 'unity-oracle.json');
+  writeFileSync(oraclePath, JSON.stringify({
+    nodeVersion: process.version, fixtureSha256: hash(bytes),
+    cases: JSON.parse(readFileSync(caseFile, 'utf8')), ...reference(module),
+  }, null, 2));
+  console.log(`Unity oracle: ${oraclePath}`);
+  process.exit(0);
 }
 
 const program = `using System;

@@ -36,7 +36,7 @@ Toolchain: .NET SDK 10.0.401, Node.js v22.19.0, wasmtime 28.0.1, wasi-sdk-24.0, 
 | `samples/RustStd/RustStd185.wasm` | match Node (T02 round 3); Unity unverified | match Node (`measure-rust-std.mjs`); Unity Editor / IL2CPP still **unverified** (no Windows/Unity here) |
 | `samples/RustStd/RustStd190.wasm` | match Node; Unity Editor Mono + Windows x64 IL2CPP matched (T02 round 4) | match Node (`measure-rust-std.mjs`); Unity not re-run in this environment (prior round 4 result unchanged) |
 | `samples/CppWorkload/CppWorkload.wasm` | match Node (T02 round 5), test suite | match, test suite: 47 calls and final memory; trap kinds match wasmtime |
-| Third-party (hash-wasm 4.12.0 ×22, xxhash-wasm 1.1.0) | match Node (T02 round 5) | match Node again (`measure-third-party.mjs`): 2,396 export calls, results/traps/full memory; bcrypt/scrypt still need `--class-name` (default name collides with export) |
+| Third-party (hash-wasm 4.12.0 ×22, xxhash-wasm 1.1.0) | match Node (T02 round 5) | match Node again (`measure-third-party.mjs`): 2,396 export calls, results/traps/full memory; bcrypt/scrypt need a non-default class name (`--class-name` / `ClassName`; default name collides with export; no auto-rename) |
 
 ## What changed in the documentation
 
@@ -50,5 +50,5 @@ Toolchain: .NET SDK 10.0.401, Node.js v22.19.0, wasmtime 28.0.1, wasi-sdk-24.0, 
 - SIMD opcodes beyond the T05 group in [t04-simd-selection.md](t04-simd-selection.md). Portable / `dotnet-netstandard2.1` still reject all `v128`.
 - **Unity Editor and Windows x64 IL2CPP were not run for `Simd.wasm`** (or any new SIMD path). Do not claim Unity support for the T05 instructions. Rust 1.85.0 on Unity remains unverified (steps in [t02-gap-report-5.md](t02-gap-report-5.md)).
 - WASI: `fd_seek`, `fd_close`, and every other Preview1 import; start-section `fd_write` on owned memory; shipped WASI host (host stays test code in `tests/Wasm2Cs.DotnetHost`).
-- Export name colliding with the generated class name (bcrypt, scrypt): use `--class-name` or rename the file.
+- Export name colliding with the generated class name (bcrypt, scrypt): clearer error by default; rename the class with `--class-name`, MSBuild `ClassName`, or Unity `WasmImporter.ClassName` (do not rename exports; Unity Editor/IL2CPP for ClassName unverified here).
 - threads, shared memory, memory64, GC, Component Model, WASI Preview2, execution sandbox: out of scope.

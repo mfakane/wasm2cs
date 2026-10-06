@@ -32,12 +32,15 @@ namespace Wasm2Cs.Editor
                 && p.EndsWith(".wasm", StringComparison.OrdinalIgnoreCase)).OrderBy(p => p, StringComparer.Ordinal);
             foreach (var path in paths)
             {
-                var name = Path.GetFileNameWithoutExtension(path);
+                var importer = AssetImporter.GetAtPath(path) as WasmImporter;
+                var name = importer != null && !string.IsNullOrWhiteSpace(importer.ClassName)
+                    ? importer.ClassName.Trim()
+                    : Path.GetFileNameWithoutExtension(path);
                 string content;
                 if (!Regex.IsMatch(name, "^[A-Za-z_][A-Za-z0-9_]*$"))
                 {
                     name = "Invalid_" + AssetDatabase.AssetPathToGUID(path);
-                    content = "!WASM001:WASM filenames must be ASCII C# identifiers: " + path;
+                    content = "!WASM001:The generated class name must be an ASCII C# identifier: " + path;
                 }
                 else
                 {

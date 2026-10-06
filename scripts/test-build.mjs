@@ -61,10 +61,27 @@ try {
   project('<Wasm Include="Counter.wasm" /><Wasm Include="Counter.wasm" />');
   assert.match(build(false), /WASM002/);
 
+  // Export name matching the default class name must fail; ClassName metadata overrides it.
+  const collideName = 'bcrypt';
+  const collideBytes = Buffer.from([0,97,115,109,1,0,0,0, 1,5,1,0x60,0,1,0x7f,
+    3,2,1,0, 7,10,1,6,...Buffer.from(collideName),0,0, 10,6,1,4,0,0x41,7,0x0b]);
+  writeFileSync(join(directory, 'bcrypt.wasm'), collideBytes);
+  writeFileSync(join(directory, 'Program.cs'),
+    'var type = typeof(Program).Assembly.GetType("Wasm2Cs.Generated.BcryptModule");' +
+    'System.Console.WriteLine(type == null ? "missing" : type.GetMethod("bcrypt").Invoke(System.Activator.CreateInstance(type), null));');
+  project('<Wasm Include="bcrypt.wasm" />');
+  assert.match(build(false), /collides with generated class name 'bcrypt'/);
+  project('<Wasm Include="bcrypt.wasm" ClassName="BcryptModule" />');
+  build();
+  assert.equal(run(), '7');
+  const overrideGenerated = join(directory, 'obj/generated/Wasm2Cs.Generator/Wasm2Cs.WasmGenerator/BcryptModule.g.cs');
+  assert.match(readFileSync(overrideGenerated, 'utf8'), /class @BcryptModule/);
+  assert.ok(statSync(join(directory, 'obj/Debug/net10.0/wasm2cs/BcryptModule.wasm.base64')).isFile());
+
   project('');
   build();
   assert.equal(run(), 'missing', 'Removing a WASM item retained the generated type');
-  console.log('PASS: MSBuild generation, unchanged inputs, binary edits, invalid/duplicate inputs, and item removal.');
+  console.log('PASS: MSBuild generation, unchanged inputs, binary edits, invalid/duplicate inputs, ClassName override, and item removal.');
 } finally {
   rmSync(directory, { recursive: true, force: true });
 }

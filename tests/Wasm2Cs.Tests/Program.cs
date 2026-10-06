@@ -119,6 +119,30 @@ foreach (var test in invalid)
 }
 Console.WriteLine($"PASS: {invalid.Length} malformed/unsupported modules rejected.");
 
+byte[] NamedExport(string exportName, byte value = 42)
+{
+    var name = System.Text.Encoding.ASCII.GetBytes(exportName);
+    return [0,97,115,109,1,0,0,0, 1,5,1,0x60,0,1,0x7f, 3,2,1,0,
+        7,(byte)(name.Length+4),1,(byte)name.Length,..name,0,0,
+        10,6,1,4,0,0x41,value,0x0b];
+}
+var collideBytes = NamedExport("bcrypt");
+try { Transpiler.Translate(collideBytes, "bcrypt"); throw new Exception("Class-name collision accepted."); }
+catch (WasmException e)
+{
+    Assert(e.Message.Contains("collides with generated class name 'bcrypt'", StringComparison.Ordinal), $"Collision message missing class name: {e.Message}");
+    Assert(e.Message.Contains("--class-name", StringComparison.Ordinal) && e.Message.Contains("ClassName", StringComparison.Ordinal),
+        $"Collision message missing rename guidance: {e.Message}");
+}
+try { Transpiler.Translate(collideBytes, "1bad"); throw new Exception("Invalid class name accepted."); }
+catch (WasmException e) { Assert(e.Message.Contains("The generated class name must be an ASCII C# identifier.", StringComparison.Ordinal), e.Message); }
+var overridden = Transpiler.Translate(collideBytes, "BcryptModule");
+Assert(overridden.Contains("class @BcryptModule", StringComparison.Ordinal) && overridden.Contains("bcrypt(", StringComparison.Ordinal),
+    "Override did not emit class and export names.");
+var overriddenType = Compile(Compilation(overridden)).GetType("Wasm2Cs.Generated.BcryptModule")!;
+Assert((int)overriddenType.GetMethod("bcrypt")!.Invoke(Activator.CreateInstance(overriddenType), null)! == 42, "Override export result differs.");
+Console.WriteLine("PASS: export/class-name collision rejected; ClassName override succeeds.");
+
 var input = new Input("Arithmetic.wasm.base64", Convert.ToBase64String(bytes));
 GeneratorDriver driver = CSharpGeneratorDriver.Create([new WasmGenerator().AsSourceGenerator()], [input],
     parseOptions: new CSharpParseOptions(LanguageVersion.CSharp9));

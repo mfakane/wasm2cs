@@ -78,6 +78,7 @@
 - **作業:** T02 と同じ入力・比較方法で通過／失敗を再測定し、`docs/supported-features.md` と `docs/usage.md` を実測した範囲に合わせる。新しい機能の依存 profile、必要なホスト設定、未対応機能を明示する。
   - 2026-10-03 の結果: [t08-wasi-remeasure.md](t08-wasi-remeasure.md)。再測定したのは WASI fixture のみ。wasmtime 28.0.1 と Node.js 22.19.0 は `hello wasi\n` と終了コード 0。`HostEnvironment.FdWrite` も同じ標準出力で、`_start` は正常 return、`proc_exit` は未呼び出し・未実装。他の Preview1 import、start 中の owned memory、NuGet/Unity 同梱は未対応。Unity/IL2CPP は未検証。配布スクリプトは変更していない。SIMD と Core は触っていない。
   - 2026-10-03 の第2回: [t08-remeasure-2.md](t08-remeasure-2.md)。T02 の第1回・第2回の全入力を再測定した。T07 の `proc_exit`・`fd_fdstat_get` の後で、`wasi_printf.wasm` は阻害から一致に変わった。他の入力は以前と同じ結果（`Simd.wasm` は4 profile すべてで拒否）。Rust・Host・Tables・Vector はテスト外の一時ハーネスで再確認した。`supported-features.md`・`usage.md`・`README.md` を実測範囲に合わせた。Unity/IL2CPP は未検証。
+  - 2026-10-06 の第3回: [t08-remeasure-3.md](t08-remeasure-3.md)。T05 後に T02 第1回〜第5回の全固定入力を再測定した。`Simd.wasm` は `dotnet-vector` で Node と一致（以前は4 profile すべて拒否）。`unity-mathematics` は翻訳のみで Editor / Windows IL2CPP は未検証のため Unity SIMD 対応は主張しない。portable 系は引き続き拒否。RustStd・CppWorkload・第三者製・WASI・その他は以前どおり一致。`supported-features.md`・`usage.md`・`README.md` を実測範囲に合わせた。
 - **受入条件:** 変更前後の結果と未対応入力が一覧に残る。変更した配布経路のテストが成功し、Unity/IL2CPP など環境不足で実行できない項目は未検証と記録する。
 
 WASI を実装しても、実行時間・メモリ・再帰深度に制限を設けるサンドボックスにはならない。新しい依存や profile は、既存の部品と標準 API では必要な意味論を実現できない場合に限って追加する。

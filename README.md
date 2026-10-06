@@ -67,7 +67,7 @@ On Windows, `scripts/test-unity.ps1 -PackagePath <tarball>` creates a temporary 
 
 ## Limitations
 
-This is **not** a general-purpose WASM compiler. Clang `-O2` library output, a `no_std` Rust library, and a Rust `std` data-summary library compiled with 1.85.0/1.90.0 have been measured to translate and match Node.js. The Rust 1.90.0 fixture also passed 18 cases on Unity Editor Mono and Windows x64 IL2CPP. SIMD autovectorized code does not translate, and other Rust/C/C++ output is not guaranteed. This is **not** an execution sandbox: no fuel or time limit, and recursive calls use the host stack. Unsupported instructions and sections are rejected at build time with `WASM001`.
+This is **not** a general-purpose WASM compiler. Clang `-O2` library and C++ libc++ output, a `no_std` Rust library, a Rust `std` data-summary library (1.85.0/1.90.0), and selected third-party modules have been measured to translate and match Node.js ([t08-remeasure-3.md](docs/t08-remeasure-3.md)). The Rust 1.90.0 fixture also passed 18 cases on Unity Editor Mono and Windows x64 IL2CPP. Clang `-O3 -msimd128` `Simd.wasm` matches Node on the `dotnet-vector` profile; `unity-mathematics` translates it but Editor/IL2CPP were not run — Unity SIMD support is unverified. Other Rust/C/C++ output is not guaranteed. This is **not** an execution sandbox: no fuel or time limit, and recursive calls use the host stack. Unsupported instructions and sections are rejected at build time with `WASM001`.
 
 See the [supported feature list](https://github.com/mfakane/wasm2cs/blob/master/docs/supported-features.md) for the exact instruction and type subset.
 

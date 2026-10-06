@@ -94,8 +94,8 @@ The `Wasm2CsTargetProfile` property selects the C# lowering backend:
 |---|---|
 | `portable-netstandard2.0` | Default. Uses only .NET Standard 2.0 APIs. |
 | `dotnet-netstandard2.1` | Uses operation-scoped `Span`/`MemoryMarshal` helpers. |
-| `dotnet-vector` | Adds `System.Runtime.Intrinsics.Vector128<float>` for the limited SIMD subset. |
-| `unity-mathematics` | Uses `Unity.Mathematics` for the limited SIMD subset. |
+| `dotnet-vector` | Adds `System.Runtime.Intrinsics.Vector128<float>` for the limited SIMD subset (T05 group; required for `Simd.wasm`). |
+| `unity-mathematics` | Uses `Unity.Mathematics` for the limited SIMD subset (translates; Editor/IL2CPP unverified for T05). |
 
 ```xml
 <PropertyGroup>
@@ -103,7 +103,7 @@ The `Wasm2CsTargetProfile` property selects the C# lowering backend:
 </PropertyGroup>
 ```
 
-A profile never changes WASM semantics. Selecting `dotnet-vector` or `unity-mathematics` does not enable additional SIMD instructions; it only affects how the supported `v128.const`, `f32x4.add`, and `f32x4.mul` subset is lowered.
+A profile never changes WASM semantics. Selecting `dotnet-vector` or `unity-mathematics` is required to lower the limited SIMD subset listed in [supported-features.md](supported-features.md) (the T05 group from Clang `Simd.wasm`, including `v128.load`/`store`, shuffles, integer/float lane ops, and the earlier `v128.const` / `f32x4.add` / `f32x4.mul`). Portable profiles reject every `v128` instruction. Unity Editor and Windows IL2CPP were not run for the T05 group; do not treat `unity-mathematics` translation as verified Unity SIMD support.
 
 ## Generated API
 
@@ -186,7 +186,7 @@ fd 1 and fd 2 are the stdout and stderr callbacks. Any other fd has to be opened
 
 wasi-libc `printf` also imports `fd_fdstat_get`, and calls it once on stdout before writing. Pass `(fd, buf) => host.FdFdstatGet(guest!.memory, fd, buf)` for it. Its `fd_seek` and `fd_close` imports were not called by `samples/WasiPreview1/wasi_printf.wasm`. Pass delegates that throw for them; do not stub them as success.
 
-Measured scope, 2026-10-03 (`docs/t08-remeasure-2.md`), fixtures `samples/WasiPreview1/wasi_hello.wasm`, `exit_code.wasm`, and `wasi_printf.wasm`: wasmtime 28.0.1 and Node.js 22.17.0 preview1 print `hello wasi` and exit 0, print `exit 3` on stderr and exit 3, or print the `printf`/`fprintf` lines and exit 0. The test host matches all three. That is the whole WASI surface. The host is test code, not a NuGet or Unity package. Unity and IL2CPP were not verified.
+Measured scope (re-confirmed 2026-10-06, [t08-remeasure-3.md](t08-remeasure-3.md)), fixtures `samples/WasiPreview1/wasi_hello.wasm`, `exit_code.wasm`, and `wasi_printf.wasm`: wasmtime 28.0.1 and Node.js preview1 print `hello wasi` and exit 0, print `exit 3` on stderr and exit 3, or print the `printf`/`fprintf` lines and exit 0. The test host matches all three. That is the whole WASI surface. The host is test code, not a NuGet or Unity package. Unity and IL2CPP were not verified.
 
 ## CLI
 

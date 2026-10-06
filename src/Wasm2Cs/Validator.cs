@@ -4,14 +4,16 @@ internal static class Validator
     public static void Validate(Module module, string className, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (!ExportNames.IsIdentifier(className)) throw new WasmException("The WASM filename must be an ASCII C# identifier.");
+        if (!ExportNames.IsIdentifier(className)) throw new WasmException("The generated class name must be an ASCII C# identifier.");
         if (ExportNames.IsReserved(className)) throw new WasmException("Module name conflicts with generated support members.");
         var exportNames = new HashSet<string>(StringComparer.Ordinal);
         foreach (var export in module.Exports)
         {
             cancellationToken.ThrowIfCancellationRequested();
             string exportName = ExportNames.For(export.Key);
-            if (exportName == className || !exportNames.Add(exportName))
+            if (exportName == className)
+                throw new WasmException($"Export '{export.Key}' collides with generated class name '{className}'. Rename the class with --class-name (CLI), ClassName metadata on the <Wasm> item (MSBuild), or ClassName on the Unity Wasm importer.");
+            if (!exportNames.Add(exportName))
                 throw new WasmException($"Export '{export.Key}' collides with another generated C# member.");
             byte kind = module.ExportKinds[export.Key];
             if (kind == 0 && export.Value >= module.FunctionCount) throw new WasmException("Invalid exported function index.");

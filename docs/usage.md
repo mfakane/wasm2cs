@@ -68,7 +68,7 @@ Use this when working on wasm2cs itself. `samples/Smoke/Smoke.csproj` is a compl
 
 When a project contains `<Wasm>` items, the `Wasm2CsPrepare` target runs before compilation:
 
-1. Each `.wasm` file is Base64-encoded into `$(IntermediateOutputPath)wasm2cs/<Name>.wasm.base64`. Timestamps are preserved when the bytes are unchanged, so the generator is not reinvoked unnecessarily.
+1. Each `.wasm` file is Base64-encoded into `$(IntermediateOutputPath)wasm2cs/<Name>.wasm.base64`, where `<Name>` is the trimmed `ClassName` item metadata when set, otherwise the filename without extension. Timestamps are preserved when the bytes are unchanged, so the generator is not reinvoked unnecessarily.
 2. The encoded files are passed to the Roslyn Source Generator as `AdditionalFiles`. The generator decodes them, translates each module, and emits C# source.
 
 Run a build after editing a `.wasm` file. IDE automatic file-watching behavior for `AdditionalFiles` has not been verified.
@@ -107,7 +107,7 @@ A profile never changes WASM semantics. Selecting `dotnet-vector` or `unity-math
 
 ## Generated API
 
-Each `.wasm` filename (without extension) becomes a sealed class in `Wasm2Cs.Generated`. Each exported WASM function becomes a public instance method. Modules own independent memory and global state.
+By default each `.wasm` filename (without extension) becomes a sealed class in `Wasm2Cs.Generated`. Override that name with CLI `--class-name`, MSBuild `ClassName` metadata on the `<Wasm>` item, or the Unity `WasmImporter.ClassName` field. Filename→class-name remains the public default contract; exports are never renamed. Each exported WASM function becomes a public instance method. Modules own independent memory and global state.
 
 ```csharp
 using Wasm2Cs.Generated;
@@ -116,18 +116,22 @@ var arith = new Arithmetic();
 Console.WriteLine(arith.add(20, 22));  // 42
 ```
 
+```xml
+<Wasm Include="bcrypt.wasm" ClassName="BcryptModule" />
+```
+
 ### Naming rules
 
-- Filenames must be valid ASCII C# identifiers. C# keywords are escaped with `@`.
-- An export cannot have the same name as its class.
-- Module filenames must be unique ignoring case.
+- The generated class name must be a valid ASCII C# identifier. C# keywords are escaped with `@`.
+- An export cannot have the same name as its class. The default is a clearer error (not an auto-rename): rename the class with `--class-name` / `ClassName` rather than renaming the export.
+- Generated class names must be unique ignoring case (from filenames or `ClassName` overrides).
 
 ### Diagnostics
 
 | Code | Source | Meaning |
 |---|---|---|
 | `WASM001` | Source Generator | Translation failed: unsupported instruction, malformed binary, or validation error. Includes function index and byte offset. |
-| `WASM002` | MSBuild task | Two `<Wasm>` filenames produce the same class name (case-insensitive). |
+| `WASM002` | MSBuild task / Unity bridge | Two modules produce the same class name (case-insensitive), from filenames or `ClassName` overrides. |
 
 Both fail the build.
 
@@ -142,10 +146,12 @@ node scripts/pack.mjs
 This produces `artifacts/com.mfakane.wasm2cs-0.1.0-preview.1.tgz`. In the Unity Editor:
 
 1. Open **Package Manager → + → Add package from tarball** and select the `.tgz`.
-2. Add `.wasm` files anywhere under `Assets`.
+2. Add `.wasm` files anywhere under `Assets`. They are imported by `WasmImporter`, which exposes a public `ClassName` field. When set (non-empty after trim), that value is the generated class name and the additionalfile basename; when empty, the filename without extension is used.
 3. The bridge watches assets and maintains Base64 inputs in `Assets/Wasm2CsGeneratedInputs`. Use **Tools/Wasm2Cs/Regenerate Inputs** to reconcile after file changes outside the Editor.
 4. Generated public classes belong to the `Wasm2Cs.Modules` assembly. Custom asmdefs must reference `Wasm2Cs.Modules`.
 5. The compiler plugin is excluded from runtime platforms.
+
+Unity Editor and Windows IL2CPP were not re-verified for the `ClassName` importer override on this Linux development environment; treat that path as implemented but unverified in Editor/IL2CPP until smoke tests are re-run on Windows.
 
 On Windows, run a full IL2CPP smoke test:
 

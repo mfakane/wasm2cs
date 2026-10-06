@@ -107,11 +107,10 @@ tarball は `artifacts/t02-third-party/cache/` に保存し、ある場合は再
 
 合計 66,752 命令。メモリは argon2 の `Hash_SetMemorySize`（WASM 内の `memory.grow`）で最大10ページまで拡張し、xxhash-wasm では JS からの grow を1回再生した。セクションは type、function、memory、export、code のほか、モジュールにより global・data。table・element・import・start はない。
 
-再現（各モジュール）: `node scripts/measure-third-party.mjs` を一度実行すると、`artifacts/t02-third-party/consumer/wasm/<name>.wasm` に取り出したモジュールが置かれる。その後 `dotnet run --project src/Wasm2Cs.Cli -- artifacts/t02-third-party/consumer/wasm/<name>.wasm` で翻訳できる。bcrypt と scrypt はこのコマンドで次のように失敗する。
+再現（各モジュール）: `node scripts/measure-third-party.mjs` を一度実行すると、`artifacts/t02-third-party/consumer/wasm/<name>.wasm` に取り出したモジュールが置かれる。その後 `dotnet run --project src/Wasm2Cs.Cli -- artifacts/t02-third-party/consumer/wasm/<name>.wasm` で翻訳できる。bcrypt と scrypt は既定のファイル名クラスだと衝突する（測定スクリプトは `-n ThirdParty_<name>` を使う）。衝突時のメッセージは次の形（自動リネームはしない）。
 
 ```text
-Export 'bcrypt' collides with another generated C# member.
-Export 'scrypt' collides with another generated C# member.
+Export 'bcrypt' collides with generated class name 'bcrypt'. Rename the class with --class-name (CLI), ClassName metadata on the <Wasm> item (MSBuild), or ClassName on the Unity Wasm importer.
 ```
 
 ## (3) C++
@@ -156,7 +155,7 @@ trap の種類は C# でそれぞれ `Unreachable`、`IntegerOverflow`、`Divisi
 | 不足 | 分類 | 出現した入力 | 優先度 |
 |---|---|---|---|
 | Core の読取り・即値・型検証・import・生成 C# のコンパイル・実行結果の不足 | Core | なし（C++、第三者製23モジュール） | — |
-| export 名が生成クラス名（既定はファイル名）と同じだと、CLI が `Export '<name>' collides with another generated C# member.` で拒否する。C# ではメンバー名を外側の型名と同じにできない（CS0542）。CLI は `-n` で回避できるが、MSBuild の `<Wasm>` 項目と Unity asset bridge にはクラス名を指定する手段がなく、ファイル名の変更が必要 | 生成 C# の命名（Core 命令ではない） | hash-wasm `bcrypt`、`scrypt` | 低。回避策があり、意味論の不足ではない。export 名の別名化か、MSBuild/Unity でのクラス名指定を、別タスクとして検討する |
+| export 名が生成クラス名（既定はファイル名）と同じだと拒否される（C# CS0542）。当時は CLI `-n` のみで、MSBuild `<Wasm>` / Unity bridge にクラス名指定がなかった | 生成 C# の命名（Core 命令ではない） | hash-wasm `bcrypt`、`scrypt` | **対応済み**（`fix/class-name-collision`）: 既定は明確なエラー（自動リネームしない）。CLI `--class-name`、MSBuild `ClassName`、Unity `WasmImporter.ClassName` でクラス名を変更する。Unity Editor/IL2CPP での ClassName 経路は未検証 |
 | SIMD | SIMD | 今回の入力にはなし（第2回の19命令のまま） | 変化なし |
 | WASI | WASI | 今回の入力にはなし。C++ の初回ビルドの3 import は、未使用の abort 経路に由来していた | 変化なし |
 
@@ -166,4 +165,4 @@ trap の種類は C# でそれぞれ `Unreachable`、`IntegerOverflow`、`Divisi
 
 ## 次のタスク
 
-T02 で未測定として残っていた3項目のうち、2項目は測定した。残るのは Rust 1.85.0 の Unity 実行だけで、これは Windows + Unity の環境で上記コマンドを実行して閉じる。T03 は Core の候補がないため実施しない。測定で具体的な入力があるのは SIMD（`Simd.wasm` の19命令）だけなので、次は T04 で SIMD の最初の一群を絞るのが妥当である。命名衝突は T04 と独立した小さな改善として扱える。
+T02 で未測定として残っていた3項目のうち、2項目は測定した。残るのは Rust 1.85.0 の Unity 実行だけで、これは Windows + Unity の環境で上記コマンドを実行して閉じる。T03 は Core の候補がないため実施しない。測定で具体的な入力があるのは SIMD（`Simd.wasm` の19命令）だけなので、次は T04 で SIMD の最初の一群を絞るのが妥当である。命名衝突は後に `fix/class-name-collision` で対応した（明確なエラー + CLI/MSBuild/Unity の ClassName。自動リネームなし）。

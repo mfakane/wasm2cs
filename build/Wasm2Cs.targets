@@ -22,10 +22,13 @@
         Directory.CreateDirectory(OutputDirectory);
         foreach (var module in Modules)
         {
-            var name = Path.GetFileNameWithoutExtension(module.ItemSpec);
+            var classNameMeta = module.GetMetadata("ClassName");
+            var name = string.IsNullOrWhiteSpace(classNameMeta)
+                ? Path.GetFileNameWithoutExtension(module.ItemSpec)
+                : classNameMeta.Trim();
             if (!names.Add(name))
             {
-                Log.LogError("WASM002: Duplicate WASM class name '{0}'. Use unique filenames.", name);
+                Log.LogError("WASM002: Duplicate WASM class name '{0}'. Use unique filenames or ClassName metadata.", name);
                 return false;
             }
             var target = Path.Combine(OutputDirectory, name + ".wasm.base64");

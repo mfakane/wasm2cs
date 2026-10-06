@@ -60,9 +60,11 @@ Numeric globals (`i32`, `i64`, `f32`, `f64`). Owned and imported. Mutable and im
 
 ### SIMD (limited)
 
-Only `v128.const`, `f32x4.add`, and `f32x4.mul` are supported. All other SIMD instructions are rejected. `v128` globals are not supported. The `dotnet-vector` and `unity-mathematics` target profiles provide the lowering for these three instructions; `portable-netstandard2.0` and `dotnet-netstandard2.1` reject them.
+Supported on `dotnet-vector` and `unity-mathematics` only (`portable-netstandard2.0` and `dotnet-netstandard2.1` reject all SIMD). `v128` globals are not supported.
 
-Clang 18 autovectorization (`-O3 -msimd128`, `samples/CSimd`) emitted these unsupported instructions, so such modules are rejected on every profile: `i32x4.add`, `v128.and`, `i16x8.narrow_i32x4_u`, `i8x16.shuffle`, `v128.store`, `i8x16.max_u`, `i32x4.mul`, `i8x16.narrow_i16x8_u`, `v128.load`, `f32x4.lt`, `f32x4.pmin`, `f32x4.splat`, `i16x8.extend_low_i8x16_u`, `i32x4.extend_low_i16x8_u`, `i32x4.extract_lane`, `i32x4.splat`, `i8x16.extract_lane_u`, `v128.bitselect`, `v128.load32_zero` (`docs/t02-gap-report-2.md`).
+Included (T05 / [t04-simd-selection.md](t04-simd-selection.md)): `v128.const`, `v128.load`, `v128.store`, `v128.load32_zero`, `v128.and`, `v128.bitselect`, `i8x16.shuffle`, `i8x16.extract_lane_u`, `i8x16.max_u`, `i8x16.narrow_i16x8_u`, `i16x8.narrow_i32x4_u`, `i16x8.extend_low_i8x16_u`, `i32x4.splat`, `i32x4.extract_lane`, `i32x4.add`, `i32x4.mul`, `i32x4.extend_low_i16x8_u`, `f32x4.splat`, `f32x4.add`, `f32x4.mul`, `f32x4.lt`, `f32x4.pmin`.
+
+Measured on 2026-10-06: `samples/CSimd/Simd.wasm` (Clang 18 `-O3 -msimd128`) translates on `dotnet-vector`, matches Node.js over the checked call script and final memory (`ExecutionChecks.CSimd`). Unity profile translates; Editor and Windows IL2CPP were **not** run, so Unity runtime support for these instructions is unverified. Other SIMD opcodes remain rejected.
 
 ## Traps
 
@@ -99,9 +101,9 @@ Parsing validates section boundaries and order, LEB128 encodings, indices, and o
 - WASM threads, shared memory, memory64.
 - WASM GC proposal.
 - WASI Preview1. The packages do not provide a WASI host; supply the imports yourself (see below).
-- SIMD instructions beyond `v128.const`, `f32x4.add`, `f32x4.mul`.
+- SIMD instructions beyond the T05 group listed under SIMD (limited).
 - `v128` globals.
-- Arbitrary Rust/C/C++ output is not guaranteed. Measured on 2026-10-03 (`docs/t08-remeasure-2.md`): Clang 18 (wasi-sdk-24.0) `-O2` library output, linked with wasi-libc `memcpy`/`memset`, translated and matched Node.js, with or without `-mbulk-memory -msign-ext -mnontrapping-fptoint -mmultivalue -mreference-types`. A `no_std` Rust 1.85 `wasm32-unknown-unknown` library matched too. `-O3 -msimd128` output does not translate (see SIMD).
+- Arbitrary Rust/C/C++ output is not guaranteed. Measured on 2026-10-03 (`docs/t08-remeasure-2.md`): Clang 18 (wasi-sdk-24.0) `-O2` library output, linked with wasi-libc `memcpy`/`memset`, translated and matched Node.js, with or without `-mbulk-memory -msign-ext -mnontrapping-fptoint -mmultivalue -mreference-types`. A `no_std` Rust 1.85 `wasm32-unknown-unknown` library matched too. `-O3 -msimd128` `samples/CSimd` translates on `dotnet-vector` after T05 (see SIMD); Unity runtime for that fixture is unverified.
 - The Rust `std` data-summary library in `samples/RustStd` was measured with Rust 1.85.0 and 1.90.0 on 2026-10-03 ([T02 round 3](t02-gap-report-3.md)). It uses integer parsing, `Vec`, sorting, `BTreeMap`, string formatting, and the standard allocator, with no imports. Both modules (about 12–13k instructions) compiled as C# 9 on `portable-netstandard2.0` and matched Node.js in 18 cases, full memory snapshots, memory growth, a bounds trap, and fresh instance memory. Rust 1.90.0 was also tested through the packaged Unity UPM package on Unity 6000.6.0f1 Editor Mono and Windows x64 IL2CPP ([T02 round 4](t02-gap-report-4.md)); both matched Node.js in the same 18 cases and full memory checks. This does not cover other std APIs or other Rust versions on Unity (Rust 1.85.0 on Unity is still unverified; [T02 round 5](t02-gap-report-5.md) has the steps).
 - C++ and third-party modules were measured on 2026-10-06 ([T02 round 5](t02-gap-report-5.md)). `samples/CppWorkload` is wasi-sdk-24.0 clang++ `-O2` output with libc++ (`std::sort`, virtual calls, `new`/`delete`, a static constructor run by `_initialize`; no exceptions or RTTI). It matched Node.js in 47 calls and final memory. 23 modules from the npm packages hash-wasm 4.12.0 and xxhash-wasm 1.1.0 (hash functions, Argon2, bcrypt, scrypt; not checked in) translated, compiled, and matched Node.js on every call made by the packages' own JS. Results, traps, and full memory after each call all matched. An export whose name equals the generated class name (default: the file name, e.g. `bcrypt.wasm` exporting `bcrypt`) is rejected; pass `--class-name` or rename the file.
 

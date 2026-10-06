@@ -51,6 +51,20 @@ internal sealed class LoweringPlan(WasmTargetProfile profile, LoweringBackend ba
     public string ExtraHelpers(Module module) => Backend.ExtraHelpers(module);
     public bool TryLowerVector(CanonicalVectorOperation operation, string left, string right, out VectorLowering? lowering) =>
         Backend.TryLowerVector(operation, left, right, out lowering);
+    public bool TryLowerVectorUnary(CanonicalVectorOperation operation, string value, out VectorLowering? lowering) =>
+        Backend.TryLowerVectorUnary(operation, value, out lowering);
+    public bool TryLowerVectorTernary(CanonicalVectorOperation operation, string a, string b, string c, out VectorLowering? lowering) =>
+        Backend.TryLowerVectorTernary(operation, a, b, c, out lowering);
+    public bool TryLowerVectorSplat(CanonicalVectorOperation operation, string scalar, out VectorLowering? lowering) =>
+        Backend.TryLowerVectorSplat(operation, scalar, out lowering);
+    public bool TryLowerVectorExtract(CanonicalVectorOperation operation, string vector, int lane, out string? expression) =>
+        Backend.TryLowerVectorExtract(operation, vector, lane, out expression);
+    public bool TryLowerVectorShuffle(string a, string b, byte[] lanes, out VectorLowering? lowering) =>
+        Backend.TryLowerVectorShuffle(a, b, lanes, out lowering);
+    public bool TryLowerVectorLoad(bool load32Zero, string address, uint offset, out VectorLowering? lowering) =>
+        Backend.TryLowerVectorLoad(load32Zero, address, offset, out lowering);
+    public bool TryLowerVectorStore(string address, string value, uint offset, out string? statement) =>
+        Backend.TryLowerVectorStore(address, value, offset, out statement);
     public string VectorTypeName => Backend.VectorTypeName;
     public bool TryLowerVectorConstant(byte[] bytes, out VectorLowering? lowering) =>
         Backend.TryLowerVectorConstant(bytes, out lowering);

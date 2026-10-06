@@ -23,6 +23,8 @@
     <None Include="../../samples/CWorkload/calls.json" Link="CWorkload/calls.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../samples/CppWorkload/CppWorkload.wasm" Link="CppWorkload/CppWorkload.wasm" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../samples/CppWorkload/calls.json" Link="CppWorkload/calls.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../samples/CSimd/Simd.wasm" Link="CSimd/Simd.wasm" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../samples/CSimd/calls.json" Link="CSimd/calls.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../scripts/conformance/*.mjs" Link="ConformanceTools/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../Conformance/typed-ir.wast" Link="Conformance/typed-ir.wast" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../Conformance/typed-ir.json" Link="Conformance/typed-ir.json" CopyToOutputDirectory="PreserveNewest" />

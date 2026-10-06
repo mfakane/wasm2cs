@@ -416,8 +416,23 @@ internal static class ExecutionChecks
             unityVector is null || unityVector.TypeName != "global::Unity.Mathematics.float4" ||
             unityVector.Expression != "left * right")
             throw new Exception("Unity backend did not lower the canonical f32x4 multiply operation.");
+        if (!vectorPlan.TryLowerVector(CanonicalVectorOperation.AddI32x4, "left", "right", out var addI32) || addI32 is null ||
+            !addI32.Expression.Contains("AsInt32") ||
+            !vectorPlan.TryLowerVector(CanonicalVectorOperation.AndV128, "left", "right", out var andV) || andV is null ||
+            !vectorPlan.TryLowerVectorUnary(CanonicalVectorOperation.ExtendLowI8x16U, "value", out var extend) || extend is null ||
+            !vectorPlan.TryLowerVectorSplat(CanonicalVectorOperation.SplatI32x4, "scalar", out var splat) || splat is null ||
+            !vectorPlan.TryLowerVectorExtract(CanonicalVectorOperation.ExtractLaneI32x4, "vector", 2, out var extract) || extract is null ||
+            !vectorPlan.TryLowerVectorShuffle("a", "b", new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 }, out var shuffle) || shuffle is null ||
+            !vectorPlan.TryLowerVectorLoad(false, "addr", 0, out var load) || load is null ||
+            !vectorPlan.TryLowerVectorStore("addr", "value", 0, out var store) || store is null)
+            throw new Exception(".NET vector backend did not lower the T05 SIMD group.");
+        if (!unityPlan.TryLowerVector(CanonicalVectorOperation.AddI32x4, "left", "right", out var unityAddI32) || unityAddI32 is null ||
+            !unityPlan.TryLowerVectorTernary(CanonicalVectorOperation.BitselectV128, "a", "b", "c", out var unityBit) || unityBit is null)
+            throw new Exception("Unity backend did not lower the T05 SIMD group.");
         var scalarPlan = Lowering.Create(Decoder.Decode(bytes), WasmTargetProfile.PortableNetStandard20);
-        if (scalarPlan.TryLowerVector(CanonicalVectorOperation.AddF32x4, "left", "right", out _))
+        if (scalarPlan.TryLowerVector(CanonicalVectorOperation.AddF32x4, "left", "right", out _) ||
+            scalarPlan.TryLowerVector(CanonicalVectorOperation.AddI32x4, "left", "right", out _) ||
+            scalarPlan.TryLowerVectorLoad(false, "addr", 0, out _))
             throw new Exception("Portable backend unexpectedly accepted a vector lowering.");
         if (!CanonicalOperations.TryCreate(0x6c, 0, out var canonicalMultiply) || canonicalMultiply is null ||
             canonicalMultiply.Kind != CanonicalOperationKind.I32 || canonicalMultiply.Inputs.Length != 2 ||
@@ -613,6 +628,134 @@ internal static class ExecutionChecks
         for (int i = 0; i < expected.Length; i++)
             if (expected[i] != actual[i]) throw new Exception($"CppWorkload: WASM/C# mismatch: {actual[i]} != {expected[i]}");
         Console.WriteLine($"PASS: C++ -O2 workload (libc++ sort, virtual calls, new/delete, static ctor) matched Node over {calls.Length} calls and final memory.");
+    }
+    public static async Task CSimd()
+    {
+        // T05: Clang -O3 -msimd128 autovectorized fixture (docs/t04-simd-selection.md).
+        string directory = Path.Combine(AppContext.BaseDirectory, "CSimd");
+        string callsPath = Path.Combine(directory, "calls.json");
+        string wasmPath = Path.Combine(directory, "Simd.wasm");
+        byte[] wasm = File.ReadAllBytes(wasmPath);
+        var calls = JsonSerializer.Deserialize<JsonElement[][]>(File.ReadAllText(callsPath))!;
+
+        foreach (var profile in new[] { WasmTargetProfile.PortableNetStandard20, WasmTargetProfile.DotNetNetStandard21 })
+        {
+            try { Transpiler.Translate(wasm, "SimdRejected", profile); throw new Exception(profile + " accepted Simd.wasm."); }
+            catch (WasmException) { }
+        }
+
+        string unitySource = Transpiler.Translate(wasm, "SimdUnity", WasmTargetProfile.UnityMathematics);
+        if (!unitySource.Contains("Unity.Mathematics.float4") || unitySource.Contains("Vector128"))
+            throw new Exception("Unity SIMD lowering leaked Vector128 or lost float4.");
+
+        var type = Compile(wasm, "Simd", false, WasmTargetProfile.DotNetVector).GetType("Wasm2Cs.Generated.Simd")!;
+        var instance = Activator.CreateInstance(type)!;
+        var actual = new List<string>();
+        foreach (var call in calls)
+        {
+            string export = call[0].GetString()!;
+            object[] arguments = call[1].EnumerateArray().Select(value => (object)value.GetInt32()).ToArray();
+            string head = $"{export}({string.Join(",", arguments)})";
+            try { actual.Add($"{head} = {type.GetMethod(export)!.Invoke(instance, arguments)}"); }
+            catch (TargetInvocationException e) when (e.InnerException?.GetType().DeclaringType == type && e.InnerException.GetType().Name == "TrapException")
+            { actual.Add($"{head} trap"); }
+        }
+        var memory = (WasmMemory)type.GetProperty("memory")!.GetValue(instance)!;
+        actual.Add("memory " + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(memory.ReadMemory(0, (int)memory.Size))).ToLowerInvariant());
+
+        var start = new ProcessStartInfo("node") { RedirectStandardOutput = true, RedirectStandardError = true };
+        start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "sequence-oracle.mjs"));
+        start.ArgumentList.Add(wasmPath);
+        start.ArgumentList.Add(callsPath);
+        using var node = Process.Start(start)!;
+        var output = node.StandardOutput.ReadToEndAsync();
+        var error = node.StandardError.ReadToEndAsync();
+        await node.WaitForExitAsync();
+        if (node.ExitCode != 0) throw new Exception(await error);
+        string[] expected = (await output).TrimEnd('\n').Split('\n');
+        if (expected.Length != actual.Count) throw new Exception("CSimd: oracle line count differs.");
+        for (int i = 0; i < expected.Length; i++)
+            if (expected[i] != actual[i]) throw new Exception($"CSimd: WASM/C# mismatch: {actual[i]} != {expected[i]}");
+
+        // Memory bounds: v128.load / v128.store need 16 bytes; load32_zero needs 4.
+        byte[] loadStore = V128MemoryModule();
+        var memType = Compile(loadStore, "SimdMem", false, WasmTargetProfile.DotNetVector).GetType("Wasm2Cs.Generated.SimdMem")!;
+        var memInstance = Activator.CreateInstance(memType)!;
+        if ((int)memType.GetMethod("roundtrip")!.Invoke(memInstance, [0])! != unchecked((int)0x04030201))
+            throw new Exception("v128 load/store round-trip failed.");
+        if ((int)memType.GetMethod("load32")!.Invoke(memInstance, [0])! != unchecked((int)0x04030201))
+            throw new Exception("v128.load32_zero failed.");
+        foreach (var (export, arg) in new[] { ("roundtrip", 65536 - 15), ("load32", 65536 - 3) })
+        {
+            try
+            {
+                memType.GetMethod(export)!.Invoke(memInstance, [arg]);
+                throw new Exception(export + " missing OOB trap.");
+            }
+            catch (TargetInvocationException e) when (e.InnerException?.GetType().DeclaringType == memType &&
+                e.InnerException.GetType().Name == "TrapException" &&
+                e.InnerException.GetType().GetProperty("Kind")!.GetValue(e.InnerException)!.ToString() == "MemoryOutOfBounds")
+            { }
+        }
+        foreach (var profile in new[] { WasmTargetProfile.PortableNetStandard20, WasmTargetProfile.DotNetNetStandard21 })
+        {
+            try { Transpiler.Translate(loadStore, "SimdMemRejected", profile); throw new Exception(profile + " accepted SIMD memory module."); }
+            catch (WasmException) { }
+        }
+
+        // Reject invalid immediates.
+        foreach (byte[] invalid in new[] { InvalidShuffleModule(), InvalidExtractModule(22, 16), InvalidExtractModule(27, 4) })
+        {
+            try { Transpiler.Translate(invalid, "SimdInvalid", WasmTargetProfile.DotNetVector); throw new Exception("Accepted invalid SIMD immediate."); }
+            catch (WasmException) { }
+        }
+
+        Console.WriteLine($"PASS: Clang -O3 -msimd128 Simd.wasm matched Node over {calls.Length} calls and final memory on dotnet-vector; portable/netstandard2.1 reject; Unity translates (Editor/IL2CPP unverified).");
+    }
+    private static byte[] V128MemoryModule()
+    {
+        // memory 1 page; roundtrip(addr): store const bytes then load and extract lane 0 as i32
+        // load32(addr): load32_zero and extract lane 0
+        byte[] roundtripBody = [0, // locals
+            0x20, 0, // local.get 0
+            0xfd, 0x0c, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, // v128.const
+            0xfd, 0x0b, 4, 0, // v128.store align=4 offset=0
+            0x20, 0,
+            0xfd, 0x00, 4, 0, // v128.load
+            0xfd, 0x1b, 0, // i32x4.extract_lane 0
+            0x0b];
+        byte[] load32Body = [0,
+            0x20, 0,
+            0xfd, 0x0c, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+            0xfd, 0x0b, 4, 0,
+            0x20, 0,
+            0xfd, 0x5c, 2, 0, // v128.load32_zero
+            0xfd, 0x1b, 0,
+            0x0b];
+        byte[] roundtrip = [..U32(roundtripBody.Length), ..roundtripBody];
+        byte[] load32 = [..U32(load32Body.Length), ..load32Body];
+        return [0, 97, 115, 109, 1, 0, 0, 0,
+            ..Section(1, [1, 0x60, 1, 0x7f, 1, 0x7f]),
+            ..Section(3, [2, 0, 0]),
+            ..Section(5, [1, 0, 1]),
+            ..Section(7, [2, 9, (byte)'r',(byte)'o',(byte)'u',(byte)'n',(byte)'d',(byte)'t',(byte)'r',(byte)'i',(byte)'p', 0, 0,
+                6, (byte)'l',(byte)'o',(byte)'a',(byte)'d',(byte)'3',(byte)'2', 0, 1]),
+            ..Section(10, [2, ..roundtrip, ..load32])];
+    }
+    private static byte[] InvalidShuffleModule()
+    {
+        byte[] lanes = Enumerable.Repeat((byte)32, 16).ToArray();
+        byte[] body = [0, 0xfd, 0x0c, ..Enumerable.Repeat((byte)0, 16), 0xfd, 0x0c, ..Enumerable.Repeat((byte)0, 16), 0xfd, 0x0d, ..lanes, 0x1a, 0x0b];
+        return [0, 97, 115, 109, 1, 0, 0, 0,
+            ..Section(1, [1, 0x60, 0, 0]), ..Section(3, [1, 0]),
+            ..Section(7, [1, 1, (byte)'f', 0, 0]), ..Section(10, [1, ..U32(body.Length), ..body])];
+    }
+    private static byte[] InvalidExtractModule(int opcode, int lane)
+    {
+        byte[] body = [0, 0xfd, 0x0c, ..Enumerable.Repeat((byte)0, 16), 0xfd, ..U32(opcode), (byte)lane, 0x1a, 0x0b];
+        return [0, 97, 115, 109, 1, 0, 0, 0,
+            ..Section(1, [1, 0x60, 0, 0]), ..Section(3, [1, 0]),
+            ..Section(7, [1, 1, (byte)'f', 0, 0]), ..Section(10, [1, ..U32(body.Length), ..body])];
     }
     public static void MemoryDuringStart()
     {

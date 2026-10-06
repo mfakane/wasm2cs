@@ -43,6 +43,7 @@
 - **作業:** 不足する SIMD 命令を一群に絞り、使用する即値・lane・メモリアクセス・数値意味論と対象 profile を記録する。現状の `v128.const`、`f32x4.add`、`f32x4.mul` は `dotnet-vector` と `unity-mathematics` のみ対応する。portable profile への追加は既定の要件にしない。
 - **成果物:** 対象 opcode と成功・拒否すべき具体的な WASM 入力、profile ごとの期待動作。
 - **受入条件:** T05 のテスト入力と対象 profile が確定する。対象入力がなければ T05 は行わない。
+  - 2026-10-06 の結果: [t04-simd-selection.md](t04-simd-selection.md)。`Simd.wasm` の不足 19 命令を一群として選んだ（より小さい部分集合では翻訳できない）。対象 profile は `dotnet-vector` と `unity-mathematics`。portable / `dotnet-netstandard2.1` は拒否のまま。
 
 ## T05: 選んだ SIMD 命令を実装する（条件付き）
 
@@ -50,6 +51,7 @@
 - **作業:** T03 と同じ decode → validate → lower → emit の流れで一群を追加する。`tests/Wasm2Cs.Tests/ExecutionChecks.cs` の vector/profile テストを拡張し、参照 WASM との lane 値・trap・メモリ境界を比較する。非対応 profile は誤ってコンパイル可能にしない。
 - **成果物:** 対象 profile の実装・テストと対応範囲の更新。
 - **受入条件:** T03 の .NET/MSBuild/パッケージ検証コマンドが成功する。Unity 向けに対応を宣言する場合は Editor と Windows x64 IL2CPP でも確認する。実機が使えない場合、Unity 対応は未検証として残し、完了を主張しない。
+  - 2026-10-06 の結果: T04 の 19 命令を実装。`Simd.wasm` は `dotnet-vector` で Node.js と一致（`ExecutionChecks.CSimd`）。Unity は翻訳のみ確認し、Editor / IL2CPP は未検証。
 
 ## T06: WASI import とメモリの接続を実証する（条件付き）
 

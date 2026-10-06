@@ -1,5 +1,5 @@
 // T02 round 3: compare the complete Rust std call sequence and linear memory.
-// node scripts/measure-rust-std.mjs [--inventory | --unity-oracle]
+// node scripts/measure-rust-std.mjs [--inventory | --unity-oracle [--unity-fixture=RustStd185|RustStd190]]
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -8,7 +8,9 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-assert.ok(process.argv.slice(2).every(arg => ['--inventory', '--unity-oracle'].includes(arg)), 'unknown option');
+assert.ok(process.argv.slice(2).every(arg => ['--inventory', '--unity-oracle', '--unity-fixture=RustStd185', '--unity-fixture=RustStd190'].includes(arg)), 'unknown option');
+// The Unity oracle defaults to RustStd190 (T02 round 4); RustStd185 writes unity-oracle-RustStd185.json.
+const unityFixture = process.argv.find(arg => arg.startsWith('--unity-fixture='))?.slice('--unity-fixture='.length) ?? 'RustStd190';
 const inventory = process.argv.includes('--inventory');
 const directory = join(root, 'artifacts/t02-rust-std');
 mkdirSync(directory, { recursive: true });
@@ -94,10 +96,10 @@ function reference(module) {
 }
 
 if (process.argv.includes('--unity-oracle')) {
-  const bytes = readFileSync(join(root, 'samples/RustStd/RustStd190.wasm'));
+  const bytes = readFileSync(join(root, `samples/RustStd/${unityFixture}.wasm`));
   const module = new WebAssembly.Module(bytes);
   assert.deepEqual(WebAssembly.Module.imports(module), [], 'library must need no host stubs');
-  const oraclePath = join(directory, 'unity-oracle.json');
+  const oraclePath = join(directory, unityFixture === 'RustStd190' ? 'unity-oracle.json' : `unity-oracle-${unityFixture}.json`);
   writeFileSync(oraclePath, JSON.stringify({
     nodeVersion: process.version, fixtureSha256: hash(bytes),
     cases: JSON.parse(readFileSync(caseFile, 'utf8')), ...reference(module),

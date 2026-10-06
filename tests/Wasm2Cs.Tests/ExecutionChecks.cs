@@ -570,6 +570,50 @@ internal static class ExecutionChecks
         }
         Console.WriteLine($"PASS: Clang -O2 workload (default and bulk-memory/sign-ext/nontrapping-fptoint builds) matched Node over {calls.Length} calls and final memory.");
     }
+    public static async Task CppWorkload()
+    {
+        // T02 C++ input: wasi-sdk-24.0 clang++ -O2 reactor library (libc++ std::sort, virtual dispatch, new/delete, static ctor).
+        string directory = Path.Combine(AppContext.BaseDirectory, "CppWorkload");
+        string callsPath = Path.Combine(directory, "calls.json");
+        string wasmPath = Path.Combine(directory, "CppWorkload.wasm");
+        var calls = JsonSerializer.Deserialize<JsonElement[][]>(File.ReadAllText(callsPath))!;
+        var type = Compile(File.ReadAllBytes(wasmPath), "CppWorkload").GetType("Wasm2Cs.Generated.CppWorkload")!;
+        var instance = Activator.CreateInstance(type)!;
+        var actual = new List<string>();
+        var trapKinds = new List<string>();
+        foreach (var call in calls)
+        {
+            string export = call[0].GetString()!;
+            object[] arguments = call[1].EnumerateArray().Select(value => (object)value.GetInt32()).ToArray();
+            string head = $"{export}({string.Join(",", arguments)})";
+            try { actual.Add($"{head} = {type.GetMethod(export)!.Invoke(instance, arguments) ?? "undefined"}"); }
+            catch (TargetInvocationException e) when (e.InnerException?.GetType().DeclaringType == type && e.InnerException.GetType().Name == "TrapException")
+            {
+                actual.Add($"{head} trap");
+                trapKinds.Add($"{head} {e.InnerException.GetType().GetProperty("Kind")!.GetValue(e.InnerException)}");
+            }
+        }
+        // Node reports only RuntimeError; these kinds match wasmtime 28.0.1's trap messages for the same calls.
+        string[] expectedKinds = ["checked_at(4096) Unreachable", "checked_at(-1) Unreachable", "divide(-2147483648,-1) IntegerOverflow", "divide(1,0) DivisionByZero"];
+        if (!trapKinds.SequenceEqual(expectedKinds)) throw new Exception("CppWorkload: trap kinds differ: " + string.Join("; ", trapKinds));
+        var memory = (WasmMemory)type.GetProperty("memory")!.GetValue(instance)!;
+        actual.Add("memory " + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(memory.ReadMemory(0, (int)memory.Size))).ToLowerInvariant());
+
+        var start = new ProcessStartInfo("node") { RedirectStandardOutput = true, RedirectStandardError = true };
+        start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "sequence-oracle.mjs"));
+        start.ArgumentList.Add(wasmPath);
+        start.ArgumentList.Add(callsPath);
+        using var node = Process.Start(start)!;
+        var output = node.StandardOutput.ReadToEndAsync();
+        var error = node.StandardError.ReadToEndAsync();
+        await node.WaitForExitAsync();
+        if (node.ExitCode != 0) throw new Exception(await error);
+        string[] expected = (await output).TrimEnd('\n').Split('\n');
+        if (expected.Length != actual.Count) throw new Exception("CppWorkload: oracle line count differs.");
+        for (int i = 0; i < expected.Length; i++)
+            if (expected[i] != actual[i]) throw new Exception($"CppWorkload: WASM/C# mismatch: {actual[i]} != {expected[i]}");
+        Console.WriteLine($"PASS: C++ -O2 workload (libc++ sort, virtual calls, new/delete, static ctor) matched Node over {calls.Length} calls and final memory.");
+    }
     public static void MemoryDuringStart()
     {
         byte[] peekType = [0x60, 2, 0x7f, 0x7f, 0];

@@ -78,6 +78,16 @@ node scripts/pack.mjs
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-unity-rust-std.ps1 -PackagePath artifacts/com.mfakane.wasm2cs-0.1.0-preview.1.tgz
 ```
 
+The Rust 1.85.0 fixture uses the same harness with `-Fixture RustStd185` and its
+own oracle. This has not been run on Unity yet (see the
+[T02 round 5 report](../../docs/t02-gap-report-5.md)):
+
+```sh
+node scripts/measure-rust-std.mjs --unity-oracle --unity-fixture=RustStd185
+node scripts/pack.mjs
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/test-unity-rust-std.ps1 -PackagePath artifacts/com.mfakane.wasm2cs-0.1.0-preview.1.tgz -Fixture RustStd185
+```
+
 The Windows PowerShell harness requires Unity 6 with Windows Build Support
 (IL2CPP). It creates a temporary project and checks 18 calls, complete memory
 snapshots, growth, a bounds trap, and a fresh instance against the Node oracle.

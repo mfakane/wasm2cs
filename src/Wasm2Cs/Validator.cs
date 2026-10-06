@@ -110,6 +110,7 @@ internal static class Validator
                 requiresDataCount |= instruction.Opcode == 0xfc && instruction.Operand is 8 or 9;
                 module.HasFloatHelpers |= FloatOperations.Arity(instruction.Opcode) != 0 ||
                     ConversionOperations.Supports(instruction.Opcode) || instruction.Opcode is 0x43 or 0x44 or 0x2a or 0x2b or 0x38 or 0x39;
+                module.HasSimd |= instruction.Opcode == 0xfd;
             }
             if (requiresDataCount && !module.DataCount.HasValue)
                 throw new WasmException("Bulk data instructions require a data count section.");
@@ -378,13 +379,62 @@ internal static class Validator
                         default: Fail("Unsupported bulk memory instruction."); break;
                     }
                     break;
-                case 0xfd when instruction.Operand == 12:
-                    if (instruction.VectorConstant is null || instruction.VectorConstant.Length != 16)
-                        Fail("Invalid v128.const immediate.");
-                    Push(ValueType.V128);
-                    break;
-                case 0xfd when instruction.Operand is 228 or 230:
-                    Pop(ValueType.V128); Pop(ValueType.V128); Push(ValueType.V128);
+                case 0xfd:
+                    module.HasSimd = true;
+                    if (!SimdOperations.TryDescribe(instruction.Operand, out _, out var simdKind, out var naturalAlign, out var maxLane))
+                        Fail("Unsupported SIMD instruction.");
+                    switch (simdKind)
+                    {
+                        case SimdOpKind.Const:
+                            if (instruction.VectorConstant is null || instruction.VectorConstant.Length != 16)
+                                Fail("Invalid v128.const immediate.");
+                            Push(ValueType.V128);
+                            break;
+                        case SimdOpKind.Shuffle:
+                        {
+                            byte[]? shuffleLanes = instruction.VectorConstant;
+                            if (shuffleLanes is null || shuffleLanes.Length != 16)
+                                Fail("Invalid i8x16.shuffle immediate.");
+                            else
+                                foreach (byte lane in shuffleLanes)
+                                    if (lane > 31) Fail("i8x16.shuffle lane out of range.");
+                            Pop(ValueType.V128); Pop(ValueType.V128); Push(ValueType.V128);
+                            break;
+                        }
+                        case SimdOpKind.Load:
+                        case SimdOpKind.Load32Zero:
+                            if (module.Memory == null) Fail("Memory instruction requires memory.");
+                            if (instruction.Secondary > (uint)naturalAlign) Fail("Alignment exceeds natural alignment.");
+                            Pop(ValueType.I32); Push(ValueType.V128);
+                            break;
+                        case SimdOpKind.Store:
+                            if (module.Memory == null) Fail("Memory instruction requires memory.");
+                            if (instruction.Secondary > (uint)naturalAlign) Fail("Alignment exceeds natural alignment.");
+                            Pop(ValueType.V128); Pop(ValueType.I32);
+                            break;
+                        case SimdOpKind.ExtractI32:
+                            if (instruction.Immediate > (uint)maxLane) Fail("SIMD extract lane out of range.");
+                            Pop(ValueType.V128); Push(ValueType.I32);
+                            break;
+                        case SimdOpKind.SplatI32:
+                            Pop(ValueType.I32); Push(ValueType.V128);
+                            break;
+                        case SimdOpKind.SplatF32:
+                            Pop(ValueType.F32); Push(ValueType.V128);
+                            break;
+                        case SimdOpKind.Unary:
+                            Pop(ValueType.V128); Push(ValueType.V128);
+                            break;
+                        case SimdOpKind.Binary:
+                            Pop(ValueType.V128); Pop(ValueType.V128); Push(ValueType.V128);
+                            break;
+                        case SimdOpKind.Ternary:
+                            Pop(ValueType.V128); Pop(ValueType.V128); Pop(ValueType.V128); Push(ValueType.V128);
+                            break;
+                        default:
+                            Fail("Unsupported SIMD instruction.");
+                            break;
+                    }
                     break;
                 default:
                     if (CanonicalOperations.TryCreate(instruction.Opcode, instruction.Operand, out var operation) && operation is not null)

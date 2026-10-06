@@ -82,16 +82,17 @@ internal static class CanonicalLowering
 
     internal static CanonicalInstruction LowerInstruction(Instruction instruction)
     {
-        if (instruction.Opcode == 0xfd)
+        if (instruction.Opcode == 0xfd &&
+            SimdOperations.TryDescribe(instruction.Operand, out var vectorOp, out var simdKind, out _, out _))
         {
-            if (instruction.Operand == 12)
+            if (simdKind == SimdOpKind.Const)
                 return new CanonicalInstruction(
                     instruction,
                     VectorConstant: new CanonicalVectorConstant((instruction.VectorConstant ?? Array.Empty<byte>()).ToArray()));
-            if (instruction.Operand == 228)
-                return new CanonicalInstruction(instruction, VectorOperation: CanonicalVectorOperation.AddF32x4);
-            if (instruction.Operand == 230)
-                return new CanonicalInstruction(instruction, VectorOperation: CanonicalVectorOperation.MultiplyF32x4);
+            if (vectorOp.HasValue)
+                return new CanonicalInstruction(instruction, VectorOperation: vectorOp);
+            // Memory SIMD ops stay classified via Source opcode 0xfd.
+            return new CanonicalInstruction(instruction);
         }
 
         // 0xfc uses the same byte prefix for numeric conversions (0..7) and

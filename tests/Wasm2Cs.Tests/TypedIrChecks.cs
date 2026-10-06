@@ -50,9 +50,12 @@ internal static class TypedIrChecks
         if (Invoke(TypedModule([], [0x70], [0xd2,0,0x0b])) is not Delegate)
             throw new Exception("ref.func did not produce a delegate.");
         ExecutionChecks.Compile(TypedModule([], [0x7f], [0x00,0xd1,0x0b]), portable: true);
-        Reject(TypedModule([], [], [0xfd,0x00,0x0b]), "opcode 0xfd/0");
+        // 0xfd/1 (v128.load8x8_s) stays outside the T05 group.
+        Reject(TypedModule([], [], [0xfd,0x01,0x0b]), "opcode 0xfd/1");
         Reject(TypedModule([], [], [0x41,0,0x41,1,0xfd,0xe4,0x01,0x0b]), "expected V128");
         Reject(TypedModule([0x7b], [], [0x0b]), "does not support v128");
+        // v128.load without memory is rejected at validation.
+        Reject(TypedModule([], [0x7b], [0x41,0,0xfd,0x00,0,0,0x0b]), "requires memory");
         Reject(TypedModule([], [], [0x1c,0,0x0b]), "exactly one");
         Reject(TypedModule([], [], [0x00,0x02,0x40,0x1a,0x0b,0x0b]), "underflow");
         Reject(TypedModule([], [], [0x02,0x40,0x02,0x7f,0x00,0x0e,1,0,1,0x0b,0x1a,0x0b,0x0b]), "arities");

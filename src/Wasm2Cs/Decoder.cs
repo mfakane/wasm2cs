@@ -438,13 +438,28 @@ internal static class Decoder
                     break;
                 case 0xfd:
                     operand = body.Count();
-                    switch (operand)
+                    if (!SimdOperations.TryDescribe(operand, out _, out var simdKind, out _, out _))
+                        throw new WasmException($"Offset 0x{offset:x}: Unsupported WASM opcode 0xfd/{operand}.");
+                    switch (simdKind)
                     {
-                        case 12:
+                        case SimdOpKind.Const:
+                        case SimdOpKind.Shuffle:
                             vectorConstant = body.Bytes(16);
                             break;
-                        case 228: // f32x4.add
-                        case 230: // f32x4.mul
+                        case SimdOpKind.Load:
+                        case SimdOpKind.Load32Zero:
+                        case SimdOpKind.Store:
+                            secondary = (uint)body.Count(); // align
+                            immediate = body.UnsignedI32(); // offset
+                            break;
+                        case SimdOpKind.ExtractI32:
+                            immediate = body.Byte(); // lane
+                            break;
+                        case SimdOpKind.Binary:
+                        case SimdOpKind.Unary:
+                        case SimdOpKind.Ternary:
+                        case SimdOpKind.SplatI32:
+                        case SimdOpKind.SplatF32:
                             break;
                         default:
                             throw new WasmException($"Offset 0x{offset:x}: Unsupported WASM opcode 0xfd/{operand}.");

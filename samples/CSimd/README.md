@@ -13,6 +13,7 @@ Binary SHA-256: `25fa5682559a4e4c3b5d767f838482d6b4d4e49abd3260105d528d1eb502ef2
 Exports (all `i32` in and out): `init`, `saxpy`, `dot`, `byte_sum`, `byte_max`,
 `clamp_scale`, `bytes_ptr`. No imports.
 
-This is a T04 input. The translator rejected it on all four profiles (`portable-netstandard2.0`,
-`dotnet-netstandard2.1`, `dotnet-vector`, `unity-mathematics`) on 2026-10-03
-(`docs/t08-remeasure-2.md`; first measured in `docs/t02-gap-report-2.md`).
+After T05 (2026-10-06), `dotnet-vector` translates and matches Node on
+`calls.json` (`ExecutionChecks.CSimd`, [t04-simd-selection.md](../../docs/t04-simd-selection.md)).
+`unity-mathematics` translates; Editor/IL2CPP unverified.
+`portable-netstandard2.0` and `dotnet-netstandard2.1` still reject SIMD.

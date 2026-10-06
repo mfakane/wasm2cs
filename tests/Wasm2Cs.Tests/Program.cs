@@ -167,6 +167,7 @@ ExecutionChecks.TargetProfiles();
 await ExecutionChecks.CAlgorithms();
 await ExecutionChecks.CWorkload();
 await ExecutionChecks.CppWorkload();
+await ExecutionChecks.CSimd();
 ExecutionChecks.Imports();
 ExecutionChecks.MemoryDuringStart();
 ExecutionChecks.WasiFdWrite();

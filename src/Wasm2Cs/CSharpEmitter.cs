@@ -25,7 +25,13 @@ internal static class CSharpEmitter
         if (hasFunctionReferences) source.Append(TableDelegates(module, lowering));
         if (module.HasI64Operations) source.Append(I64Operations.Helpers);
         if (module.HasFloatHelpers)
-            source.Append(FloatOperations.Helpers).Append(lowering.ExtraHelpers(module));
+            source.Append(FloatOperations.Helpers);
+        bool moduleHasVector = module.HasSimd ||
+            module.Types.Any(t => t.Parameters.Contains(ValueType.V128) || t.Results.Contains(ValueType.V128)) ||
+            module.Bodies.Any(f => f.Locals.Contains(ValueType.V128) || f.Instructions.Any(i => i.Opcode == 0xfd)) ||
+            module.Globals.Any(g => g.Type == ValueType.V128);
+        if (module.HasFloatHelpers || moduleHasVector)
+            source.Append(lowering.ExtraHelpers(module));
         if (module.HasConversionOperations)
             source.Append(ConversionOperations.Helpers);
         if (module.Memory != null) source.Append(lowering.MemoryHelpers(module));
@@ -799,12 +805,76 @@ internal static class CSharpEmitter
             }
             if (canonicalInstruction.Kind == CanonicalInstructionKind.VectorOperation && canonicalInstruction.VectorOperation.HasValue)
             {
-                string vectorRight = Pop(ValueType.V128).Name;
-                string vectorLeft = Pop(ValueType.V128).Name;
-                if (!lowering.TryLowerVector(canonicalInstruction.VectorOperation.Value, vectorLeft, vectorRight, out var vectorResult) ||
-                    vectorResult is null)
-                    throw new WasmException($"Target profile '{WasmTargetProfiles.Name(lowering.Profile)}' cannot lower vector operation {instruction.Operand}.");
-                Push(vectorResult.Expression, ValueType.V128);
+                var vectorOp = canonicalInstruction.VectorOperation.Value;
+                if (!SimdOperations.TryDescribe(instruction.Operand, out _, out var simdKind, out _, out _))
+                    throw new WasmException($"Unknown SIMD operand {instruction.Operand}.");
+                VectorLowering? vectorResult = null;
+                switch (simdKind)
+                {
+                    case SimdOpKind.Binary:
+                    {
+                        string vectorRight = Pop(ValueType.V128).Name;
+                        string vectorLeft = Pop(ValueType.V128).Name;
+                        if (!lowering.TryLowerVector(vectorOp, vectorLeft, vectorRight, out vectorResult) || vectorResult is null)
+                            throw new WasmException($"Target profile '{WasmTargetProfiles.Name(lowering.Profile)}' cannot lower vector operation {instruction.Operand}.");
+                        Push(vectorResult.Expression, ValueType.V128);
+                        break;
+                    }
+                    case SimdOpKind.Unary:
+                    {
+                        string vectorValue = Pop(ValueType.V128).Name;
+                        if (!lowering.TryLowerVectorUnary(vectorOp, vectorValue, out vectorResult) || vectorResult is null)
+                            throw new WasmException($"Target profile '{WasmTargetProfiles.Name(lowering.Profile)}' cannot lower vector operation {instruction.Operand}.");
+                        Push(vectorResult.Expression, ValueType.V128);
+                        break;
+                    }
+                    case SimdOpKind.Ternary:
+                    {
+                        string c = Pop(ValueType.V128).Name;
+                        string b = Pop(ValueType.V128).Name;
+                        string a = Pop(ValueType.V128).Name;
+                        if (!lowering.TryLowerVectorTernary(vectorOp, a, b, c, out vectorResult) || vectorResult is null)
+                            throw new WasmException($"Target profile '{WasmTargetProfiles.Name(lowering.Profile)}' cannot lower vector operation {instruction.Operand}.");
+                        Push(vectorResult.Expression, ValueType.V128);
+                        break;
+                    }
+                    case SimdOpKind.SplatI32:
+                    {
+                        string scalar = Pop(ValueType.I32).Name;
+                        if (!lowering.TryLowerVectorSplat(vectorOp, scalar, out vectorResult) || vectorResult is null)
+                            throw new WasmException($"Target profile '{WasmTargetProfiles.Name(lowering.Profile)}' cannot lower vector operation {instruction.Operand}.");
+                        Push(vectorResult.Expression, ValueType.V128);
+                        break;
+                    }
+                    case SimdOpKind.SplatF32:
+                    {
+                        string scalar = Pop(ValueType.F32).Name;
+                        if (!lowering.TryLowerVectorSplat(vectorOp, scalar, out vectorResult) || vectorResult is null)
+                            throw new WasmException($"Target profile '{WasmTargetProfiles.Name(lowering.Profile)}' cannot lower vector operation {instruction.Operand}.");
+                        Push(vectorResult.Expression, ValueType.V128);
+                        break;
+                    }
+                    case SimdOpKind.ExtractI32:
+                    {
+                        string vectorValue = Pop(ValueType.V128).Name;
+                        if (!lowering.TryLowerVectorExtract(vectorOp, vectorValue, (int)instruction.Immediate, out var extract) || extract is null)
+                            throw new WasmException($"Target profile '{WasmTargetProfiles.Name(lowering.Profile)}' cannot lower vector operation {instruction.Operand}.");
+                        Push(extract, ValueType.I32);
+                        break;
+                    }
+                    case SimdOpKind.Shuffle:
+                    {
+                        string vectorRight = Pop(ValueType.V128).Name;
+                        string vectorLeft = Pop(ValueType.V128).Name;
+                        byte[] lanes = instruction.VectorConstant ?? Array.Empty<byte>();
+                        if (!lowering.TryLowerVectorShuffle(vectorLeft, vectorRight, lanes, out vectorResult) || vectorResult is null)
+                            throw new WasmException($"Target profile '{WasmTargetProfiles.Name(lowering.Profile)}' cannot lower vector operation {instruction.Operand}.");
+                        Push(vectorResult.Expression, ValueType.V128);
+                        break;
+                    }
+                    default:
+                        throw new WasmException($"Target profile '{WasmTargetProfiles.Name(lowering.Profile)}' cannot lower vector operation {instruction.Operand}.");
+                }
                 if (code.Length >= FunctionChunkCharacters) { yield return code.ToString(); code.Clear(); }
                 continue;
             }
@@ -1011,6 +1081,29 @@ internal static class CSharpEmitter
                     Line($"{store}({address}, {stored}, {instruction.Immediate}u, {MemoryOperations.Width(instruction.Opcode)});"); break;
                 case 0x3f: Push("__wasm_memory.CurrentPages"); break;
                 case 0x40: Push($"__wasm_Grow({PopI32()})"); break;
+                case 0xfd:
+                {
+                    if (!SimdOperations.TryDescribe(instruction.Operand, out _, out var memSimdKind, out _, out _))
+                        throw new WasmException($"Unsupported SIMD opcode 0xfd/{instruction.Operand}.");
+                    if (memSimdKind is SimdOpKind.Load or SimdOpKind.Load32Zero)
+                    {
+                        string v128Address = PopI32();
+                        if (!lowering.TryLowerVectorLoad(memSimdKind == SimdOpKind.Load32Zero, v128Address, instruction.Immediate, out var v128Loaded) || v128Loaded is null)
+                            throw new WasmException($"Target profile '{WasmTargetProfiles.Name(lowering.Profile)}' cannot lower SIMD load.");
+                        Push(v128Loaded.Expression, ValueType.V128);
+                    }
+                    else if (memSimdKind == SimdOpKind.Store)
+                    {
+                        string v128Stored = Pop(ValueType.V128).Name;
+                        string v128Address = PopI32();
+                        if (!lowering.TryLowerVectorStore(v128Address, v128Stored, instruction.Immediate, out var v128Store) || v128Store is null)
+                            throw new WasmException($"Target profile '{WasmTargetProfiles.Name(lowering.Profile)}' cannot lower SIMD store.");
+                        Line(v128Store + ";");
+                    }
+                    else
+                        throw new WasmException($"SIMD opcode 0xfd/{instruction.Operand} was not lowered.");
+                    break;
+                }
                 case 0xfc when instruction.Operand == 8:
                     string initLength = PopI32();
                     string initSource = PopI32();

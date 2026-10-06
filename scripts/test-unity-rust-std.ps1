@@ -1,14 +1,18 @@
 param(
     [string]$Editor = "C:\Program Files\Unity\Hub\Editor\6000.6.0f1\Editor\Unity.exe",
     [Parameter(Mandatory = $true)][string]$PackagePath,
+    [ValidateSet("RustStd190", "RustStd185")][string]$Fixture = "RustStd190",
     [string]$OraclePath = "",
     [string]$WorkDirectory = (Join-Path $env:TEMP ("wasm2cs-rust-std-" + [guid]::NewGuid().ToString("N")))
 )
 $ErrorActionPreference = "Stop"
 $repo = Split-Path $PSScriptRoot -Parent
-if (!$OraclePath) { $OraclePath = Join-Path $repo "artifacts/t02-rust-std/unity-oracle.json" }
+if (!$OraclePath) {
+    $oracleName = if ($Fixture -eq "RustStd190") { "unity-oracle.json" } else { "unity-oracle-$Fixture.json" }
+    $OraclePath = Join-Path $repo "artifacts/t02-rust-std/$oracleName"
+}
 $oracle = Get-Content -LiteralPath $OraclePath -Raw | ConvertFrom-Json
-$fixture = Join-Path $repo "samples/RustStd/RustStd190.wasm"
+$fixture = Join-Path $repo "samples/RustStd/$Fixture.wasm"
 $fixtureHash = (Get-FileHash -LiteralPath $fixture -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($fixtureHash -ne $oracle.fixtureSha256) { throw "Oracle does not match the input WASM." }
 if ($oracle.cases.Count -ne 18 -or $oracle.rows.Count -ne 18) { throw "Expected all 18 reference cases." }
@@ -32,6 +36,7 @@ Copy-Item -LiteralPath $PackagePath -Destination $package
     oracleSha256 = (Get-FileHash -LiteralPath $OraclePath -Algorithm SHA256).Hash.ToLowerInvariant()
     nodeVersion = $oracle.nodeVersion
     editor = $Editor
+    fixture = $Fixture
 } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $WorkDirectory "inputs.json") -Encoding UTF8
 RunEditor @("-createProject", "`"$project`"", "-quit") "create.log"
 New-Item -ItemType Directory -Path (Join-Path $project "Assets/Editor"), (Join-Path $project "Assets/Resources") -Force | Out-Null
@@ -40,9 +45,11 @@ $env:WASM2CS_UNITY_PACKAGE = $package.Replace('\', '/')
 RunEditor @("-executeMethod", "PackageInstaller.Install") "install.log"
 $manifest = Get-Content (Join-Path $project "Packages/manifest.json") -Raw | ConvertFrom-Json
 if (!$manifest.dependencies.'com.mfakane.wasm2cs') { throw "UPM package was not installed." }
-Copy-Item -LiteralPath $fixture -Destination (Join-Path $project "Assets/RustStd190.wasm")
+Copy-Item -LiteralPath $fixture -Destination (Join-Path $project "Assets/$Fixture.wasm")
 RunEditor @("-executeMethod", "Wasm2Cs.Editor.WasmAssetBridge.Synchronize", "-quit") "inputs.log"
-Copy-Item (Join-Path $repo "unity/RustStd/RustStdRunner.cs") (Join-Path $project "Assets/RustStdRunner.cs")
+# The runner names the generated class; point it at the selected fixture (RustStd190 by default).
+(Get-Content -LiteralPath (Join-Path $repo "unity/RustStd/RustStdRunner.cs") -Raw).Replace("RustStd190", $Fixture) |
+    Set-Content -LiteralPath (Join-Path $project "Assets/RustStdRunner.cs") -Encoding UTF8 -NoNewline
 Copy-Item (Join-Path $repo "unity/RustStd/Editor/RustStdBuild.cs") (Join-Path $project "Assets/Editor/RustStdBuild.cs")
 Copy-Item -LiteralPath $OraclePath -Destination (Join-Path $project "Assets/Resources/RustStdOracle.json")
 $env:WASM2CS_RUST_STD_OUTPUT = Join-Path $WorkDirectory "editor.json"

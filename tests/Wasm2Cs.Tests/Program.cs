@@ -166,6 +166,7 @@ ExecutionChecks.SharedMemoryGlobalsAndBulkData();
 ExecutionChecks.TargetProfiles();
 await ExecutionChecks.CAlgorithms();
 await ExecutionChecks.CWorkload();
+await ExecutionChecks.CppWorkload();
 ExecutionChecks.Imports();
 ExecutionChecks.MemoryDuringStart();
 ExecutionChecks.WasiFdWrite();

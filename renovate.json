@@ -2,5 +2,13 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "description": "Self-hosting is pinned to SDK 10.0.400 (SH-01 profile); do not bump it",
+      "matchFileNames": [".github/workflows/self-hosting.yml"],
+      "matchDepNames": ["dotnet-sdk"],
+      "enabled": false
+    }
   ]
 }

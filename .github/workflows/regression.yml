@@ -14,7 +14,7 @@ jobs:
           dotnet-version: 10.0.402
       - uses: actions/setup-node@v5
         with:
-          node-version: 22.23.3
+          node-version: 22.23.4
       - run: dotnet build Wasm2Cs.slnx -m:1 -p:UseSharedCompilation=false --nologo
       - run: dotnet tests/Wasm2Cs.Tests/bin/Debug/net10.0/Wasm2Cs.Tests.dll
       - run: dotnet samples/Smoke/bin/Debug/net10.0/Smoke.dll

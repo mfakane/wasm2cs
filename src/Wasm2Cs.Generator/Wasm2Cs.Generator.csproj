@@ -16,7 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="../Wasm2Cs/Wasm2Cs.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../Wasm2Cs.Runtime/Wasm2Cs.Runtime.csproj" ReferenceOutputAssembly="false" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" PrivateAssets="all" />
     <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
     <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
     <Compile Include="../Wasm2Cs/*.cs" Exclude="../Wasm2Cs/HostObjects.cs" Link="Core/%(Filename)%(Extension)" />

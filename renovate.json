@@ -9,6 +9,12 @@
       "matchFileNames": [".github/workflows/self-hosting.yml"],
       "matchDepNames": ["dotnet-sdk"],
       "enabled": false
+    },
+    {
+      "description": "Unity UPM packages come from packages.unity.com, not npmjs (avoids false MAL-2022-2066 match on the npm name-squat)",
+      "matchFileNames": ["unity/Packages/**/package.json"],
+      "matchManagers": ["npm"],
+      "enabled": false
     }
   ]
 }

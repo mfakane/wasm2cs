@@ -16,6 +16,12 @@
       "matchFileNames": ["unity/Packages/**/package.json"],
       "matchManagers": ["npm"],
       "enabled": false
+    },
+    {
+      "description": "Source generator must stay on Roslyn 4.x so it loads on .NET 10 SDK / Unity compilers (CS8032)",
+      "matchFileNames": ["src/Wasm2Cs.Generator/**"],
+      "matchPackageNames": ["Microsoft.CodeAnalysis.CSharp"],
+      "allowedVersions": "<5.0.0"
     }
   ]
 }
